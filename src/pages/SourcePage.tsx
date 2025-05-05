@@ -18,7 +18,7 @@ const SourcePage = () => {
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4">
-        <Button asChild variant="ghost" className="mb-6">
+        <Button asChild variant="ghost" className="mb-6 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">
           <Link to="/library">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Library

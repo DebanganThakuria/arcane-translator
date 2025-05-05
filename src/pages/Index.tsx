@@ -11,11 +11,11 @@ const Index = () => {
   const recentNovels = getRecentNovels();
   const updatedNovels = getRecentlyUpdatedNovels();
   
-  // For demonstration, we'll filter novels by language
+  // For demonstration, we'll filter novels manually since language property is missing
   // In a real app, this would come from the API
-  const chineseNovels = mockNovels.filter(novel => novel.language === 'Chinese' || novel.id === 'n1');
-  const koreanNovels = mockNovels.filter(novel => novel.language === 'Korean' || novel.id === 'n2');
-  const japaneseNovels = mockNovels.filter(novel => novel.language === 'Japanese' || novel.id === 'n3');
+  const chineseNovels = mockNovels.filter(novel => novel.id === 'n1' || novel.id === 'n4');
+  const koreanNovels = mockNovels.filter(novel => novel.id === 'n2' || novel.id === 'n5');
+  const japaneseNovels = mockNovels.filter(novel => novel.id === 'n3' || novel.id === 'n6');
 
   return (
     <Layout>
@@ -33,7 +33,7 @@ const Index = () => {
                   into English, right as you read.
                 </p>
                 <div className="flex flex-wrap gap-4">
-                  <Button asChild size="lg" className="bg-novel hover:bg-novel/90">
+                  <Button asChild size="lg" className="bg-gradient-to-r from-indigo-600 to-blue-400 hover:from-indigo-700 hover:to-blue-500 border-none">
                     <Link to="/add">Add Your First Novel</Link>
                   </Button>
                   <Button asChild size="lg" variant="outline" className="border-white/20 bg-white/10 hover:bg-white/20">
@@ -48,57 +48,63 @@ const Index = () => {
           {recentNovels.length > 0 && (
             <div className="mb-12">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Continue Reading</h2>
-                <Button asChild variant="ghost">
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">Continue Reading</h2>
+                <Button asChild variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">
                   <Link to="/library">View All</Link>
                 </Button>
               </div>
-              <NovelGrid novels={recentNovels} recent={true} />
+              <div className="glass-card rounded-lg p-6">
+                <NovelGrid novels={recentNovels} recent={true} />
+              </div>
             </div>
           )}
 
           {/* Novels by Language */}
           <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">Browse by Language</h2>
-            <Tabs defaultValue="chinese" className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="chinese">Chinese</TabsTrigger>
-                <TabsTrigger value="korean">Korean</TabsTrigger>
-                <TabsTrigger value="japanese">Japanese</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="chinese">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium mb-4">Popular Chinese Novels</h3>
-                  <NovelGrid novels={chineseNovels} />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="korean">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium mb-4">Popular Korean Novels</h3>
-                  <NovelGrid novels={koreanNovels} />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="japanese">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium mb-4">Popular Japanese Novels</h3>
-                  <NovelGrid novels={japaneseNovels} />
-                </div>
-              </TabsContent>
-            </Tabs>
+            <h2 className="text-2xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">Browse by Language</h2>
+            <div className="glass-card rounded-lg p-6">
+              <Tabs defaultValue="chinese" className="w-full">
+                <TabsList className="mb-6 bg-white/60 backdrop-blur-sm">
+                  <TabsTrigger value="chinese">Chinese</TabsTrigger>
+                  <TabsTrigger value="korean">Korean</TabsTrigger>
+                  <TabsTrigger value="japanese">Japanese</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="chinese">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-4">Popular Chinese Novels</h3>
+                    <NovelGrid novels={chineseNovels} />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="korean">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-4">Popular Korean Novels</h3>
+                    <NovelGrid novels={koreanNovels} />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="japanese">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-4">Popular Japanese Novels</h3>
+                    <NovelGrid novels={japaneseNovels} />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
 
           {/* Recently Updated Section */}
           <div className="mb-12">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Recently Updated</h2>
-              <Button asChild variant="ghost">
+              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">Recently Updated</h2>
+              <Button asChild variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50">
                 <Link to="/library">View All</Link>
               </Button>
             </div>
-            <NovelGrid novels={updatedNovels} />
+            <div className="glass-card rounded-lg p-6">
+              <NovelGrid novels={updatedNovels} />
+            </div>
           </div>
         </div>
       </section>

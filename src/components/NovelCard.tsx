@@ -17,21 +17,21 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent }) => {
         <img 
           src={novel.cover || '/placeholder.svg'} 
           alt={novel.title} 
-          className="w-full h-full object-cover rounded-md"
+          className="w-full h-full object-cover rounded-md shadow-md group-hover:shadow-lg"
         />
         {isRecent && novel.lastRead && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center">
+          <div className="absolute bottom-0 left-0 right-0 bg-indigo-600/80 text-white text-xs p-1 text-center">
             {Math.round(novel.lastRead.progress * 100)}% read
           </div>
         )}
         {novel.status === 'Ongoing' && (
-          <Badge className="absolute top-2 right-2" variant="secondary">
+          <Badge className="absolute top-2 right-2 bg-gradient-to-r from-indigo-600 to-blue-400">
             Ongoing
           </Badge>
         )}
       </div>
       <div className="mt-2">
-        <h3 className="font-medium text-sm line-clamp-2 group-hover:text-novel">{novel.title}</h3>
+        <h3 className="font-medium text-sm line-clamp-2 group-hover:text-indigo-600 transition-colors">{novel.title}</h3>
         <p className="text-xs text-muted-foreground mt-1">
           {novel.lastUpdated ? `Updated ${formatDistanceToNow(novel.lastUpdated)} ago` : ''}
         </p>

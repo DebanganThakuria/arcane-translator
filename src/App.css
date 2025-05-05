@@ -42,3 +42,16 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Custom button styles for gradient buttons */
+.gradient-button {
+  background-image: linear-gradient(135deg, rgba(108,99,255,1) 0%, rgba(91,195,235,1) 100%);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.gradient-button:hover {
+  background-image: linear-gradient(135deg, rgba(98,89,235,1) 0%, rgba(81,175,215,1) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108,99,255,0.3);
+}

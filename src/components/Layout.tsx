@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
             <div className="flex items-center space-x-4">
               <SearchBar />
               <Link to="/add">
-                <Button size="sm" variant="outline" className="border-indigo-200 hover:bg-indigo-50">
+                <Button size="sm" variant="outline" className="border-indigo-200 hover:bg-indigo-50 text-indigo-600">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Novel
                 </Button>

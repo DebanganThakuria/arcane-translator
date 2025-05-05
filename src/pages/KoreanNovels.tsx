@@ -3,6 +3,7 @@ import React from 'react';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
 import { mockNovels } from '../data/mockData';
+import { Link } from 'react-router-dom';
 
 const KoreanNovels = () => {
   // Filter novels for Korean - since language property isn't available, 
@@ -33,9 +34,9 @@ const KoreanNovels = () => {
           <h2 className="text-xl font-semibold mb-4">Top Korean Novel Sources</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {['Munpia', 'Naver Series', 'Kakaopage', 'Ridibooks'].map(source => (
-              <div key={source} className="bg-white/60 hover:bg-white/80 rounded-lg p-6 text-center cursor-pointer transition-colors shadow-sm hover:shadow-md">
+              <Link key={source} to={`/source/${source}`} className="bg-white/60 hover:bg-white/80 rounded-lg p-6 text-center cursor-pointer transition-colors shadow-sm hover:shadow-md">
                 <h3 className="font-medium">{source}</h3>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

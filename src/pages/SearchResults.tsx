@@ -29,7 +29,7 @@ const SearchResults = () => {
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-2">Search Results</h1>
+        <h1 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">Search Results</h1>
         <p className="text-muted-foreground mb-8">
           {isLoading 
             ? 'Searching...' 
@@ -39,19 +39,21 @@ const SearchResults = () => {
           }
         </p>
         
-        {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 animate-pulse">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="flex flex-col space-y-3">
-                <div className="bg-gray-200 aspect-[2/3] rounded-md"></div>
-                <div className="bg-gray-200 h-4 w-2/3 rounded"></div>
-                <div className="bg-gray-200 h-3 w-1/2 rounded"></div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <NovelGrid novels={results} />
-        )}
+        <div className="glass-card rounded-lg p-6">
+          {isLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 animate-pulse">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                <div key={i} className="flex flex-col space-y-3">
+                  <div className="bg-indigo-100 aspect-[2/3] rounded-md"></div>
+                  <div className="bg-indigo-100 h-4 w-2/3 rounded"></div>
+                  <div className="bg-indigo-100 h-3 w-1/2 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <NovelGrid novels={results} />
+          )}
+        </div>
       </div>
     </Layout>
   );

@@ -37,7 +37,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
           variant="outline" 
           size="sm" 
           onClick={toggleSortOrder}
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
         >
           {sortAscending ? (
             <>
@@ -56,7 +56,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
           <Link 
             key={chapter.id} 
             to={`/novel/${novelId}/chapter/${chapter.number}`}
-            className="flex items-center justify-between hover:bg-accent/50 p-2 rounded-md transition-colors"
+            className="flex items-center justify-between hover:bg-indigo-50/50 p-2 rounded-md transition-colors"
           >
             <div className="truncate">
               <span className="text-sm">Ch. {chapter.number}: </span>
