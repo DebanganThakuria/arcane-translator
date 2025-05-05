@@ -50,6 +50,21 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
                     Library
                   </Link>
                 </TabsTrigger>
+                <TabsTrigger value="chinese" asChild>
+                  <Link to="/chinese">
+                    Chinese
+                  </Link>
+                </TabsTrigger>
+                <TabsTrigger value="korean" asChild>
+                  <Link to="/korean">
+                    Korean
+                  </Link>
+                </TabsTrigger>
+                <TabsTrigger value="japanese" asChild>
+                  <Link to="/japanese">
+                    Japanese
+                  </Link>
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>

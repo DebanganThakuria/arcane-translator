@@ -38,6 +38,9 @@ const Reader: React.FC<ReaderProps> = ({
     });
   };
 
+  // Format chapter content to add line breaks after paragraphs
+  const formattedContent = chapter.content.replace(/<\/p>/g, '</p><br/>');
+
   return (
     <div className={`min-h-screen pb-20 ${sepiaMode ? 'sepia-mode' : 'bg-background'}`}>
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 dark:bg-background/80 border-b">
@@ -87,7 +90,7 @@ const Reader: React.FC<ReaderProps> = ({
         <div 
           className="prose max-w-none"
           style={{ fontSize: `${fontSize}px` }}
-          dangerouslySetInnerHTML={{ __html: chapter.content }}
+          dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
       </div>
       

@@ -5,11 +5,17 @@ import NovelGrid from '../components/NovelGrid';
 import { getRecentNovels, getRecentlyUpdatedNovels, mockNovels } from '../data/mockData';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
   const recentNovels = getRecentNovels();
   const updatedNovels = getRecentlyUpdatedNovels();
-  const featuredNovel = mockNovels[2]; // Using Silent Shadows as featured
+  
+  // For demonstration, we'll filter novels by language
+  // In a real app, this would come from the API
+  const chineseNovels = mockNovels.filter(novel => novel.language === 'Chinese' || novel.id === 'n1');
+  const koreanNovels = mockNovels.filter(novel => novel.language === 'Korean' || novel.id === 'n2');
+  const japaneseNovels = mockNovels.filter(novel => novel.language === 'Japanese' || novel.id === 'n3');
 
   return (
     <Layout>
@@ -51,38 +57,38 @@ const Index = () => {
             </div>
           )}
 
-          {/* Featured Novel */}
-          {featuredNovel && (
-            <div className="mb-12 bg-gradient-to-r from-novel-light/20 to-novel/10 p-6 rounded-xl">
-              <div className="flex flex-col md:flex-row gap-8">
-                <div className="md:w-1/3">
-                  <div className="book-cover aspect-[2/3] max-w-[250px] mx-auto">
-                    <img 
-                      src={featuredNovel.cover || '/placeholder.svg'} 
-                      alt={featuredNovel.title} 
-                      className="w-full h-full object-cover rounded-md shadow-lg"
-                    />
-                  </div>
+          {/* Novels by Language */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Browse by Language</h2>
+            <Tabs defaultValue="chinese" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="chinese">Chinese</TabsTrigger>
+                <TabsTrigger value="korean">Korean</TabsTrigger>
+                <TabsTrigger value="japanese">Japanese</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="chinese">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-4">Popular Chinese Novels</h3>
+                  <NovelGrid novels={chineseNovels} />
                 </div>
-                <div className="md:w-2/3">
-                  <h3 className="text-sm font-medium text-novel mb-2">FEATURED NOVEL</h3>
-                  <h2 className="text-3xl font-bold mb-4">{featuredNovel.title}</h2>
-                  <p className="text-sm mb-2">
-                    <span className="text-muted-foreground">Original Title: </span>
-                    {featuredNovel.originalTitle}
-                  </p>
-                  <p className="text-sm mb-4">
-                    <span className="text-muted-foreground">Author: </span>
-                    {featuredNovel.author}
-                  </p>
-                  <p className="mb-6">{featuredNovel.summary}</p>
-                  <Button asChild>
-                    <Link to={`/novel/${featuredNovel.id}`}>View Details</Link>
-                  </Button>
+              </TabsContent>
+              
+              <TabsContent value="korean">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-4">Popular Korean Novels</h3>
+                  <NovelGrid novels={koreanNovels} />
                 </div>
-              </div>
-            </div>
-          )}
+              </TabsContent>
+              
+              <TabsContent value="japanese">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-4">Popular Japanese Novels</h3>
+                  <NovelGrid novels={japaneseNovels} />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {/* Recently Updated Section */}
           <div className="mb-12">

@@ -11,6 +11,11 @@ import ChapterReader from "./pages/ChapterReader";
 import AddNovel from "./pages/AddNovel";
 import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
+import ChineseNovels from "./pages/ChineseNovels";
+import KoreanNovels from "./pages/KoreanNovels";
+import JapaneseNovels from "./pages/JapaneseNovels";
+import GenrePage from "./pages/GenrePage";
+import SourcePage from "./pages/SourcePage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +32,11 @@ const App = () => (
           <Route path="/novel/:novelId/chapter/:chapterNumber" element={<ChapterReader />} />
           <Route path="/add" element={<AddNovel />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/chinese" element={<ChineseNovels />} />
+          <Route path="/korean" element={<KoreanNovels />} />
+          <Route path="/japanese" element={<JapaneseNovels />} />
+          <Route path="/genre/:genre" element={<GenrePage />} />
+          <Route path="/source/:source" element={<SourcePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

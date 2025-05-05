@@ -83,6 +83,14 @@ const NovelDetail = () => {
                 <p className="mb-1">
                   <span className="text-muted-foreground">Last Updated:</span> {formatDistanceToNow(novel.lastUpdated)} ago
                 </p>
+                {novel.source && (
+                  <p className="mb-1">
+                    <span className="text-muted-foreground">Source:</span>{' '}
+                    <Link to={`/source/${novel.source}`} className="hover:underline text-novel">
+                      {novel.source}
+                    </Link>
+                  </p>
+                )}
               </div>
               
               {novel.genres && novel.genres.length > 0 && (
@@ -90,7 +98,11 @@ const NovelDetail = () => {
                   <p className="text-sm text-muted-foreground mb-2">Genres:</p>
                   <div className="flex flex-wrap gap-2">
                     {novel.genres.map(genre => (
-                      <Badge key={genre} variant="secondary">{genre}</Badge>
+                      <Link to={`/genre/${genre}`} key={genre}>
+                        <Badge variant="secondary" className="hover:bg-secondary cursor-pointer">
+                          {genre}
+                        </Badge>
+                      </Link>
                     ))}
                   </div>
                 </div>
