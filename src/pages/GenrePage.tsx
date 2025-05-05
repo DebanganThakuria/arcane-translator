@@ -25,17 +25,19 @@ const GenrePage = () => {
           </Link>
         </Button>
       
-        <h1 className="text-3xl font-bold mb-8">
+        <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">
           {genre} Novels
         </h1>
         
-        {filteredNovels.length > 0 ? (
-          <NovelGrid novels={filteredNovels} />
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No novels found in this genre.</p>
-          </div>
-        )}
+        <div className="glass-card rounded-lg p-6">
+          {filteredNovels.length > 0 ? (
+            <NovelGrid novels={filteredNovels} />
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No novels found in this genre.</p>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
