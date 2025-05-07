@@ -3,7 +3,7 @@ import { Novel, Chapter, SourceSite } from '../types/novel';
 import { mockNovels, mockChapters, mockSites } from '../data/mockData';
 
 // Check if we're in a Node.js environment or browser
-const isNode = typeof window === 'undefined';
+const isNode = typeof globalThis !== 'undefined' && globalThis.process && globalThis.process.versions && globalThis.process.versions.node;
 
 // This will only be used in Node.js environment
 let Database: any;
@@ -168,7 +168,7 @@ export const initializeDatabase = () => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
-      mockChapters.forEach(chapter => {
+      mockChapters.forEach((chapter) => {
         insertChapter.run(
           chapter.id,
           chapter.novelId,
@@ -296,7 +296,7 @@ export const getChaptersForNovel = (novelId: string): Chapter[] => {
         ORDER BY number ASC
       `).all(novelId) as any[];
       
-      return chapters.map(chapter => ({
+      return chapters.map((chapter) => ({
         id: chapter.id,
         novelId: chapter.novelId,
         number: chapter.number,
@@ -362,7 +362,7 @@ export const getAllSourceSites = (): SourceSite[] => {
       
       const sites = db.prepare(`SELECT * FROM sources`).all() as any[];
       
-      return sites.map(site => ({
+      return sites.map((site) => ({
         id: site.id,
         name: site.name,
         url: site.url,

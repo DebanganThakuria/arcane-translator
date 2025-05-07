@@ -6,6 +6,8 @@ import { Chapter, Novel } from '../types/novel';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { translateChapter } from '../services/translationService';
 
 interface ReaderProps {
   chapter: Chapter;
@@ -24,18 +26,57 @@ const Reader: React.FC<ReaderProps> = ({
 }) => {
   const [sepiaMode, setSepiaMode] = useState(true);
   const [fontSize, setFontSize] = useState(18);
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Scroll to top when chapter changes
     window.scrollTo(0, 0);
-  }, [chapter.id]);
+    
+    // When a chapter is loaded, simulate background translation of the next chapter
+    if (hasNextChapter) {
+      const nextChapterNumber = chapter.number + 1;
+      
+      // Simulate background translation - this would be a real API call in production
+      const simulateBackgroundTranslation = async () => {
+        try {
+          console.log(`Background translating chapter ${nextChapterNumber}...`);
+          
+          // This is where we would actually call the translation service
+          // In a real app, we'd store the result in the database
+          // translateChapter(novel.id, nextChapterNumber);
+        } catch (error) {
+          console.error('Error in background translation:', error);
+        }
+      };
+      
+      // Wait a few seconds before starting background translation
+      const timeoutId = setTimeout(simulateBackgroundTranslation, 5000);
+      
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [chapter.id, chapter.number, hasNextChapter, novel.id]);
 
   const handleFontSizeChange = (increase: boolean) => {
     setFontSize(prev => {
       const newSize = increase ? prev + 1 : prev - 1;
       return Math.min(Math.max(newSize, 14), 24); // Limit between 14 and 24
     });
+  };
+
+  const handleNavigate = (direction: 'next' | 'prev') => {
+    onNavigate(direction);
+    
+    // Simulate translation notification for the next chapter
+    if (direction === 'next' && hasNextChapter) {
+      const nextChapterNumber = chapter.number + 1;
+      toast({
+        title: "Auto-translation",
+        description: `Chapter ${nextChapterNumber + 1} is being translated in the background`,
+      });
+    }
   };
 
   // Format chapter content to add line breaks after paragraphs
@@ -98,7 +139,7 @@ const Reader: React.FC<ReaderProps> = ({
         <div className="container mx-auto flex justify-between">
           <Button
             variant="outline"
-            onClick={() => onNavigate('prev')}
+            onClick={() => handleNavigate('prev')}
             disabled={!hasPreviousChapter}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -106,7 +147,7 @@ const Reader: React.FC<ReaderProps> = ({
           </Button>
           
           <Button
-            onClick={() => onNavigate('next')}
+            onClick={() => handleNavigate('next')}
             disabled={!hasNextChapter}
           >
             Next Chapter

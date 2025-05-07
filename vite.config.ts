@@ -13,7 +13,8 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['better-sqlite3']
+    exclude: ['better-sqlite3'],
+    include: ['@google/generative-ai']
   },
   server: {
     port: 8080,

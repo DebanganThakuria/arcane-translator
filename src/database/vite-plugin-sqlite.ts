@@ -14,6 +14,11 @@ export function sqlitePlugin(): Plugin {
       } catch (error) {
         console.error('Failed to initialize SQLite database:', error);
       }
-    }
+    },
+    config: () => ({
+      optimizeDeps: {
+        exclude: ['better-sqlite3']
+      }
+    })
   };
 }
