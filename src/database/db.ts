@@ -1,4 +1,3 @@
-
 import { Novel, Chapter, SourceSite } from '../types/novel';
 import { mockNovels, mockChapters, mockSites } from '../data/mockData';
 
@@ -200,7 +199,7 @@ export const getAllNovels = (): Novel[] => {
       
       const novels = db.prepare(`SELECT * FROM novels`).all() as any[];
       
-      return novels.map(novel => {
+      return novels.map((novel: any): Novel => {
         // Get genres for this novel
         const genres = db.prepare(`
           SELECT genre FROM novel_genres WHERE novelId = ?

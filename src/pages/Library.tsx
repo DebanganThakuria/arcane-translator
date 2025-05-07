@@ -5,16 +5,17 @@ import NovelGrid from '../components/NovelGrid';
 import { getAllNovels } from '../database/db';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { Novel } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
 
 const Library = () => {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
+  const fetchNovels = () => {
     try {
       const fetchedNovels = getAllNovels();
       setNovels(fetchedNovels);
@@ -28,19 +29,51 @@ const Library = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchNovels();
   }, [toast]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    
+    // Simulate a check for updates
+    setTimeout(() => {
+      fetchNovels();
+      setRefreshing(false);
+      
+      toast({
+        title: "Library Refreshed",
+        description: "Your library has been updated with the latest information.",
+      });
+    }, 1500);
+  };
 
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">Your Library</h1>
-          <Button asChild className="bg-gradient-to-r from-indigo-600 to-blue-400 hover:from-indigo-700 hover:to-blue-500 border-none">
-            <Link to="/add">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Novel
-            </Link>
-          </Button>
+          
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="border-indigo-200 hover:bg-indigo-50"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Updating...' : 'Refresh'}
+            </Button>
+            
+            <Button asChild className="bg-gradient-to-r from-indigo-600 to-blue-400 hover:from-indigo-700 hover:to-blue-500 border-none">
+              <Link to="/add">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Novel
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {loading ? (

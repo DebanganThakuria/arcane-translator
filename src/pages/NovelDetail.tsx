@@ -5,12 +5,13 @@ import Layout from '../components/Layout';
 import ChapterList from '../components/ChapterList';
 import { getNovelById, getChaptersForNovel } from '../database/db';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Novel, Chapter } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
+import { refreshNovelData } from '../services/refreshService';
 
 const NovelDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,8 +20,9 @@ const NovelDetail = () => {
   const [novel, setNovel] = useState<Novel | undefined>(undefined);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
-  useEffect(() => {
+  const fetchNovelData = () => {
     if (!id) {
       navigate('/library');
       return;
@@ -43,7 +45,41 @@ const NovelDetail = () => {
     } finally {
       setLoading(false);
     }
+  };
+  
+  useEffect(() => {
+    fetchNovelData();
   }, [id, navigate, toast]);
+  
+  const handleRefresh = async () => {
+    if (!id) return;
+    
+    setRefreshing(true);
+    try {
+      const result = await refreshNovelData(id);
+      
+      if (result.success) {
+        toast({
+          title: "Refresh Complete",
+          description: result.message,
+          variant: result.newChaptersCount ? "default" : "secondary",
+        });
+        
+        if (result.newChaptersCount) {
+          // Refetch the novel data to get updated chapters
+          fetchNovelData();
+        }
+      } else {
+        toast({
+          title: "Refresh Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
   
   if (loading) {
     return (
@@ -79,12 +115,24 @@ const NovelDetail = () => {
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4">
-        <Button asChild variant="ghost" className="mb-6 hover:bg-indigo-50/50 hover:text-indigo-600">
-          <Link to="/library">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Library
-          </Link>
-        </Button>
+        <div className="flex justify-between items-center mb-6">
+          <Button asChild variant="ghost" className="hover:bg-indigo-50/50 hover:text-indigo-600">
+            <Link to="/library">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Library
+            </Link>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="border-indigo-200 hover:bg-indigo-50"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Checking...' : 'Check for Updates'}
+          </Button>
+        </div>
         
         <div className="flex flex-col md:flex-row gap-8">
           {/* Left Column - Novel Info */}
