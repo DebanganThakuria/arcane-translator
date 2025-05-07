@@ -296,7 +296,7 @@ export const getChaptersForNovel = (novelId: string): Chapter[] => {
         ORDER BY number ASC
       `).all(novelId) as any[];
       
-      return chapters.map((chapter) => ({
+      return chapters.map((chapter: any): Chapter => ({
         id: chapter.id,
         novelId: chapter.novelId,
         number: chapter.number,
@@ -362,7 +362,7 @@ export const getAllSourceSites = (): SourceSite[] => {
       
       const sites = db.prepare(`SELECT * FROM sources`).all() as any[];
       
-      return sites.map((site) => ({
+      return sites.map((site: any): SourceSite => ({
         id: site.id,
         name: site.name,
         url: site.url,
