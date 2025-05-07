@@ -7,8 +7,13 @@ export function sqlitePlugin(): Plugin {
     name: 'vite-plugin-sqlite',
     configureServer() {
       // Initialize database on server start
-      initializeDatabase();
-      console.log('SQLite database initialized');
+      // This code runs on the server, not in the browser
+      try {
+        initializeDatabase();
+        console.log('SQLite database initialized');
+      } catch (error) {
+        console.error('Failed to initialize SQLite database:', error);
+      }
     }
   };
 }

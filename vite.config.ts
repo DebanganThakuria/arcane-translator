@@ -16,6 +16,7 @@ export default defineConfig({
     exclude: ['better-sqlite3']
   },
   server: {
+    port: 8080,
     watch: {
       ignored: ['**/novels.db', '**/novels.db-shm', '**/novels.db-wal']
     }
