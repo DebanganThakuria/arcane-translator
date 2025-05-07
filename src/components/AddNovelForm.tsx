@@ -1,19 +1,35 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { mockSites } from '../data/mockData';
+import { getAllSourceSites } from '../database/db';
+import { SourceSite } from '../types/novel';
 
 const AddNovelForm = () => {
   const [url, setUrl] = useState('');
   const [source, setSource] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sites, setSites] = useState<SourceSite[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const fetchedSites = getAllSourceSites();
+      setSites(fetchedSites);
+    } catch (error) {
+      console.error('Error fetching source sites:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load source sites.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +90,7 @@ const AddNovelForm = () => {
             <SelectValue placeholder="Select source site" />
           </SelectTrigger>
           <SelectContent>
-            {mockSites.map(site => (
+            {sites.map(site => (
               <SelectItem key={site.id} value={site.id}>
                 {site.name} ({site.language})
               </SelectItem>

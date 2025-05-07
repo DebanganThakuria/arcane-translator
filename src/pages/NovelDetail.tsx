@@ -1,26 +1,59 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ChapterList from '../components/ChapterList';
-import { getNovelById, getChaptersForNovel } from '../data/mockData';
+import { getNovelById, getChaptersForNovel } from '../database/db';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { Novel, Chapter } from '../types/novel';
+import { useToast } from '@/components/ui/use-toast';
 
 const NovelDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [novel, setNovel] = useState<Novel | undefined>(undefined);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  if (!id) {
-    navigate('/library');
-    return null;
+  useEffect(() => {
+    if (!id) {
+      navigate('/library');
+      return;
+    }
+    
+    try {
+      const fetchedNovel = getNovelById(id);
+      if (fetchedNovel) {
+        setNovel(fetchedNovel);
+        const fetchedChapters = getChaptersForNovel(id);
+        setChapters(fetchedChapters);
+      }
+    } catch (error) {
+      console.error('Error fetching novel details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load novel details.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [id, navigate, toast]);
+  
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-16 px-4 text-center">
+          <p className="text-xl text-muted-foreground mb-4">Loading...</p>
+        </div>
+      </Layout>
+    );
   }
-  
-  const novel = getNovelById(id);
-  const chapters = getChaptersForNovel(id);
   
   if (!novel) {
     return (
