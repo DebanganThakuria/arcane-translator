@@ -12,15 +12,74 @@ let DB_PATH: string;
 
 // Only load Node.js specific modules on the server side
 if (isNode) {
-  try {
-    // These imports will only run on the server, not in the browser
-    Database = require('better-sqlite3');
-    fs = require('fs');
-    path = require('path');
-    DB_PATH = path.join(process.cwd(), 'novels.db');
-  } catch (error) {
-    console.error('Failed to load Node.js modules:', error);
-  }
+  // Use top-level async IIFE (Immediately Invoked Function Expression) to load modules
+  (async () => {
+    try {
+      console.log('Loading Node.js modules...');
+      
+      // Try to load modules using dynamic imports with explicit node: protocol
+      let fsModule, pathModule, dbModule;
+      
+      try {
+        // Use node: protocol which is more reliable in ESM context
+        fsModule = await import('node:fs');
+        console.log('Successfully loaded fs module');
+      } catch (e) {
+        console.error('Failed to load fs module:', e);
+        fsModule = null;
+      }
+      
+      try {
+        pathModule = await import('node:path');
+        console.log('Successfully loaded path module');
+      } catch (e) {
+        console.error('Failed to load path module:', e);
+        pathModule = null;
+      }
+      
+      // Assign the modules
+      fs = fsModule;
+      path = pathModule;
+      
+      if (!fs || !path) {
+        throw new Error('Could not load fs or path modules');
+      }
+      
+      // Set database path
+      DB_PATH = path.join(process.cwd(), 'novels.db');
+      console.log('Database path set to:', DB_PATH);
+      
+      // Try to load better-sqlite3
+      try {
+        dbModule = await import('better-sqlite3');
+        console.log('Successfully loaded better-sqlite3 module');
+      } catch (e) {
+        console.error('Failed to load better-sqlite3 module:', e);
+        dbModule = null;
+      }
+      
+      // Assign the database module (handle both default and named exports)
+      Database = dbModule?.default || dbModule;
+      
+      if (!Database) {
+        throw new Error('Could not load better-sqlite3 module');
+      }
+      
+      console.log('All Node.js modules loaded successfully. Initializing database...');
+      
+      // Initialize database now that modules are loaded
+      initializeDatabase();
+      
+    } catch (error) {
+      console.error('Failed to load required modules:', error);
+      fs = null;
+      path = null;
+      Database = null;
+      DB_PATH = '';
+    }
+  })().catch(error => {
+    console.error('Error in async module loading:', error);
+  });
 }
 
 // Database connection function that works in both environments
@@ -40,14 +99,26 @@ export const getDb = () => {
 
 // Initialize the database schema and seed with mock data
 export const initializeDatabase = () => {
-  if (!isNode) return null; // Skip if in browser
+  if (!isNode) {
+    // console.log('Not in Node.js environment, skipping database initialization.');
+    return null; 
+  }
+
+  // Add checks for fs, path, and Database being successfully loaded
+  if (!fs || !path || !Database || !DB_PATH) {
+    console.error('Essential Node.js modules (fs, path, better-sqlite3) or DB_PATH are not available. Cannot initialize database.');
+    return null;
+  }
 
   try {
     // Check if database already exists
-    const dbExists = fs.existsSync(DB_PATH);
+    const dbExists = fs.existsSync(DB_PATH); // fs should now be defined if loaded
     
-    const db = getDb();
-    if (!db) return null;
+    const db = getDb(); // getDb also relies on Database and DB_PATH
+    if (!db) {
+      console.error('Failed to get DB connection in initializeDatabase.');
+      return null;
+    }
     
     // Create tables if they don't exist
     db.exec(`
