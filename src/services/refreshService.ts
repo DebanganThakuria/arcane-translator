@@ -1,7 +1,7 @@
 
 import { getNovelById } from '../database/db';
 
-// Function to refresh novel data - will call Python backend API
+// Function to refresh novel data - calls Python backend API
 export const refreshNovelData = async (novelId: string): Promise<{ 
   success: boolean;
   message: string; 
@@ -9,7 +9,7 @@ export const refreshNovelData = async (novelId: string): Promise<{
 }> => {
   try {
     // Get current novel data
-    const novel = getNovelById(novelId);
+    const novel = await getNovelById(novelId);
     
     if (!novel) {
       return {
@@ -18,24 +18,25 @@ export const refreshNovelData = async (novelId: string): Promise<{
       };
     }
     
-    // TODO: Replace with actual Python backend API call
-    // const response = await fetch(`http://localhost:8000/novels/${novelId}/refresh`, {
-    //   method: 'POST'
-    // });
-    // const result = await response.json();
+    // Call Python backend API to refresh novel data
+    const response = await fetch(`http://localhost:8000/novels/${novelId}/refresh`, {
+      method: 'POST'
+    });
     
-    // Simulation for now
-    const hadNewChapters = Math.random() > 0.5;
-    const newChaptersCount = hadNewChapters ? Math.floor(Math.random() * 3) + 1 : 0;
+    if (!response.ok) {
+      throw new Error('Failed to refresh novel data');
+    }
     
-    console.log(`Refreshed novel ${novel.title}, found ${newChaptersCount} new chapters`);
+    const result = await response.json();
+    
+    console.log(`Refreshed novel ${novel.title}, found ${result.newChaptersCount || 0} new chapters`);
     
     return {
       success: true,
-      message: newChaptersCount > 0 
-        ? `Found ${newChaptersCount} new chapter${newChaptersCount > 1 ? 's' : ''}!`
+      message: result.newChaptersCount > 0 
+        ? `Found ${result.newChaptersCount} new chapter${result.newChaptersCount > 1 ? 's' : ''}!`
         : "No new chapters found",
-      newChaptersCount
+      newChaptersCount: result.newChaptersCount || 0
     };
   } catch (error) {
     console.error("Error refreshing novel data:", error);

@@ -188,6 +188,32 @@ async def get_chapters(novel_id: str):
         ) for chapter in chapters
     ]
 
+@app.post("/novels/{novel_id}/refresh")
+async def refresh_novel(novel_id: str):
+    """Refresh novel data and check for new chapters"""
+    try:
+        # For demo, simulate finding new chapters
+        import random
+        new_chapters_count = random.randint(0, 3)
+        
+        return {
+            "success": True,
+            "newChaptersCount": new_chapters_count,
+            "message": f"Found {new_chapters_count} new chapters" if new_chapters_count > 0 else "No new chapters found"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error refreshing novel: {str(e)}")
+
+@app.get("/sources", response_model=List[SourceSite])
+async def get_sources():
+    """Get all source sites"""
+    # For demo, return static data
+    return [
+        SourceSite(id="qidian", name="Qidian", url="https://www.qidian.com", language="Chinese"),
+        SourceSite(id="naver", name="Naver Series", url="https://series.naver.com", language="Korean"),
+        SourceSite(id="syosetu", name="Syosetu", url="https://syosetu.com", language="Japanese")
+    ]
+
 @app.post("/novels/extract")
 async def extract_novel_details(url: str, source: str):
     """Extract and translate novel details from a webpage URL"""

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -22,18 +21,26 @@ const NovelDetail = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
-  const fetchNovelData = () => {
+  const fetchNovelData = async () => {
     if (!id) {
       navigate('/library');
       return;
     }
     
     try {
-      const fetchedNovel = getNovelById(id);
+      setLoading(true);
+      const fetchedNovel = await getNovelById(id);
       if (fetchedNovel) {
         setNovel(fetchedNovel);
-        const fetchedChapters = getChaptersForNovel(id);
+        const fetchedChapters = await getChaptersForNovel(id);
         setChapters(fetchedChapters);
+      } else {
+        toast({
+          title: "Novel not found",
+          description: "The requested novel could not be found.",
+          variant: "destructive",
+        });
+        navigate('/library');
       }
     } catch (error) {
       console.error('Error fetching novel details:', error);
@@ -49,7 +56,7 @@ const NovelDetail = () => {
   
   useEffect(() => {
     fetchNovelData();
-  }, [id, navigate, toast]);
+  }, [id]);
   
   const handleRefresh = async () => {
     if (!id) return;
@@ -62,12 +69,12 @@ const NovelDetail = () => {
         toast({
           title: "Refresh Complete",
           description: result.message,
-          variant: result.newChaptersCount ? "default" : "default",
+          variant: "default",
         });
         
         if (result.newChaptersCount) {
           // Refetch the novel data to get updated chapters
-          fetchNovelData();
+          await fetchNovelData();
         }
       } else {
         toast({

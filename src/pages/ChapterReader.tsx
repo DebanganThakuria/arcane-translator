@@ -18,45 +18,50 @@ const ChapterReader = () => {
   const chapterNum = chapterNumber ? parseInt(chapterNumber) : 1;
   
   useEffect(() => {
-    if (!novelId) {
-      navigate('/library');
-      return;
-    }
-    
-    try {
-      const fetchedNovel = getNovelById(novelId);
-      if (fetchedNovel) {
-        setNovel(fetchedNovel);
-        const fetchedChapter = getChapter(novelId, chapterNum);
-        setChapter(fetchedChapter);
-        
-        if (!fetchedChapter) {
+    const fetchData = async () => {
+      if (!novelId) {
+        navigate('/library');
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const fetchedNovel = await getNovelById(novelId);
+        if (fetchedNovel) {
+          setNovel(fetchedNovel);
+          const fetchedChapter = await getChapter(novelId, chapterNum);
+          setChapter(fetchedChapter);
+          
+          if (!fetchedChapter) {
+            toast({
+              title: "Chapter not found",
+              description: "The requested chapter is not available.",
+              variant: "destructive",
+            });
+            navigate(`/novel/${novelId}`);
+          }
+        } else {
           toast({
-            title: "Chapter not found",
-            description: "The requested chapter is not available.",
+            title: "Novel not found",
+            description: "The requested novel is not available.",
             variant: "destructive",
           });
-          navigate(`/novel/${novelId}`);
+          navigate('/library');
         }
-      } else {
+      } catch (error) {
+        console.error('Error fetching chapter:', error);
         toast({
-          title: "Novel not found",
-          description: "The requested novel is not available.",
+          title: "Error",
+          description: "Failed to load chapter.",
           variant: "destructive",
         });
         navigate('/library');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching chapter:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load chapter.",
-        variant: "destructive",
-      });
-      navigate('/library');
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    fetchData();
   }, [novelId, chapterNum, navigate, toast]);
   
   if (loading || !novel || !chapter) {

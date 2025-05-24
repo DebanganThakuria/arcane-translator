@@ -1,21 +1,63 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
-import { getRecentNovels, getRecentlyUpdatedNovels, mockNovels } from '../data/mockData';
+import { getAllNovels } from '../database/db';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Novel } from '../types/novel';
 
 const Index = () => {
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchNovels = async () => {
+      try {
+        const fetchedNovels = await getAllNovels();
+        setNovels(fetchedNovels);
+      } catch (error) {
+        console.error('Error fetching novels:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNovels();
+  }, []);
+
+  // Helper functions to filter novels
+  const getRecentNovels = () => {
+    return novels
+      .filter(novel => novel.lastRead)
+      .sort((a, b) => (b.lastRead?.timestamp || 0) - (a.lastRead?.timestamp || 0))
+      .slice(0, 4);
+  };
+
+  const getRecentlyUpdatedNovels = () => {
+    return novels
+      .sort((a, b) => b.lastUpdated - a.lastUpdated)
+      .slice(0, 4);
+  };
+
+  // For demonstration, we'll filter novels manually since language property is missing
+  const chineseNovels = novels.filter(novel => novel.source === 'qidian');
+  const koreanNovels = novels.filter(novel => novel.source === 'naver');
+  const japaneseNovels = novels.filter(novel => novel.source === 'syosetu');
+
   const recentNovels = getRecentNovels();
   const updatedNovels = getRecentlyUpdatedNovels();
-  
-  // For demonstration, we'll filter novels manually since language property is missing
-  // In a real app, this would come from the API
-  const chineseNovels = mockNovels.filter(novel => novel.id === 'n1' || novel.id === 'n4');
-  const koreanNovels = mockNovels.filter(novel => novel.id === 'n2' || novel.id === 'n5');
-  const japaneseNovels = mockNovels.filter(novel => novel.id === 'n3' || novel.id === 'n6');
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-16 px-4 text-center">
+          <p className="text-xl text-muted-foreground mb-4">Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

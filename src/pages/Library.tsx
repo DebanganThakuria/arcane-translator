@@ -15,9 +15,10 @@ const Library = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
-  const fetchNovels = () => {
+  const fetchNovels = async () => {
     try {
-      const fetchedNovels = getAllNovels();
+      setLoading(true);
+      const fetchedNovels = await getAllNovels();
       setNovels(fetchedNovels);
     } catch (error) {
       console.error('Error fetching novels:', error);
@@ -33,21 +34,26 @@ const Library = () => {
 
   useEffect(() => {
     fetchNovels();
-  }, [toast]);
+  }, []);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
     
-    // Simulate a check for updates
-    setTimeout(() => {
-      fetchNovels();
-      setRefreshing(false);
-      
+    try {
+      await fetchNovels();
       toast({
         title: "Library Refreshed",
         description: "Your library has been updated with the latest information.",
       });
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh your library.",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
