@@ -62,7 +62,7 @@ const NovelDetail = () => {
         toast({
           title: "Refresh Complete",
           description: result.message,
-          variant: result.newChaptersCount ? "default" : "secondary",
+          variant: result.newChaptersCount ? "default" : "default",
         });
         
         if (result.newChaptersCount) {
