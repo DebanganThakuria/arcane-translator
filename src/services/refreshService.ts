@@ -1,9 +1,7 @@
 
 import { getNovelById } from '../database/db';
-import { Novel } from '../types/novel';
-import { toast } from '@/components/ui/use-toast';
 
-// Function to simulate refreshing the novel data from source
+// Function to refresh novel data - will call Python backend API
 export const refreshNovelData = async (novelId: string): Promise<{ 
   success: boolean;
   message: string; 
@@ -20,17 +18,16 @@ export const refreshNovelData = async (novelId: string): Promise<{
       };
     }
     
-    // In a real application, here we would:
-    // 1. Fetch the novel's source URL
-    // 2. Parse the webpage for updated chapters
-    // 3. Compare with our database
-    // 4. Add any new chapters found
+    // TODO: Replace with actual Python backend API call
+    // const response = await fetch(`http://localhost:8000/novels/${novelId}/refresh`, {
+    //   method: 'POST'
+    // });
+    // const result = await response.json();
     
-    // This is a simulation: we'll randomly decide if there are new chapters
+    // Simulation for now
     const hadNewChapters = Math.random() > 0.5;
     const newChaptersCount = hadNewChapters ? Math.floor(Math.random() * 3) + 1 : 0;
     
-    // In a real implementation, we would update the database here
     console.log(`Refreshed novel ${novel.title}, found ${newChaptersCount} new chapters`);
     
     return {
