@@ -1,14 +1,44 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
-import { mockNovels } from '../data/mockData';
+import { getAllNovels } from '../database/db';
+import { Novel } from '../types/novel';
 import { Link } from 'react-router-dom';
 
 const JapaneseNovels = () => {
-  // Filter novels that are Japanese or use mock data for demonstration
-  // Since language property doesn't exist in the Novel type, we're filtering specific novels
-  const japaneseNovels = mockNovels.filter(novel => novel.id === 'n3' || novel.id === 'n6');
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNovels = async () => {
+      try {
+        const fetchedNovels = await getAllNovels();
+        // Filter novels that are from Japanese sources
+        const japaneseNovels = fetchedNovels.filter(novel => 
+          novel.source === 'syosetu' || novel.source === 'kakuyomu' || novel.source === 'alphapolis'
+        );
+        setNovels(japaneseNovels);
+      } catch (error) {
+        console.error('Error fetching novels:', error);
+        setNovels([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNovels();
+  }, []);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-16 px-4 text-center">
+          <p className="text-xl text-muted-foreground mb-4">Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -19,12 +49,12 @@ const JapaneseNovels = () => {
         
         <div className="glass-card rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Popular Japanese Novels</h2>
-          <NovelGrid novels={japaneseNovels} />
+          <NovelGrid novels={novels} />
         </div>
         
         <div className="glass-card rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Recently Updated Japanese Novels</h2>
-          <NovelGrid novels={japaneseNovels.slice(0, 5)} />
+          <NovelGrid novels={novels.slice(0, 5)} />
         </div>
         
         <div className="glass-card rounded-lg p-6">

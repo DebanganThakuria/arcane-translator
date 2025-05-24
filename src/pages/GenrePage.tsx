@@ -1,19 +1,47 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
-import { mockNovels } from '../data/mockData';
+import { getAllNovels } from '../database/db';
+import { Novel } from '../types/novel';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 const GenrePage = () => {
   const { genre } = useParams<{ genre: string }>();
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Filter novels by genre - in a real app, this would call an API
-  const filteredNovels = mockNovels.filter(novel => 
-    novel.genres && novel.genres.includes(genre || '')
-  );
+  useEffect(() => {
+    const fetchNovels = async () => {
+      try {
+        const fetchedNovels = await getAllNovels();
+        // Filter novels by genre
+        const filteredNovels = fetchedNovels.filter(novel => 
+          novel.genres && novel.genres.includes(genre || '')
+        );
+        setNovels(filteredNovels);
+      } catch (error) {
+        console.error('Error fetching novels:', error);
+        setNovels([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNovels();
+  }, [genre]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-16 px-4 text-center">
+          <p className="text-xl text-muted-foreground mb-4">Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
   
   return (
     <Layout>
@@ -26,12 +54,12 @@ const GenrePage = () => {
         </Button>
       
         <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">
-          {genre} Novels
+          {genre || 'Unknown Genre'} Novels
         </h1>
         
         <div className="glass-card rounded-lg p-6">
-          {filteredNovels.length > 0 ? (
-            <NovelGrid novels={filteredNovels} />
+          {novels.length > 0 ? (
+            <NovelGrid novels={novels} />
           ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No novels found in this genre.</p>

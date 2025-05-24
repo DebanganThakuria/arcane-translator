@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { getAllSourceSites } from '../database/db';
 import { SourceSite } from '../types/novel';
 import { extractNovelDetails, isGeminiConfigured, setGeminiApiKey } from '../services/translationService';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const AddNovelForm = () => {
   const [url, setUrl] = useState('');
@@ -18,21 +18,30 @@ const AddNovelForm = () => {
   const [sites, setSites] = useState<SourceSite[]>([]);
   const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const [isLoadingSites, setIsLoadingSites] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    try {
-      const fetchedSites = getAllSourceSites();
-      setSites(fetchedSites);
-    } catch (error) {
-      console.error('Error fetching source sites:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load source sites.",
-        variant: "destructive",
-      });
-    }
+    const fetchSites = async () => {
+      try {
+        setIsLoadingSites(true);
+        const fetchedSites = await getAllSourceSites();
+        setSites(fetchedSites || []);
+      } catch (error) {
+        console.error('Error fetching source sites:', error);
+        setSites([]);
+        toast({
+          title: "Error",
+          description: "Failed to load source sites. Using fallback options.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingSites(false);
+      }
+    };
+
+    fetchSites();
   }, [toast]);
 
   useEffect(() => {
@@ -43,7 +52,7 @@ const AddNovelForm = () => {
   }, []);
 
   const handleApiKeySubmit = () => {
-    if (!apiKey) {
+    if (!apiKey.trim()) {
       toast({
         title: "Error",
         description: "Please enter a valid API key",
@@ -63,7 +72,7 @@ const AddNovelForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!url || !source) {
+    if (!url.trim() || !source.trim()) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -79,24 +88,19 @@ const AddNovelForm = () => {
     
     setIsSubmitting(true);
     
-    // Extract novel details using Gemini
     try {
       toast({
         title: "Processing",
         description: "Extracting and translating novel information...",
       });
 
-      // In a real application, this would call the API and process the results
-      // This is simulated for the demo
       const novelDetails = await extractNovelDetails(url, source);
       
       toast({
         title: "Success",
-        description: `Novel "${novelDetails.novel_title_translated}" added successfully! Translating first chapter...`,
+        description: `Novel "${novelDetails.novel_title_translated || 'Unknown Title'}" added successfully!`,
       });
       
-      // In a real app, we would save this to the database and process chapters
-      // For the demo, we'll just navigate back to the library
       setTimeout(() => {
         setIsSubmitting(false);
         navigate('/library');
@@ -111,6 +115,14 @@ const AddNovelForm = () => {
       setIsSubmitting(false);
     }
   };
+
+  const fallbackSites = [
+    { id: 'qidian', name: 'Qidian', url: 'https://www.qidian.com', language: 'Chinese' as const },
+    { id: 'naver', name: 'Naver Series', url: 'https://series.naver.com', language: 'Korean' as const },
+    { id: 'syosetu', name: 'Syosetu', url: 'https://syosetu.com', language: 'Japanese' as const }
+  ];
+
+  const sitesToShow = sites.length > 0 ? sites : fallbackSites;
 
   return (
     <>
@@ -131,12 +143,12 @@ const AddNovelForm = () => {
         
         <div className="space-y-2">
           <Label htmlFor="source">Source Site</Label>
-          <Select value={source} onValueChange={setSource} required>
+          <Select value={source} onValueChange={setSource} required disabled={isLoadingSites}>
             <SelectTrigger>
-              <SelectValue placeholder="Select source site" />
+              <SelectValue placeholder={isLoadingSites ? "Loading sources..." : "Select source site"} />
             </SelectTrigger>
             <SelectContent>
-              {sites.map(site => (
+              {sitesToShow.map(site => (
                 <SelectItem key={site.id} value={site.id}>
                   {site.name} ({site.language})
                 </SelectItem>
@@ -145,7 +157,7 @@ const AddNovelForm = () => {
           </Select>
         </div>
         
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="w-full" disabled={isSubmitting || isLoadingSites}>
           {isSubmitting ? "Processing..." : "Add Novel"}
         </Button>
       </form>

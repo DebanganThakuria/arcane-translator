@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
-import { searchNovels } from '../data/mockData';
+import { getAllNovels } from '../database/db';
 import { Novel } from '../types/novel';
 
 const SearchResults = () => {
@@ -13,17 +13,38 @@ const SearchResults = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Set loading state
-    setIsLoading(true);
+    const searchNovels = async () => {
+      setIsLoading(true);
+      
+      try {
+        const allNovels = await getAllNovels();
+        // Simple client-side search - in production, this would be handled by the backend
+        const searchResults = allNovels.filter(novel => {
+          const searchTerm = query.toLowerCase();
+          return (
+            novel.title.toLowerCase().includes(searchTerm) ||
+            (novel.originalTitle && novel.originalTitle.toLowerCase().includes(searchTerm)) ||
+            (novel.author && novel.author.toLowerCase().includes(searchTerm)) ||
+            novel.summary.toLowerCase().includes(searchTerm) ||
+            (novel.genres && novel.genres.some(genre => genre.toLowerCase().includes(searchTerm)))
+          );
+        });
+        
+        setResults(searchResults);
+      } catch (error) {
+        console.error('Error searching novels:', error);
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Simulate API call with a delay
-    const timer = setTimeout(() => {
-      const searchResults = searchNovels(query);
-      setResults(searchResults);
+    if (query.trim()) {
+      searchNovels();
+    } else {
+      setResults([]);
       setIsLoading(false);
-    }, 500);
-    
-    return () => clearTimeout(timer);
+    }
   }, [query]);
 
   return (
@@ -35,7 +56,9 @@ const SearchResults = () => {
             ? 'Searching...' 
             : results.length > 0 
               ? `Found ${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"` 
-              : `No results found for "${query}"`
+              : query.trim()
+                ? `No results found for "${query}"`
+                : 'Enter a search term to find novels'
           }
         </p>
         
