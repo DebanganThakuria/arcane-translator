@@ -122,7 +122,6 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 
 	novel.Genres = append(novel.Genres, translatedContent.PossibleNewGenres...)
 	novel.Genres = utils.RemoveDuplicatesFromSlice(novel.Genres)
-	novel.LastUpdated = time.Now()
 	if err = s.repo.UpdateNovel(novel); err != nil {
 		return nil, err
 	}
@@ -182,7 +181,6 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 
 	novel.Genres = append(novel.Genres, translatedContent.PossibleNewGenres...)
 	novel.Genres = utils.RemoveDuplicatesFromSlice(novel.Genres)
-	novel.LastUpdated = time.Now()
 	if err = s.repo.UpdateNovel(novel); err != nil {
 		return nil, err
 	}
