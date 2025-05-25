@@ -2,7 +2,7 @@
 import { Novel, Chapter, SourceSite } from '../types/novel';
 
 // API base URL - will be replaced by actual backend calls
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8088';
 
 // Fetch all novels from backend
 export const getAllNovels = async (): Promise<Novel[]> => {
@@ -104,6 +104,30 @@ export const addChapter = async (chapter: Chapter): Promise<boolean> => {
     return response.ok;
   } catch (error) {
     console.error('Error adding chapter:', error);
+    return false;
+  }
+};
+
+// Save or update chapter via backend
+export const saveChapter = async (chapter: Chapter): Promise<boolean> => {
+  try {
+    // Check if chapter already exists
+    const existingChapter = await getChapter(chapter.novelId, chapter.number);
+    
+    if (existingChapter) {
+      // Update existing chapter
+      const response = await fetch(`${API_BASE_URL}/chapters/${chapter.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(chapter)
+      });
+      return response.ok;
+    } else {
+      // Add new chapter
+      return await addChapter(chapter);
+    }
+  } catch (error) {
+    console.error('Error saving chapter:', error);
     return false;
   }
 };

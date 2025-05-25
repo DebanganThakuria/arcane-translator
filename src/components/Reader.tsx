@@ -33,31 +33,43 @@ const Reader: React.FC<ReaderProps> = ({
     // Scroll to top when chapter changes
     window.scrollTo(0, 0);
     
-    // When a chapter is loaded, simulate background translation of the next chapter
+    // When a chapter is loaded, start background translation of the next chapter
     if (hasNextChapter) {
       const nextChapterNumber = chapter.number + 1;
       
-      // Simulate background translation - this would be a real API call in production
-      const simulateBackgroundTranslation = async () => {
+      // Start background translation of the next chapter
+      const startBackgroundTranslation = async () => {
         try {
           console.log(`Background translating chapter ${nextChapterNumber}...`);
           
-          // This is where we would actually call the translation service
-          // In a real app, we'd store the result in the database
-          // translateChapter(novel.id, nextChapterNumber);
+          // Use nextChapterUrl from the current chapter if available
+          const nextChapterUrl = chapter.nextChapterUrl || 
+                                `${novel.url}/chapter-${nextChapterNumber}`; // Fallback URL format
+          
+          // Use the actual translation service to pre-translate the next chapter
+          // and save it to the database
+          await translateChapter(
+            novel.id, 
+            nextChapterNumber, 
+            nextChapterUrl,
+            undefined, // No original content provided
+            true // Save to database
+          );
+          
+          console.log(`Successfully translated chapter ${nextChapterNumber} in the background`);
         } catch (error) {
           console.error('Error in background translation:', error);
         }
       };
       
       // Wait a few seconds before starting background translation
-      const timeoutId = setTimeout(simulateBackgroundTranslation, 5000);
+      const timeoutId = setTimeout(startBackgroundTranslation, 5000);
       
       return () => {
         clearTimeout(timeoutId);
       };
     }
-  }, [chapter.id, chapter.number, hasNextChapter, novel.id]);
+  }, [chapter.id, chapter.number, hasNextChapter, novel.id, novel.url]);
 
   const handleFontSizeChange = (increase: boolean) => {
     setFontSize(prev => {

@@ -79,7 +79,7 @@
   }
   
   .reader-container {
-    @apply max-w-3xl mx-auto p-6 md:p-8 lg:p-10 my-8 rounded-lg shadow-md;
+    @apply max-w-4xl mx-auto p-6 md:p-8 lg:p-10 my-8 rounded-lg shadow-md;
   }
   
   .reader-container.sepia {

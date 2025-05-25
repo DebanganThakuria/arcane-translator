@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { getAllSourceSites } from '../database/db';
 import { SourceSite } from '../types/novel';
-import { extractNovelDetails, isGeminiConfigured, setGeminiApiKey } from '../services/translationService';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { extractNovelDetails, addExtractedNovel } from '../services/translationService';
+import { NovelDetails } from '../types/api';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const AddNovelForm = () => {
   const [url, setUrl] = useState('');
@@ -44,31 +45,6 @@ const AddNovelForm = () => {
     fetchSites();
   }, [toast]);
 
-  useEffect(() => {
-    // Check if API key is configured, if not, show dialog
-    if (!isGeminiConfigured()) {
-      setIsApiKeyDialogOpen(true);
-    }
-  }, []);
-
-  const handleApiKeySubmit = () => {
-    if (!apiKey.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid API key",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setGeminiApiKey(apiKey);
-    setIsApiKeyDialogOpen(false);
-    toast({
-      title: "Success",
-      description: "API key configured successfully",
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -80,36 +56,58 @@ const AddNovelForm = () => {
       });
       return;
     }
-
-    if (!isGeminiConfigured()) {
-      setIsApiKeyDialogOpen(true);
-      return;
-    }
     
     setIsSubmitting(true);
     
     try {
       toast({
         title: "Processing",
-        description: "Extracting and translating novel information...",
+        description: "Extracting novel information...",
       });
 
+      // Step 1: Extract novel information from the URL
       const novelDetails = await extractNovelDetails(url, source);
       
       toast({
-        title: "Success",
-        description: `Novel "${novelDetails.novel_title_translated || 'Unknown Title'}" added successfully!`,
+        title: "Extracting",
+        description: `Found novel: "${novelDetails.novel_title_translated}". Adding to library...`,
       });
       
+      // Step 2: Add the novel to the database
+      const addedNovel = await addExtractedNovel(novelDetails, source, url);
+      
+      toast({
+        title: "Success",
+        description: `Novel "${addedNovel.title}" added successfully!`,
+      });
+      
+      // Navigate to the library after successful addition
       setTimeout(() => {
         setIsSubmitting(false);
         navigate('/library');
       }, 2000);
     } catch (error) {
       console.error('Error processing novel:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Handle specific error messages with more user-friendly explanations
+      let title = "Error";
+      let description = `Failed to process novel: ${errorMessage}`;
+      
+      if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+        title = "Novel Not Found";
+        description = "The URL you provided doesn't seem to contain a valid novel. Please check the URL and try again. Try using the novel's main page URL instead of a chapter page.";
+      } else if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+        title = "Access Denied";
+        description = "The website is blocking our access. This is common with some novel sites. Try another source or URL, or try a different novel site. Some sites actively block web scrapers.";
+      } else if (errorMessage.includes('connection') || errorMessage.includes('network')) {
+        title = "Connection Issue";
+        description = "There was a problem connecting to the novel site. Please check your internet connection and try again. If the problem persists, the site might be down or blocking access.";
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to process novel. Please check the URL and try again.",
+        title: title,
+        description: description,
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -192,9 +190,6 @@ const AddNovelForm = () => {
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" onClick={handleApiKeySubmit}>Save API Key</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

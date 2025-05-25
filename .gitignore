@@ -24,10 +24,7 @@ dist-ssr
 *.sw?
 
 # DB files
-*.db 
-*.db-shm 
-*.db-wal
+*.db
 
-# Backend files
-venv
-.env
+# Go binaries
+bin/

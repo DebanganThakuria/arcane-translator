@@ -11,6 +11,8 @@ export interface Novel {
   status?: 'Ongoing' | 'Completed' | 'Unknown';
   genres?: string[];
   chaptersCount: number;
+  firstChapterUrl?: string;
+  urlPattern?: string;  // Pattern for generating chapter URLs
   lastRead?: {
     chapterId: string;
     progress: number;
@@ -29,6 +31,8 @@ export interface Chapter {
   content: string;
   dateTranslated: number;
   wordCount?: number;
+  url?: string;              // URL of this chapter
+  nextChapterUrl?: string;   // URL to the next chapter
 }
 
 export interface SourceSite {

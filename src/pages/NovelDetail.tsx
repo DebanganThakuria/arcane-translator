@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ChapterList from '../components/ChapterList';
+import FirstChapterDialog from '../components/FirstChapterDialog';
 import { getNovelById, getChaptersForNovel } from '../database/db';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Link as LinkIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,6 +21,7 @@ const NovelDetail = () => {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [firstChapterDialogOpen, setFirstChapterDialogOpen] = useState(false);
   
   const fetchNovelData = async () => {
     if (!id) {
@@ -170,7 +172,7 @@ const NovelDetail = () => {
                   <p className="mb-1"><span className="text-indigo-600 font-medium">Status:</span> {novel.status}</p>
                   <p className="mb-1"><span className="text-indigo-600 font-medium">Chapters:</span> {novel.chaptersCount}</p>
                   <p className="mb-1">
-                    <span className="text-indigo-600 font-medium">Last Updated:</span> {formatDistanceToNow(novel.lastUpdated)} ago
+                    <span className="text-indigo-600 font-medium">Last Updated:</span> {formatDistanceToNow(new Date(novel.lastUpdated * 1000))} ago
                   </p>
                   {novel.source && (
                     <p className="mb-1">
@@ -213,7 +215,10 @@ const NovelDetail = () => {
                 <p className="mb-4">by <span className="font-medium text-indigo-600">{novel.author}</span></p>
               )}
               
-              <p className="mb-0 text-gray-700">{novel.summary}</p>
+              <div 
+                className="mb-0 text-gray-700 prose prose-sm max-w-none" 
+                dangerouslySetInnerHTML={{ __html: novel.summary }}
+              />
             </div>
             
             <div className="glass-card p-6 rounded-lg">
@@ -223,6 +228,31 @@ const NovelDetail = () => {
             </div>
           </div>
         </div>
+        
+        {/* First Chapter Button */}
+        <div className="fixed bottom-4 right-4">
+          <Button 
+            onClick={() => setFirstChapterDialogOpen(true)} 
+            className="gradient-button flex items-center"
+          >
+            <LinkIcon className="mr-2 h-5 w-5" />
+            First Chapter
+          </Button>
+        </div>
+        
+        {/* First Chapter Dialog */}
+        <FirstChapterDialog 
+          isOpen={firstChapterDialogOpen} 
+          onOpenChange={setFirstChapterDialogOpen} 
+          novelId={id || ''}
+          onSuccess={() => {
+            toast({
+              title: "Ready to Read",
+              description: "You can now start reading the first chapter.",
+            });
+            navigate(`/novel/${id}/chapter/1`);
+          }}
+        />
       </div>
     </Layout>
   );
