@@ -2,7 +2,7 @@
 export interface Novel {
   id: string;
   title: string;
-  originalTitle?: string;
+  original_title?: string;
   cover?: string;
   source: string;
   url: string;
@@ -10,29 +10,23 @@ export interface Novel {
   author?: string;
   status?: 'Ongoing' | 'Completed' | 'Unknown';
   genres?: string[];
-  chaptersCount: number;
-  firstChapterUrl?: string;
-  urlPattern?: string;  // Pattern for generating chapter URLs
-  lastRead?: {
-    chapterId: string;
-    progress: number;
-    timestamp: number;
-  };
-  lastUpdated: number;
-  dateAdded: number;
+  chapters_count: number;
+  first_chapter_url?: string;
+  url_pattern?: string;  // Pattern for generating chapter URLs
+  last_updated: number;
+  date_added: number;
 }
 
 export interface Chapter {
   id: string;
-  novelId: string;
+  novel_id: string;
   number: number;
   title: string;
-  originalTitle?: string;
+  original_tile?: string;
   content: string;
-  dateTranslated: number;
-  wordCount?: number;
+  date_translated: number;
+  word_count?: number;
   url?: string;              // URL of this chapter
-  nextChapterUrl?: string;   // URL to the next chapter
 }
 
 export interface SourceSite {

@@ -23,7 +23,7 @@ const SearchResults = () => {
           const searchTerm = query.toLowerCase();
           return (
             novel.title.toLowerCase().includes(searchTerm) ||
-            (novel.originalTitle && novel.originalTitle.toLowerCase().includes(searchTerm)) ||
+            (novel.original_title && novel.original_title.toLowerCase().includes(searchTerm)) ||
             (novel.author && novel.author.toLowerCase().includes(searchTerm)) ||
             novel.summary.toLowerCase().includes(searchTerm) ||
             (novel.genres && novel.genres.some(genre => genre.toLowerCase().includes(searchTerm)))

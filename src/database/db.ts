@@ -112,7 +112,7 @@ export const addChapter = async (chapter: Chapter): Promise<boolean> => {
 export const saveChapter = async (chapter: Chapter): Promise<boolean> => {
   try {
     // Check if chapter already exists
-    const existingChapter = await getChapter(chapter.novelId, chapter.number);
+    const existingChapter = await getChapter(chapter.novel_id, chapter.number);
     
     if (existingChapter) {
       // Update existing chapter

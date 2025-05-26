@@ -33,7 +33,7 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent }) => {
       <div className="mt-2">
         <h3 className="font-medium text-sm line-clamp-2 group-hover:text-indigo-600 transition-colors">{novel.title}</h3>
         <p className="text-xs text-muted-foreground mt-1">
-          {novel.lastUpdated ? `Updated ${formatDistanceToNow(novel.lastUpdated)} ago` : ''}
+          {novel.last_updated ? `Updated ${formatDistanceToNow(novel.last_updated * 1000)} ago` : ''}
         </p>
       </div>
     </Link>

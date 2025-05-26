@@ -61,14 +61,14 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
             <div className="truncate">
               <span className="text-sm">Ch. {chapter.number}: </span>
               <span className="font-medium">{chapter.title}</span>
-              {chapter.wordCount && (
+              {chapter.word_count && (
                 <span className="text-xs text-muted-foreground ml-2">
-                  ({chapter.wordCount} words)
+                  ({chapter.word_count} words)
                 </span>
               )}
             </div>
             <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(chapter.dateTranslated)} ago
+              {formatDistanceToNow(new Date(chapter.date_translated * 1000))} ago
             </span>
           </Link>
         ))}

@@ -62,7 +62,7 @@ const ChapterReader = () => {
               
               let chapterUrl;
               // If we have a firstChapterUrl and urlPattern, use those to generate the URL
-              if (fetchedNovel.firstChapterUrl && fetchedNovel.urlPattern) {
+              if (fetchedNovel.first_chapter_url && fetchedNovel.url_pattern) {
                 try {
                   chapterUrl = await getChapterUrl(novelId, chapterNum);
                 } catch (urlError) {
@@ -88,12 +88,12 @@ const ChapterReader = () => {
               if (translatedChapter) {
                 fetchedChapter = {
                   id: `${novelId}-${chapterNum}`, // Generate a temporary ID
-                  novelId: novelId,
+                  novel_id: novelId,
                   number: chapterNum,
                   title: translatedChapter.translated_chapter_title,
                   content: translatedChapter.translated_chapter_contents,
-                  dateTranslated: Date.now(),
-                  wordCount: translatedChapter.word_count
+                  date_translated: Date.now(),
+                  word_count: translatedChapter.word_count
                 };
                 
                 // Save the chapter to the database
@@ -119,7 +119,7 @@ const ChapterReader = () => {
           
           // Start background translation for next chapter if we're not at the last chapter
           const nextChapterNum = chapterNum + 1;
-          if (nextChapterNum <= fetchedNovel.chaptersCount) {
+          if (nextChapterNum <= fetchedNovel.chapters_count) {
             backgroundTranslateNextChapter(novelId, nextChapterNum, fetchedNovel);
           }
         } else {
@@ -189,7 +189,7 @@ const ChapterReader = () => {
       }
       
       // If nextChapterUrl is not available, generate one using the pattern
-      if (!chapterUrl && novel.firstChapterUrl && novel.urlPattern) {
+      if (!chapterUrl && novel.first_chapter_url && novel.url_pattern) {
         try {
           chapterUrl = await getChapterUrl(novelId, chapterNumber);
         } catch (urlError) {
@@ -260,7 +260,7 @@ const ChapterReader = () => {
     navigate(`/novel/${novelId}/chapter/${targetChapterNum}`);
     
     // If this was a next chapter and it's not the last one, start background translation of the next-next chapter
-    if (direction === 'next' && targetChapterNum < novel.chaptersCount - 1 && novel) {
+    if (direction === 'next' && targetChapterNum < novel.chapters_count - 1 && novel) {
       // Start background translation for the next-next chapter (looking ahead)
       const nextNextChapterNum = targetChapterNum + 1;
       
@@ -279,7 +279,7 @@ const ChapterReader = () => {
   };
   
   const hasPreviousChapter = chapterNum > 1;
-  const hasNextChapter = chapterNum < novel.chaptersCount;
+  const hasNextChapter = chapterNum < novel.chapters_count;
 
   return (
     <Layout hideNavigation>

@@ -114,7 +114,7 @@ const NovelDetail = () => {
   }
   
   const continueReading = () => {
-    if (novel.lastRead) {
+    if (novel.last_updated) {
       navigate(`/novel/${id}/chapter/${novel.lastRead.chapterId.split('-')[1]}`);
     } else if (chapters.length > 0) {
       navigate(`/novel/${id}/chapter/1`);
@@ -170,9 +170,10 @@ const NovelDetail = () => {
                 
                 <div className="glass-card p-4 rounded-md text-sm">
                   <p className="mb-1"><span className="text-indigo-600 font-medium">Status:</span> {novel.status}</p>
-                  <p className="mb-1"><span className="text-indigo-600 font-medium">Chapters:</span> {novel.chaptersCount}</p>
+                  <p className="mb-1"><span className="text-indigo-600 font-medium">Chapters:</span> {novel.chapters_count}</p>
                   <p className="mb-1">
-                    <span className="text-indigo-600 font-medium">Last Updated:</span> {formatDistanceToNow(new Date(novel.lastUpdated * 1000))} ago
+                    <span className="text-indigo-600 font-medium">Last Updated:</span>{" "}
+                    {novel.chapters_count ? formatDistanceToNow(new Date(parseInt(String(novel.chapters_count)) * 1000)) : "unknown"} ago
                   </p>
                   {novel.source && (
                     <p className="mb-1">
@@ -207,8 +208,8 @@ const NovelDetail = () => {
             <div className="glass-card p-6 rounded-lg mb-6">
               <h1 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">{novel.title}</h1>
               
-              {novel.originalTitle && (
-                <p className="text-lg text-muted-foreground mb-2">{novel.originalTitle}</p>
+              {novel.original_title && (
+                <p className="text-lg text-muted-foreground mb-2">{novel.original_title}</p>
               )}
               
               {novel.author && (

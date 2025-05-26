@@ -6,14 +6,14 @@ import { NovelDetails, TranslatedChapter } from '../types/api';
 const API_BASE_URL = 'http://localhost:8088';
 
 // Extract and translate novel details from a webpage URL
-export const extractNovelDetails = async (url: string, sourceSite: string): Promise<NovelDetails> => {
+export const extractNovelDetails = async (url: string, sourceSite: string): Promise<Novel> => {
   try {
     // First, validate the URL format
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       throw new Error('Invalid URL format. URL must start with http:// or https://');
     }
     
-    const response = await fetch(`${API_BASE_URL}/novels/extract`, {
+    const response = await fetch(`${API_BASE_URL}/novels/translate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -52,41 +52,6 @@ export const extractNovelDetails = async (url: string, sourceSite: string): Prom
     return await response.json();
   } catch (error) {
     console.error('Error extracting novel details:', error);
-    throw error;
-  }
-};
-
-export const addExtractedNovel = async (novelDetails: NovelDetails, sourceSite?: string, sourceUrl?: string): Promise<Novel> => {
-  try {
-    const novelPayload = {
-      title: novelDetails.novel_title_translated,
-      originalTitle: novelDetails.novel_title_original,
-      cover: null, // Cover would need to be uploaded separately or handled differently
-      source: sourceSite || "unknown",
-      url: sourceUrl || "",
-      summary: novelDetails.novel_summary_translated,
-      author: novelDetails.novel_author_name_translated,
-      status: novelDetails.status,
-      genres: novelDetails.possible_novel_genres,
-      chaptersCount: novelDetails.number_of_chapters
-    };
-
-    const response = await fetch(`${API_BASE_URL}/novels/add`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(novelPayload)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(errorData.detail || 'Failed to add novel');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error adding novel:', error);
     throw error;
   }
 };
@@ -210,12 +175,13 @@ export const setFirstChapterUrl = async (
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/novels/${novelId}/first-chapter?first_chapter_url=${encodeURIComponent(firstChapterUrl)}&auto_translate=${autoTranslate}`, 
+      `${API_BASE_URL}/novels/translate/first_chapter`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ novel_id: novelId, chapter_url: firstChapterUrl })
       }
     );
     
@@ -267,7 +233,6 @@ export const getChapterUrl = async (novelId: string, chapterNumber: number): Pro
 
 export default {
   extractNovelDetails,
-  addExtractedNovel,
   translateChapter,
   getNovels,
   getNovel,

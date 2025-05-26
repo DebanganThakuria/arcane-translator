@@ -13,6 +13,7 @@ import (
 
 	"backend/handler"
 	_ "backend/provider/gemini"
+	_ "backend/provider/webscraper"
 	_ "backend/repo"
 	_ "backend/service"
 )

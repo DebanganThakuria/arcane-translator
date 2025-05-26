@@ -37,7 +37,7 @@ const Index = () => {
 
   const getRecentlyUpdatedNovels = () => {
     return novels
-      .sort((a, b) => b.lastUpdated - a.lastUpdated)
+      .sort((a, b) => b.last_updated - a.last_updated)
       .slice(0, 4);
   };
 

@@ -64,7 +64,7 @@ func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 
 	response, err := g.geminiClient.Models.GenerateContent(ctx,
 		GenerateContentModel,
-		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleModel)},
+		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleUser)},
 		&genai.GenerateContentConfig{
 			ResponseMIMEType: ResponseMimeType,
 			ResponseSchema: &genai.Schema{
@@ -135,7 +135,7 @@ func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 
 	response, err := g.geminiClient.Models.GenerateContent(ctx,
 		GenerateContentModel,
-		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleModel)},
+		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleUser)},
 		&genai.GenerateContentConfig{
 			ResponseMIMEType: ResponseMimeType,
 			ResponseSchema: &genai.Schema{

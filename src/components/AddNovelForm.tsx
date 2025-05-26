@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { getAllSourceSites } from '../database/db';
 import { SourceSite } from '../types/novel';
-import { extractNovelDetails, addExtractedNovel } from '../services/translationService';
+import { extractNovelDetails } from '../services/translationService';
 import { NovelDetails } from '../types/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -65,20 +65,16 @@ const AddNovelForm = () => {
         description: "Extracting novel information...",
       });
 
-      // Step 1: Extract novel information from the URL
-      const novelDetails = await extractNovelDetails(url, source);
+      const novel = await extractNovelDetails(url, source);
       
       toast({
         title: "Extracting",
-        description: `Found novel: "${novelDetails.novel_title_translated}". Adding to library...`,
+        description: `Found novel: "${novel.title}". Adding to library...`,
       });
-      
-      // Step 2: Add the novel to the database
-      const addedNovel = await addExtractedNovel(novelDetails, source, url);
       
       toast({
         title: "Success",
-        description: `Novel "${addedNovel.title}" added successfully!`,
+        description: `Novel "${novel.title}" added successfully!`,
       });
       
       // Navigate to the library after successful addition

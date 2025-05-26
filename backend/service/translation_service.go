@@ -18,7 +18,7 @@ type TranslationService interface {
 	ExtractNovelDetails(ctx context.Context, request *models.NovelExtractionRequest) (*models.Novel, error)
 	TranslateChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
 	TranslateFirstChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
-	RefreshNovel(ctx context.Context, novelID string) (*models.Novel, error)
+	RefreshNovel(ctx context.Context, request *models.NovelRefreshRequest) (*models.Novel, error)
 }
 
 type translationService struct {
@@ -82,8 +82,8 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		Genres:        novelDetails.PossibleNovelGenres,
 		ChaptersCount: novelDetails.NumberOfChapters,
 		URLPattern:    "",
-		LastUpdated:   time.Now(),
-		DateAdded:     time.Now(),
+		LastUpdated:   time.Now().Unix(),
+		DateAdded:     time.Now().Unix(),
 	}
 
 	return s.repo.CreateNovel(newNovel)
@@ -97,9 +97,6 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	// Validate required fields
 	if request.NovelID == "" {
 		return nil, errors.New("novel ID cannot be empty")
-	}
-	if request.ChapterNumber <= 0 {
-		return nil, errors.New("chapter number must be greater than zero")
 	}
 
 	// Get the novel by ID to ensure it exists
@@ -134,7 +131,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		Title:          translatedContent.TranslatedChapterTitle,
 		OriginalTitle:  translatedContent.OriginalChapterTitle,
 		Content:        translatedContent.TranslatedChapterContents,
-		DateTranslated: time.Now(),
+		DateTranslated: time.Now().Unix(),
 		WordCount:      utils.CountWords(translatedContent.TranslatedChapterContents),
 		URL:            request.ChapterURL,
 	}
@@ -193,20 +190,20 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		Title:          translatedContent.TranslatedChapterTitle,
 		OriginalTitle:  translatedContent.OriginalChapterTitle,
 		Content:        translatedContent.TranslatedChapterContents,
-		DateTranslated: time.Now(),
+		DateTranslated: time.Now().Unix(),
 		URL:            nextChapterUrl,
 	}
 
 	return s.repo.CreateChapter(chapter)
 }
 
-func (s *translationService) RefreshNovel(ctx context.Context, novelID string) (*models.Novel, error) {
-	if novelID == "" {
+func (s *translationService) RefreshNovel(ctx context.Context, request *models.NovelRefreshRequest) (*models.Novel, error) {
+	if request.NovelID == "" {
 		return nil, errors.New("novel ID cannot be empty")
 	}
 
 	// Get the novel by ID to ensure it exists
-	novel, err := s.repo.GetNovelByID(novelID)
+	novel, err := s.repo.GetNovelByID(request.NovelID)
 	if err != nil {
 		return nil, err
 	}
@@ -230,11 +227,11 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelID string) (
 	novel.Author = novelDetails.NovelAuthorNameTranslated
 	novel.Status = novelDetails.Status
 	novel.ChaptersCount = novelDetails.NumberOfChapters
-	novel.LastUpdated = time.Now()
+	novel.LastUpdated = time.Now().Unix()
 
 	if err = s.repo.UpdateNovel(novel); err != nil {
 		return nil, err
 	}
 
-	return s.repo.GetNovelByID(novelID)
+	return s.repo.GetNovelByID(request.NovelID)
 }

@@ -19,6 +19,12 @@ func getAllNovels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If no novels found, return an empty array
+	if len(novels) == 0 {
+		writeJSON(w, []models.Novel{}, http.StatusOK)
+		return
+	}
+
 	writeJSON(w, novels, http.StatusOK)
 }
 
@@ -83,6 +89,12 @@ func getNovelChapters(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "Failed to retrieve chapters: "+err.Error(), http.StatusInternalServerError)
 		}
+		return
+	}
+
+	// If no chapters found, return an empty array
+	if len(chapters) == 0 {
+		writeJSON(w, []models.Chapter{}, http.StatusOK)
 		return
 	}
 

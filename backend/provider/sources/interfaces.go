@@ -8,7 +8,7 @@ type Source interface {
 
 func GetSource(sourceType string) Source {
 	switch sourceType {
-	case "68shuba":
+	case "69shuba":
 		return NewShuba()
 	default:
 		return nil

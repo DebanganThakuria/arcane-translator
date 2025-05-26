@@ -82,9 +82,8 @@ func (s *novelService) CreateNovel(novel *models.Novel) (*models.Novel, error) {
 	}
 
 	// Set timestamps
-	now := time.Now()
-	novel.DateAdded = now
-	novel.LastUpdated = now
+	novel.DateAdded = time.Now().Unix()
+	novel.LastUpdated = time.Now().Unix()
 
 	// Set default values
 	if novel.Status == "" {
@@ -191,9 +190,7 @@ func (s *novelService) CreateChapter(chapter *models.Chapter) (*models.Chapter, 
 	}
 
 	// Set default values
-	if chapter.DateTranslated.IsZero() {
-		chapter.DateTranslated = time.Now()
-	}
+	chapter.DateTranslated = time.Now().Unix()
 
 	// Calculate word count if not provided
 	if chapter.WordCount <= 0 {
@@ -265,7 +262,7 @@ func (s *novelService) DeleteChapter(id string) error {
 var allSources = []*models.SourceSite{
 	{
 		ID:       "69shuba",
-		Name:     "69书吧",
+		Name:     "69shuba",
 		URL:      "https://www.69shuba.com",
 		Language: "Chinese",
 	},

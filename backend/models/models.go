@@ -3,38 +3,37 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"time"
 )
 
 // Novel represents a novel in the database
 type Novel struct {
-	ID            string    `json:"id"`
-	Title         string    `json:"title"`
-	OriginalTitle string    `json:"original_title,omitempty"`
-	Cover         string    `json:"cover,omitempty"`
-	Source        string    `json:"source"`
-	URL           string    `json:"url"`
-	Summary       string    `json:"summary"`
-	Author        string    `json:"author,omitempty"`
-	Status        string    `json:"status,omitempty"`
-	Genres        []string  `json:"genres,omitempty"`
-	ChaptersCount int       `json:"chapters_count"`
-	URLPattern    string    `json:"url_pattern,omitempty"`
-	LastUpdated   time.Time `json:"last_updated"`
-	DateAdded     time.Time `json:"date_added"`
+	ID            string   `json:"id"`
+	Title         string   `json:"title"`
+	OriginalTitle string   `json:"original_title,omitempty"`
+	Cover         string   `json:"cover,omitempty"`
+	Source        string   `json:"source"`
+	URL           string   `json:"url"`
+	Summary       string   `json:"summary"`
+	Author        string   `json:"author,omitempty"`
+	Status        string   `json:"status,omitempty"`
+	Genres        []string `json:"genres,omitempty"`
+	ChaptersCount int      `json:"chapters_count"`
+	URLPattern    string   `json:"url_pattern,omitempty"`
+	LastUpdated   int64    `json:"last_updated"`
+	DateAdded     int64    `json:"date_added"`
 }
 
 // Chapter represents a chapter in the database
 type Chapter struct {
-	ID             string    `json:"id"`
-	NovelID        string    `json:"novel_id"`
-	Number         int       `json:"number"`
-	Title          string    `json:"title"`
-	OriginalTitle  string    `json:"original_title,omitempty"`
-	Content        string    `json:"content"`
-	DateTranslated time.Time `json:"date_translated"`
-	WordCount      int       `json:"word_count,omitempty"`
-	URL            string    `json:"url,omitempty"`
+	ID             string `json:"id"`
+	NovelID        string `json:"novel_id"`
+	Number         int    `json:"number"`
+	Title          string `json:"title"`
+	OriginalTitle  string `json:"original_title,omitempty"`
+	Content        string `json:"content"`
+	DateTranslated int64  `json:"date_translated"`
+	WordCount      int    `json:"word_count,omitempty"`
+	URL            string `json:"url,omitempty"`
 }
 
 // SourceSite represents a source site for novels
@@ -80,9 +79,8 @@ func ScanNovel(row *sql.Row) (*Novel, error) {
 		}
 	}
 
-	// Convert Unix timestamps to time.Time
-	novel.LastUpdated = time.Unix(lastUpdatedUnix, 0)
-	novel.DateAdded = time.Unix(dateAddedUnix, 0)
+	novel.LastUpdated = lastUpdatedUnix
+	novel.DateAdded = lastUpdatedUnix
 
 	return &novel, nil
 }
@@ -124,9 +122,8 @@ func ScanNovels(rows *sql.Rows) ([]*Novel, error) {
 			}
 		}
 
-		// Convert Unix timestamps to time.Time
-		novel.LastUpdated = time.Unix(lastUpdatedUnix, 0)
-		novel.DateAdded = time.Unix(dateAddedUnix, 0)
+		novel.LastUpdated = lastUpdatedUnix
+		novel.DateAdded = lastUpdatedUnix
 
 		novels = append(novels, &novel)
 	}
@@ -154,8 +151,7 @@ func ScanChapter(row *sql.Row) (*Chapter, error) {
 		return nil, err
 	}
 
-	// Convert Unix timestamp to time.Time
-	chapter.DateTranslated = time.Unix(dateTranslatedUnix, 0)
+	chapter.DateTranslated = dateTranslatedUnix
 
 	return &chapter, nil
 }
@@ -183,8 +179,7 @@ func ScanChapters(rows *sql.Rows) ([]*Chapter, error) {
 			return nil, err
 		}
 
-		// Convert Unix timestamp to time.Time
-		chapter.DateTranslated = time.Unix(dateTranslatedUnix, 0)
+		chapter.DateTranslated = dateTranslatedUnix
 
 		chapters = append(chapters, &chapter)
 	}

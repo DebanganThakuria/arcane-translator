@@ -42,16 +42,12 @@ const Reader: React.FC<ReaderProps> = ({
         try {
           console.log(`Background translating chapter ${nextChapterNumber}...`);
           
-          // Use nextChapterUrl from the current chapter if available
-          const nextChapterUrl = chapter.nextChapterUrl || 
-                                `${novel.url}/chapter-${nextChapterNumber}`; // Fallback URL format
-          
           // Use the actual translation service to pre-translate the next chapter
           // and save it to the database
           await translateChapter(
             novel.id, 
             nextChapterNumber, 
-            nextChapterUrl,
+            undefined,
             undefined, // No original content provided
             true // Save to database
           );

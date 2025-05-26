@@ -104,15 +104,6 @@ func (r *repo) CreateNovel(novel *models.Novel) (*models.Novel, error) {
 		novel.ID = uuid.New().String()
 	}
 
-	// Set timestamps if not provided
-	now := time.Now()
-	if novel.DateAdded.IsZero() {
-		novel.DateAdded = now
-	}
-	if novel.LastUpdated.IsZero() {
-		novel.LastUpdated = now
-	}
-
 	// Convert genres to JSON
 	genresJSON, err := models.GenresToJSON(novel.Genres)
 	if err != nil {
@@ -140,8 +131,8 @@ func (r *repo) CreateNovel(novel *models.Novel) (*models.Novel, error) {
 		genresJSON,
 		novel.ChaptersCount,
 		novel.URLPattern,
-		novel.LastUpdated.Unix(),
-		novel.DateAdded.Unix(),
+		novel.LastUpdated,
+		novel.DateAdded,
 	)
 	if err != nil {
 		return nil, err
@@ -151,9 +142,6 @@ func (r *repo) CreateNovel(novel *models.Novel) (*models.Novel, error) {
 }
 
 func (r *repo) UpdateNovel(novel *models.Novel) error {
-	// Update the last updated timestamp
-	novel.LastUpdated = time.Now()
-
 	// Convert genres to JSON
 	genresJSON, err := models.GenresToJSON(novel.Genres)
 	if err != nil {
@@ -181,7 +169,7 @@ func (r *repo) UpdateNovel(novel *models.Novel) error {
 		genresJSON,
 		novel.ChaptersCount,
 		novel.URLPattern,
-		novel.LastUpdated.Unix(),
+		novel.LastUpdated,
 		novel.ID,
 	)
 	if err != nil {
@@ -285,11 +273,6 @@ func (r *repo) CreateChapter(chapter *models.Chapter) (*models.Chapter, error) {
 		chapter.ID = uuid.New().String()
 	}
 
-	// Set timestamp if not provided
-	if chapter.DateTranslated.IsZero() {
-		chapter.DateTranslated = time.Now()
-	}
-
 	query := `
 		INSERT INTO chapters (
 			id, novel_id, number, title, original_title, content, date_translated, word_count, url
@@ -304,7 +287,7 @@ func (r *repo) CreateChapter(chapter *models.Chapter) (*models.Chapter, error) {
 		chapter.Title,
 		chapter.OriginalTitle,
 		chapter.Content,
-		chapter.DateTranslated.Unix(),
+		chapter.DateTranslated,
 		chapter.WordCount,
 		chapter.URL,
 	)
@@ -340,7 +323,7 @@ func (r *repo) UpdateChapter(chapter *models.Chapter) error {
 		chapter.Title,
 		chapter.OriginalTitle,
 		chapter.Content,
-		chapter.DateTranslated.Unix(),
+		chapter.DateTranslated,
 		chapter.WordCount,
 		chapter.URL,
 		chapter.ID,
