@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { getAllSourceSites } from '../database/db';
 import { SourceSite } from '../types/novel';
 import { extractNovelDetails } from '../services/translationService';
-import { NovelDetails } from '../types/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const AddNovelForm = () => {

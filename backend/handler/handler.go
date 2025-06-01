@@ -16,11 +16,11 @@ func RegisterHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("GET /sources", getAllSources)
 
 	// Novels CRUD APIs
-	mux.HandleFunc("GET /novels", getAllNovels)
-	mux.HandleFunc("POST /novels", createNovel)
+	mux.HandleFunc("GET /novels", getNovelsUsingFilter)
+	mux.HandleFunc("GET /novels/search/{query}", searchNovel)
 	mux.HandleFunc("GET /novels/{id}", getNovelByID)
 	mux.HandleFunc("GET /novels/{id}/chapters", getNovelChapters)
-	mux.HandleFunc("GET /novels/{id}/chapters/{chapterId}", getNovelChapterByID)
+	mux.HandleFunc("GET /novels/{id}/chapters/num/{chapterNumber}", getNovelChapterByNumber)
 
 	// Translation APIs
 	mux.HandleFunc("POST /novels/translate", extractNovelDetails)

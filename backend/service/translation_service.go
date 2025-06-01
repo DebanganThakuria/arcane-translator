@@ -81,7 +81,6 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		Status:        novelDetails.Status,
 		Genres:        novelDetails.PossibleNovelGenres,
 		ChaptersCount: novelDetails.NumberOfChapters,
-		URLPattern:    "",
 		LastUpdated:   time.Now().Unix(),
 		DateAdded:     time.Now().Unix(),
 	}

@@ -1,5 +1,14 @@
 package models
 
+// NovelListResponse represents the response structure for paginated novels
+// @Description Paginated list of novels with metadata
+type NovelListResponse struct {
+	Novels      []*Novel `json:"novels"`
+	TotalCount  int      `json:"total_count"`
+	CurrentPage int      `json:"current_page"`
+	TotalPages  int      `json:"total_pages"`
+}
+
 // NovelDetails represents details about a novel extracted and translated from a source
 type NovelDetails struct {
 	NovelTitleOriginal        string   `json:"novel_title_original"`

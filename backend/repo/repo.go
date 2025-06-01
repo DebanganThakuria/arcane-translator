@@ -18,11 +18,17 @@ type Repo interface {
 	GetStatus() (bool, error)
 
 	// Novel methods
-	GetAllNovels() ([]*models.Novel, error)
+	GetAllNovels(offset, limit int) ([]*models.Novel, int, error)
 	GetNovelByID(id string) (*models.Novel, error)
+	GetNovelsBySourceIDs(source []string) ([]*models.Novel, int, error)
+	GetNovelsByGenre(genre string) ([]*models.Novel, int, error)
+	GetNovelsByRecentlyUpdated(count int) ([]*models.Novel, error)
+	GetNovelsByRecentlyRead(count int) ([]*models.Novel, error)
 	CreateNovel(novel *models.Novel) (*models.Novel, error)
+	SearchNovel(query string) ([]*models.Novel, error)
 	UpdateNovel(novel *models.Novel) error
 	DeleteNovel(id string) error
+	UpdateLastReadChapter(novelID string, chapterNumber int) error
 
 	// Chapter methods
 	GetNovelChapters(novelID string) ([]*models.Chapter, error)
@@ -69,27 +75,39 @@ func (r *repo) GetStatus() (bool, error) {
 
 // Novel CRUD Operations
 
-func (r *repo) GetAllNovels() ([]*models.Novel, error) {
+func (r *repo) GetAllNovels(offset, limit int) ([]*models.Novel, int, error) {
 	query := `
 		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, url_pattern, last_updated, date_added
+		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
 		FROM novels
 		ORDER BY title
+		LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	return models.ScanNovels(rows)
+	novels, err := models.ScanNovels(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var count int
+	err = r.db.QueryRow("SELECT COUNT(*) FROM novels").Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return novels, count, nil
 }
 
 func (r *repo) GetNovelByID(id string) (*models.Novel, error) {
 	query := `
 		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, url_pattern, last_updated, date_added
+		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
 		FROM novels
 		WHERE id = ?
 	`
@@ -98,12 +116,122 @@ func (r *repo) GetNovelByID(id string) (*models.Novel, error) {
 	return models.ScanNovel(row)
 }
 
-func (r *repo) CreateNovel(novel *models.Novel) (*models.Novel, error) {
-	// Generate a new UUID if not provided
-	if novel.ID == "" {
-		novel.ID = uuid.New().String()
+func (r *repo) GetNovelsBySourceIDs(sources []string) ([]*models.Novel, int, error) {
+	query := `
+		SELECT id, title, original_title, cover, source, url, summary, author, status, 
+		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		FROM novels
+		WHERE source IN (?)
+		ORDER BY last_read_timestamp, last_updated, date_added DESC
+		LIMIT 20
+	`
+
+	rows, err := r.db.Query(query, sources)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	novels, err := models.ScanNovels(rows)
+	if err != nil {
+		return nil, 0, err
 	}
 
+	var count int
+	err = r.db.QueryRow("SELECT COUNT(*) FROM novels WHERE source IN (?)", sources).Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return novels, count, nil
+}
+
+func (r *repo) GetNovelsByGenre(genre string) ([]*models.Novel, int, error) {
+	query := `
+		SELECT id, title, original_title, cover, source, url, summary, author, status, 
+		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		FROM novels
+		WHERE genres LIKE ? COLLATE NOCASE
+		ORDER BY last_read_timestamp, last_updated, date_added DESC
+		LIMIT 20
+	`
+
+	rows, err := r.db.Query(query, "%"+genre+"%")
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	novels, err := models.ScanNovels(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var count int
+	err = r.db.QueryRow("SELECT COUNT(*) FROM novels WHERE genres LIKE ? COLLATE NOCASE", "%"+genre+"%").Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return novels, count, nil
+}
+
+func (r *repo) GetNovelsByRecentlyUpdated(count int) ([]*models.Novel, error) {
+	query := `
+		SELECT id, title, original_title, cover, source, url, summary, author, status, 
+		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		FROM novels
+		ORDER BY last_updated DESC
+		LIMIT ?
+	`
+
+	rows, err := r.db.Query(query, count)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return models.ScanNovels(rows)
+}
+
+func (r *repo) GetNovelsByRecentlyRead(count int) ([]*models.Novel, error) {
+	query := `
+		SELECT id, title, original_title, cover, source, url, summary, author, status, 
+		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		FROM novels
+		ORDER BY last_read_timestamp, last_updated DESC
+		LIMIT ?
+	`
+
+	rows, err := r.db.Query(query, count)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return models.ScanNovels(rows)
+}
+
+func (r *repo) SearchNovel(query string) ([]*models.Novel, error) {
+	query = `
+		SELECT id, title, original_title, cover, source, url, summary, author, status, 
+		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		FROM novels
+		WHERE title LIKE ? COLLATE NOCASE
+		ORDER BY last_read_timestamp, last_updated, date_added DESC
+		LIMIT 20
+	`
+
+	rows, err := r.db.Query(query, "%"+query+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return models.ScanNovels(rows)
+}
+
+func (r *repo) CreateNovel(novel *models.Novel) (*models.Novel, error) {
 	// Convert genres to JSON
 	genresJSON, err := models.GenresToJSON(novel.Genres)
 	if err != nil {
@@ -111,10 +239,8 @@ func (r *repo) CreateNovel(novel *models.Novel) (*models.Novel, error) {
 	}
 
 	query := `
-		INSERT INTO novels (
-			id, title, original_title, cover, source, url, summary, author, status, 
-			genres, chapters_count, url_pattern, last_updated, date_added
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO novels (id, title, original_title, cover, source, url, summary, author, status, genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	_, err = r.db.Exec(
@@ -130,7 +256,8 @@ func (r *repo) CreateNovel(novel *models.Novel) (*models.Novel, error) {
 		novel.Status,
 		genresJSON,
 		novel.ChaptersCount,
-		novel.URLPattern,
+		novel.LastReadChapterNumber,
+		novel.LastReadTimestamp,
 		novel.LastUpdated,
 		novel.DateAdded,
 	)
@@ -152,7 +279,7 @@ func (r *repo) UpdateNovel(novel *models.Novel) error {
 		UPDATE novels
 		SET title = ?, original_title = ?, cover = ?, source = ?, url = ?, 
 		    summary = ?, author = ?, status = ?, genres = ?, chapters_count = ?, 
-		    url_pattern = ?, last_updated = ?
+		    last_read_chapter_number = ?, last_read_timestamp = ?, last_updated = ?
 		WHERE id = ?
 	`
 
@@ -168,7 +295,8 @@ func (r *repo) UpdateNovel(novel *models.Novel) error {
 		novel.Status,
 		genresJSON,
 		novel.ChaptersCount,
-		novel.URLPattern,
+		novel.LastReadChapterNumber,
+		novel.LastReadTimestamp,
 		novel.LastUpdated,
 		novel.ID,
 	)
@@ -211,6 +339,20 @@ func (r *repo) DeleteNovel(id string) error {
 	}
 
 	return nil
+}
+
+func (r *repo) UpdateLastReadChapter(novelID string, chapterNumber int) error {
+	currentTime := time.Now().Unix()
+
+	query := `
+		UPDATE novels
+		SET last_read_chapter_number = ?,
+		    last_read_timestamp = ?
+		WHERE id = ?
+	`
+
+	_, err := r.db.Exec(query, chapterNumber, currentTime, novelID)
+	return err
 }
 
 // Chapter CRUD Operations

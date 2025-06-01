@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Novel } from '../types/novel';
@@ -19,9 +18,9 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent }) => {
           alt={novel.title} 
           className="w-full h-full object-cover rounded-md shadow-md group-hover:shadow-lg"
         />
-        {isRecent && novel.lastRead && (
+        {isRecent && novel.last_read_chapter_number && (
           <div className="absolute bottom-0 left-0 right-0 bg-indigo-600/80 text-white text-xs p-1 text-center">
-            {Math.round(novel.lastRead.progress * 100)}% read
+            {Math.round(novel.last_read_chapter_number/novel.chapters_count * 100)}% read
           </div>
         )}
         {novel.status === 'Ongoing' && (

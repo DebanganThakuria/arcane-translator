@@ -1,4 +1,3 @@
-
 export interface Novel {
   id: string;
   title: string;
@@ -12,9 +11,17 @@ export interface Novel {
   genres?: string[];
   chapters_count: number;
   first_chapter_url?: string;
-  url_pattern?: string;  // Pattern for generating chapter URLs
+  last_read_chapter_number: number;
+  last_read_timestamp: number;
   last_updated: number;
   date_added: number;
+}
+
+export interface PaginatedNovels {
+  novels: Novel[];
+  total_count: number;
+  current_page: number;
+  total_pages: number;
 }
 
 export interface Chapter {

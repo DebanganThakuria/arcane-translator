@@ -1,18 +1,39 @@
-
-import { Novel, Chapter, SourceSite } from '../types/novel';
+import { Novel, PaginatedNovels, Chapter, SourceSite } from '../types/novel';
 
 // API base URL - will be replaced by actual backend calls
 const API_BASE_URL = 'http://localhost:8088';
 
-// Fetch all novels from backend
-export const getAllNovels = async (): Promise<Novel[]> => {
+// Fetch all novels with pagination
+export const getAllNovels = async (page = 1, limit = 20): Promise<PaginatedNovels> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/novels`);
+    const response = await fetch(`${API_BASE_URL}/novels?page=${page}&limit=${limit}`);
     if (!response.ok) throw new Error('Failed to fetch novels');
     return await response.json();
   } catch (error) {
     console.error('Error fetching novels:', error);
-    return [];
+    return {
+      novels: [],
+      total_count: 0,
+      current_page: page,
+      total_pages: 1
+    };
+  }
+};
+
+// Fetch novels by filter from backend
+export const getNovelsByFilter = async (filter: string, value: string, page = 1, limit = 20): Promise<PaginatedNovels> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/novels?filter=${filter}&value=${value}&page=${page}&limit=${limit}`);
+    if (!response.ok) throw new Error('Failed to fetch novels');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching novels:', error);
+    return {
+      novels: [],
+      total_count: 0,
+      current_page: page,
+      total_pages: 1
+    };
   }
 };
 
@@ -40,11 +61,15 @@ export const getChaptersForNovel = async (novelId: string): Promise<Chapter[]> =
   }
 };
 
-// Get specific chapter from backend
-export const getChapter = async (novelId: string, chapterNumber: number): Promise<Chapter | undefined> => {
+// Get chapter by number
+export const getChapterByNumber = async (novelId: string, chapterNumber: number): Promise<Chapter | undefined> => {
   try {
-    const chapters = await getChaptersForNovel(novelId);
-    return chapters.find(chapter => chapter.number === chapterNumber);
+    const response = await fetch(`${API_BASE_URL}/novels/${novelId}/chapters/num/${chapterNumber}`);
+    if (!response.ok) {
+      console.error(`Failed to fetch chapter ${chapterNumber} for novel ${novelId}`);
+      return undefined;
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error fetching chapter:', error);
     return undefined;
@@ -63,71 +88,14 @@ export const getAllSourceSites = async (): Promise<SourceSite[]> => {
   }
 };
 
-// Add novel via backend
-export const addNovel = async (novel: Novel): Promise<boolean> => {
+// Search novels
+export const searchNovelsByQuery = async (query: string): Promise<Novel[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/novels`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(novel)
-    });
-    return response.ok;
+    const response = await fetch(`${API_BASE_URL}/novels/search/${query}`);
+    if (!response.ok) throw new Error('Failed to search novels');
+    return await response.json();
   } catch (error) {
-    console.error('Error adding novel:', error);
-    return false;
-  }
-};
-
-// Update novel via backend
-export const updateNovel = async (id: string, updates: Partial<Novel>): Promise<boolean> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/novels/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Error updating novel:', error);
-    return false;
-  }
-};
-
-// Add chapter via backend
-export const addChapter = async (chapter: Chapter): Promise<boolean> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/chapters`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(chapter)
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Error adding chapter:', error);
-    return false;
-  }
-};
-
-// Save or update chapter via backend
-export const saveChapter = async (chapter: Chapter): Promise<boolean> => {
-  try {
-    // Check if chapter already exists
-    const existingChapter = await getChapter(chapter.novel_id, chapter.number);
-    
-    if (existingChapter) {
-      // Update existing chapter
-      const response = await fetch(`${API_BASE_URL}/chapters/${chapter.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(chapter)
-      });
-      return response.ok;
-    } else {
-      // Add new chapter
-      return await addChapter(chapter);
-    }
-  } catch (error) {
-    console.error('Error saving chapter:', error);
-    return false;
+    console.error('Error searching novels:', error);
+    return [];
   }
 };

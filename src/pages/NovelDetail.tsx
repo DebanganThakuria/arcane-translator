@@ -114,10 +114,22 @@ const NovelDetail = () => {
   }
   
   const continueReading = () => {
-    if (novel.last_updated) {
-      navigate(`/novel/${id}/chapter/${novel.lastRead.chapterId.split('-')[1]}`);
-    } else if (chapters.length > 0) {
-      navigate(`/novel/${id}/chapter/1`);
+    if (novel.last_read_chapter_number) {
+      // Find the chapter that matches the last read chapter number
+      const lastReadChapter = chapters.find(chapter => 
+        chapter.number === novel.last_read_chapter_number
+      );
+      
+      if (lastReadChapter) {
+        navigate(`/novel/${id}/chapter/${lastReadChapter.id}`);
+        return;
+      }
+    }
+    
+    // If no last read chapter or not found, go to first chapter
+    if (chapters.length > 0) {
+      const firstChapter = chapters[0];
+      navigate(`/novel/${id}/chapter/${firstChapter.id}`);
     }
   };
 
@@ -156,13 +168,13 @@ const NovelDetail = () => {
               </div>
               
               <div className="space-y-4">
-                {novel.lastRead && (
+                {novel.last_read_timestamp && (
                   <Button className="w-full gradient-button" onClick={continueReading}>
                     Continue Reading
                   </Button>
                 )}
                 
-                {!novel.lastRead && chapters.length > 0 && (
+                {!novel.last_read_timestamp && chapters.length > 0 && (
                   <Button className="w-full gradient-button" onClick={continueReading}>
                     Start Reading
                   </Button>

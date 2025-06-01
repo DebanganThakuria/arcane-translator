@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"backend/models"
@@ -11,9 +13,10 @@ import (
 
 // NovelService provides business logic for novel operations
 type NovelService interface {
-	GetAllNovels() ([]*models.Novel, error)
+	GetAllNovels(offset, limit int) (*models.NovelListResponse, error)
 	GetNovelByID(id string) (*models.Novel, error)
-	CreateNovel(novel *models.Novel) (*models.Novel, error)
+	SearchNovel(query string) ([]*models.Novel, error)
+	GetNovelsByFilter(filter, value string, offset, limit int) (*models.NovelListResponse, error)
 	UpdateNovel(novel *models.Novel) error
 	DeleteNovel(id string) error
 
@@ -51,8 +54,27 @@ func GetNovelService() NovelService {
 
 // Novel operations
 
-func (s *novelService) GetAllNovels() ([]*models.Novel, error) {
-	return s.repo.GetAllNovels()
+func (s *novelService) GetAllNovels(offset, limit int) (*models.NovelListResponse, error) {
+	if offset < 0 {
+		offset = 0
+	}
+	if limit <= 0 {
+		limit = 20 // Default limit
+	} else if limit > 100 {
+		limit = 100 // Max limit to prevent excessive data transfer
+	}
+
+	novels, totalCount, err := s.repo.GetAllNovels(offset, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.NovelListResponse{
+		Novels:      novels,
+		TotalCount:  totalCount,
+		CurrentPage: offset/limit + 1,
+		TotalPages:  (totalCount + limit - 1) / limit,
+	}, nil
 }
 
 func (s *novelService) GetNovelByID(id string) (*models.Novel, error) {
@@ -63,34 +85,93 @@ func (s *novelService) GetNovelByID(id string) (*models.Novel, error) {
 	return s.repo.GetNovelByID(id)
 }
 
-func (s *novelService) CreateNovel(novel *models.Novel) (*models.Novel, error) {
-	// Validate required fields
-	if novel.Title == "" {
-		return nil, errors.New("novel title cannot be empty")
+func (s *novelService) SearchNovel(query string) ([]*models.Novel, error) {
+	query = strings.TrimSpace(query)
+	if query == "" || len(query) < 3 {
+		return nil, errors.New("search query cannot be empty or less than 3 characters")
 	}
 
-	if novel.Source == "" {
-		novel.Source = "unknown"
+	return s.repo.SearchNovel(query)
+}
+
+func (s *novelService) GetNovelsByFilter(filter, value string, offset, limit int) (*models.NovelListResponse, error) {
+	switch filter {
+	case "language":
+		sources, err := s.GetAllSources()
+		if err != nil {
+			return nil, err
+		}
+
+		var sourceIDs []string
+		for _, source := range sources {
+			if source.Language == value {
+				sourceIDs = append(sourceIDs, source.ID)
+			}
+		}
+
+		novels, totalCount, err := s.repo.GetNovelsBySourceIDs(sourceIDs)
+		if err != nil {
+		}
+
+		return &models.NovelListResponse{
+			Novels:      novels,
+			TotalCount:  totalCount,
+			CurrentPage: offset/limit + 1,
+			TotalPages:  (totalCount + limit - 1) / limit,
+		}, nil
+	case "genre":
+		novels, totalCount, err := s.repo.GetNovelsByGenre(value)
+		if err != nil {
+			return nil, err
+		}
+
+		return &models.NovelListResponse{
+			Novels:      novels,
+			TotalCount:  totalCount,
+			CurrentPage: offset/limit + 1,
+			TotalPages:  (totalCount + limit - 1) / limit,
+		}, nil
+	case "recently_updated":
+		count, err := strconv.Atoi(value)
+		if err != nil {
+			return nil, errors.New("invalid count")
+		}
+		if count > 100 {
+			return nil, errors.New("count cannot be greater than 100")
+		}
+		novels, err := s.repo.GetNovelsByRecentlyUpdated(count)
+		if err != nil {
+			return nil, err
+		}
+
+		return &models.NovelListResponse{
+			Novels:      novels,
+			TotalCount:  len(novels),
+			CurrentPage: 1,
+			TotalPages:  1,
+		}, nil
+	case "recently_read":
+		count, err := strconv.Atoi(value)
+		if err != nil {
+			return nil, errors.New("invalid count")
+		}
+		if count > 100 {
+			return nil, errors.New("count cannot be greater than 100")
+		}
+		novels, err := s.repo.GetNovelsByRecentlyRead(count)
+		if err != nil {
+			return nil, err
+		}
+
+		return &models.NovelListResponse{
+			Novels:      novels,
+			TotalCount:  len(novels),
+			CurrentPage: 1,
+			TotalPages:  1,
+		}, nil
+	default:
+		return nil, errors.New("invalid filter")
 	}
-
-	if novel.URL == "" {
-		novel.URL = ""
-	}
-
-	if novel.Summary == "" {
-		novel.Summary = "No summary available"
-	}
-
-	// Set timestamps
-	novel.DateAdded = time.Now().Unix()
-	novel.LastUpdated = time.Now().Unix()
-
-	// Set default values
-	if novel.Status == "" {
-		novel.Status = "Unknown"
-	}
-
-	return s.repo.CreateNovel(novel)
 }
 
 func (s *novelService) UpdateNovel(novel *models.Novel) error {
@@ -145,7 +226,13 @@ func (s *novelService) GetChapterByID(novelID string, chapterID string) (*models
 		return nil, errors.New("chapter ID cannot be empty")
 	}
 
-	return s.repo.GetChapterByID(novelID, chapterID)
+	chapter, err := s.repo.GetChapterByID(novelID, chapterID)
+
+	if chapter != nil {
+		_ = s.UpdateLastReadChapter(novelID, chapter.Number)
+	}
+
+	return chapter, err
 }
 
 func (s *novelService) GetChapterByNumber(novelID string, chapterNumber int) (*models.Chapter, error) {
@@ -157,7 +244,13 @@ func (s *novelService) GetChapterByNumber(novelID string, chapterNumber int) (*m
 		return nil, errors.New("chapter number must be positive")
 	}
 
-	return s.repo.GetChapterByNumber(novelID, chapterNumber)
+	chapter, err := s.repo.GetChapterByNumber(novelID, chapterNumber)
+
+	if chapter != nil {
+		_ = s.UpdateLastReadChapter(novelID, chapter.Number)
+	}
+
+	return chapter, err
 }
 
 func (s *novelService) CreateChapter(chapter *models.Chapter) (*models.Chapter, error) {
@@ -255,6 +348,18 @@ func (s *novelService) DeleteChapter(id string) error {
 	}
 
 	return s.repo.DeleteChapter(id)
+}
+
+func (s *novelService) UpdateLastReadChapter(novelID string, chapterNumber int) error {
+	if novelID == "" {
+		return errors.New("novel ID cannot be empty")
+	}
+
+	if chapterNumber <= 0 {
+		return errors.New("chapter number must be positive")
+	}
+
+	return s.repo.UpdateLastReadChapter(novelID, chapterNumber)
 }
 
 // Source operations

@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { searchNovelsByQuery } from '../database/db';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
-import { getAllNovels } from '../database/db';
 import { Novel } from '../types/novel';
 
 const SearchResults = () => {
@@ -14,22 +13,16 @@ const SearchResults = () => {
   
   useEffect(() => {
     const searchNovels = async () => {
+      if (!query.trim()) {
+        setResults([]);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       
       try {
-        const allNovels = await getAllNovels();
-        // Simple client-side search - in production, this would be handled by the backend
-        const searchResults = allNovels.filter(novel => {
-          const searchTerm = query.toLowerCase();
-          return (
-            novel.title.toLowerCase().includes(searchTerm) ||
-            (novel.original_title && novel.original_title.toLowerCase().includes(searchTerm)) ||
-            (novel.author && novel.author.toLowerCase().includes(searchTerm)) ||
-            novel.summary.toLowerCase().includes(searchTerm) ||
-            (novel.genres && novel.genres.some(genre => genre.toLowerCase().includes(searchTerm)))
-          );
-        });
-        
+        const searchResults = await searchNovelsByQuery(query);
         setResults(searchResults);
       } catch (error) {
         console.error('Error searching novels:', error);
@@ -39,12 +32,12 @@ const SearchResults = () => {
       }
     };
     
-    if (query.trim()) {
+    // Add a small debounce to prevent too many API calls
+    const timer = setTimeout(() => {
       searchNovels();
-    } else {
-      setResults([]);
-      setIsLoading(false);
-    }
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [query]);
 
   return (

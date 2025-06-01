@@ -1,4 +1,3 @@
-
 import React from 'react';
 import NovelCard from './NovelCard';
 import { Novel } from '../types/novel';

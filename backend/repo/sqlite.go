@@ -96,7 +96,8 @@ func initSchema(db *sql.DB) error {
 			status TEXT,
 			genres TEXT,  -- Stored as JSON string
 			chapters_count INTEGER NOT NULL DEFAULT 0,
-			url_pattern TEXT,
+			last_read_chapter_number INTEGER,
+			last_read_timestamp INTEGER,
 			last_updated INTEGER NOT NULL,
 			date_added INTEGER NOT NULL
 		);

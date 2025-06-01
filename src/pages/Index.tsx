@@ -1,22 +1,39 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
-import { getAllNovels } from '../database/db';
+import { getNovelsByFilter } from '../database/db';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Novel } from '../types/novel';
 
 const Index = () => {
-  const [novels, setNovels] = useState<Novel[]>([]);
+  const [chineseNovels, setChineseNovels] = useState<Novel[]>([]);
+  const [koreanNovels, setKoreanNovels] = useState<Novel[]>([]);
+  const [japaneseNovels, setJapaneseNovels] = useState<Novel[]>([]);
+  const [recentlyUpdatedNovels, setRecentlyUpdatedNovels] = useState<Novel[]>([]);
+  const [recentlyReadNovels, setRecentlyReadNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const fetchNovels = async () => {
       try {
-        const fetchedNovels = await getAllNovels();
-        setNovels(fetchedNovels);
+        setLoading(true);
+
+        const [chinese, korean, japanese, recentlyUpdated, recentlyRead] = await Promise.all([
+          getNovelsByFilter('language', 'chinese', ),
+          getNovelsByFilter('language', 'korean'),
+          getNovelsByFilter('language', 'japanese'),
+          getNovelsByFilter('recently_updated', '5'),
+          getNovelsByFilter('recently_read', '5')
+        ]);
+
+        setChineseNovels(chinese.novels);
+        setKoreanNovels(korean.novels);
+        setJapaneseNovels(japanese.novels);
+        setRecentlyUpdatedNovels(recentlyUpdated.novels);
+        setRecentlyReadNovels(recentlyRead.novels);
+        
       } catch (error) {
         console.error('Error fetching novels:', error);
       } finally {
@@ -26,28 +43,6 @@ const Index = () => {
 
     fetchNovels();
   }, []);
-
-  // Helper functions to filter novels
-  const getRecentNovels = () => {
-    return novels
-      .filter(novel => novel.lastRead)
-      .sort((a, b) => (b.lastRead?.timestamp || 0) - (a.lastRead?.timestamp || 0))
-      .slice(0, 4);
-  };
-
-  const getRecentlyUpdatedNovels = () => {
-    return novels
-      .sort((a, b) => b.last_updated - a.last_updated)
-      .slice(0, 4);
-  };
-
-  // For demonstration, we'll filter novels manually since language property is missing
-  const chineseNovels = novels.filter(novel => novel.source === 'qidian');
-  const koreanNovels = novels.filter(novel => novel.source === 'naver');
-  const japaneseNovels = novels.filter(novel => novel.source === 'syosetu');
-
-  const recentNovels = getRecentNovels();
-  const updatedNovels = getRecentlyUpdatedNovels();
 
   if (loading) {
     return (
@@ -87,7 +82,7 @@ const Index = () => {
           </div>
 
           {/* Continue Reading Section */}
-          {recentNovels.length > 0 && (
+          {recentlyReadNovels.length > 0 && (
             <div className="mb-12">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">Continue Reading</h2>
@@ -96,7 +91,7 @@ const Index = () => {
                 </Button>
               </div>
               <div className="glass-card rounded-lg p-6">
-                <NovelGrid novels={recentNovels} recent={true} />
+                <NovelGrid novels={recentlyReadNovels} recent={true} />
               </div>
             </div>
           )}
@@ -114,21 +109,21 @@ const Index = () => {
                 
                 <TabsContent value="chinese">
                   <div className="mb-4">
-                    <h3 className="text-lg font-medium mb-4">Popular Chinese Novels</h3>
+                    <h3 className="text-lg font-medium mb-4">Chinese Novels</h3>
                     <NovelGrid novels={chineseNovels} />
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="korean">
                   <div className="mb-4">
-                    <h3 className="text-lg font-medium mb-4">Popular Korean Novels</h3>
+                    <h3 className="text-lg font-medium mb-4">Korean Novels</h3>
                     <NovelGrid novels={koreanNovels} />
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="japanese">
                   <div className="mb-4">
-                    <h3 className="text-lg font-medium mb-4">Popular Japanese Novels</h3>
+                    <h3 className="text-lg font-medium mb-4">Japanese Novels</h3>
                     <NovelGrid novels={japaneseNovels} />
                   </div>
                 </TabsContent>
@@ -145,7 +140,7 @@ const Index = () => {
               </Button>
             </div>
             <div className="glass-card rounded-lg p-6">
-              <NovelGrid novels={updatedNovels} />
+              <NovelGrid novels={recentlyUpdatedNovels} />
             </div>
           </div>
         </div>

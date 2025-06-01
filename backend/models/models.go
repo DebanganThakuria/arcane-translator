@@ -7,20 +7,21 @@ import (
 
 // Novel represents a novel in the database
 type Novel struct {
-	ID            string   `json:"id"`
-	Title         string   `json:"title"`
-	OriginalTitle string   `json:"original_title,omitempty"`
-	Cover         string   `json:"cover,omitempty"`
-	Source        string   `json:"source"`
-	URL           string   `json:"url"`
-	Summary       string   `json:"summary"`
-	Author        string   `json:"author,omitempty"`
-	Status        string   `json:"status,omitempty"`
-	Genres        []string `json:"genres,omitempty"`
-	ChaptersCount int      `json:"chapters_count"`
-	URLPattern    string   `json:"url_pattern,omitempty"`
-	LastUpdated   int64    `json:"last_updated"`
-	DateAdded     int64    `json:"date_added"`
+	ID                    string   `json:"id"`
+	Title                 string   `json:"title"`
+	OriginalTitle         string   `json:"original_title,omitempty"`
+	Cover                 string   `json:"cover,omitempty"`
+	Source                string   `json:"source"`
+	URL                   string   `json:"url"`
+	Summary               string   `json:"summary"`
+	Author                string   `json:"author,omitempty"`
+	Status                string   `json:"status,omitempty"`
+	Genres                []string `json:"genres,omitempty"`
+	ChaptersCount         int      `json:"chapters_count"`
+	LastReadChapterNumber int      `json:"last_read_chapter_number,omitempty"`
+	LastReadTimestamp     int64    `json:"last_read_timestamp,omitempty"`
+	LastUpdated           int64    `json:"last_updated"`
+	DateAdded             int64    `json:"date_added"`
 }
 
 // Chapter represents a chapter in the database
@@ -63,7 +64,8 @@ func ScanNovel(row *sql.Row) (*Novel, error) {
 		&novel.Status,
 		&genresJSON,
 		&novel.ChaptersCount,
-		&novel.URLPattern,
+		&novel.LastReadChapterNumber,
+		&novel.LastReadTimestamp,
 		&lastUpdatedUnix,
 		&dateAddedUnix,
 	)
@@ -106,7 +108,8 @@ func ScanNovels(rows *sql.Rows) ([]*Novel, error) {
 			&novel.Status,
 			&genresJSON,
 			&novel.ChaptersCount,
-			&novel.URLPattern,
+			&novel.LastReadChapterNumber,
+			&novel.LastReadTimestamp,
 			&lastUpdatedUnix,
 			&dateAddedUnix,
 		)

@@ -1,13 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { translateChapter } from '../services/translationService';
 
 interface ReaderProps {
   chapter: Chapter;
@@ -24,48 +19,14 @@ const Reader: React.FC<ReaderProps> = ({
   hasNextChapter,
   onNavigate,
 }) => {
-  const [sepiaMode, setSepiaMode] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'sepia' | 'dark'>('sepia');
   const [fontSize, setFontSize] = useState(18);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Scroll to top when chapter changes
     window.scrollTo(0, 0);
-    
-    // When a chapter is loaded, start background translation of the next chapter
-    if (hasNextChapter) {
-      const nextChapterNumber = chapter.number + 1;
-      
-      // Start background translation of the next chapter
-      const startBackgroundTranslation = async () => {
-        try {
-          console.log(`Background translating chapter ${nextChapterNumber}...`);
-          
-          // Use the actual translation service to pre-translate the next chapter
-          // and save it to the database
-          await translateChapter(
-            novel.id, 
-            nextChapterNumber, 
-            undefined,
-            undefined, // No original content provided
-            true // Save to database
-          );
-          
-          console.log(`Successfully translated chapter ${nextChapterNumber} in the background`);
-        } catch (error) {
-          console.error('Error in background translation:', error);
-        }
-      };
-      
-      // Wait a few seconds before starting background translation
-      const timeoutId = setTimeout(startBackgroundTranslation, 5000);
-      
-      return () => {
-        clearTimeout(timeoutId);
-      };
-    }
-  }, [chapter.id, chapter.number, hasNextChapter, novel.id, novel.url]);
+  }, [chapter.id]);
 
   const handleFontSizeChange = (increase: boolean) => {
     setFontSize(prev => {
@@ -76,22 +37,20 @@ const Reader: React.FC<ReaderProps> = ({
 
   const handleNavigate = (direction: 'next' | 'prev') => {
     onNavigate(direction);
-    
-    // Simulate translation notification for the next chapter
-    if (direction === 'next' && hasNextChapter) {
-      const nextChapterNumber = chapter.number + 1;
-      toast({
-        title: "Auto-translation",
-        description: `Chapter ${nextChapterNumber + 1} is being translated in the background`,
-      });
-    }
   };
 
-  // Format chapter content to add line breaks after paragraphs
+  // Format chapter content to add line breaks between paragraphs
   const formattedContent = chapter.content.replace(/<\/p>/g, '</p><br/>');
 
+  // Apply theme classes to the root element
+  const themeClasses = {
+    light: 'bg-white text-foreground',
+    sepia: 'sepia-mode',
+    dark: 'bg-gray-900 text-gray-100',
+  };
+
   return (
-    <div className={`min-h-screen pb-20 ${sepiaMode ? 'sepia-mode' : 'bg-background'}`}>
+    <div className={`min-h-screen pb-20 ${themeClasses[theme]}`}>
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 dark:bg-background/80 border-b">
         <div className="container mx-auto p-4 flex justify-between items-center">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/novel/${novel.id}`)}>
@@ -100,12 +59,26 @@ const Reader: React.FC<ReaderProps> = ({
           </Button>
           <div className="flex items-center gap-4">
             <div className="flex items-center space-x-2">
-              <Switch
-                id="sepia-mode"
-                checked={sepiaMode}
-                onCheckedChange={setSepiaMode}
-              />
-              <Label htmlFor="sepia-mode">Sepia</Label>
+              <div className="flex items-center space-x-2 rounded-full bg-secondary p-1">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`h-6 w-6 rounded-full ${theme === 'light' ? 'bg-primary' : 'bg-transparent'}`}
+                  aria-label="Light theme"
+                  style={{ backgroundColor: theme === 'light' ? 'hsl(222.2 47.4% 11.2%)' : 'transparent' }}
+                />
+                <button
+                  onClick={() => setTheme('sepia')}
+                  className={`h-6 w-6 rounded-full ${theme === 'sepia' ? 'bg-primary' : 'bg-transparent'}`}
+                  aria-label="Sepia theme"
+                  style={{ backgroundColor: theme === 'sepia' ? 'hsl(35 60% 60%)' : 'transparent' }}
+                />
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`h-6 w-6 rounded-full ${theme === 'dark' ? 'bg-primary' : 'bg-transparent'}`}
+                  aria-label="Dark theme"
+                  style={{ backgroundColor: theme === 'dark' ? 'hsl(222.2 84% 4.9%)' : 'transparent' }}
+                />
+              </div>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -130,7 +103,7 @@ const Reader: React.FC<ReaderProps> = ({
         </div>
       </header>
 
-      <div className={`reader-container ${sepiaMode ? 'sepia' : 'bg-white'}`}>
+      <div className={`reader-container ${theme === 'sepia' ? 'sepia' : theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>
         <h1 className="text-2xl font-semibold mb-2">{chapter.title}</h1>
         <p className="text-sm text-muted-foreground mb-6">
           {novel.title} • Chapter {chapter.number}

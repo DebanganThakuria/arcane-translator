@@ -1,25 +1,36 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
 import { getAllNovels } from '../database/db';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Plus, RefreshCw } from 'lucide-react';
-import { Novel } from '../types/novel';
+import { Plus, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { PaginatedNovels } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
 
 const Library = () => {
-  const [novels, setNovels] = useState<Novel[]>([]);
+  const [pagination, setPagination] = useState<PaginatedNovels>({
+    novels: [],
+    total_count: 0,
+    current_page: 1,
+    total_pages: 1,
+  });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [pageInput, setPageInput] = useState('1');
   const { toast } = useToast();
 
-  const fetchNovels = async () => {
+  const fetchNovels = useCallback(async (page = 1, limit = itemsPerPage) => {
     try {
       setLoading(true);
-      const fetchedNovels = await getAllNovels();
-      setNovels(fetchedNovels);
+      const result = await getAllNovels(page, limit);
+      setPagination(result);
+      setPageInput(String(result.current_page));
     } catch (error) {
       console.error('Error fetching novels:', error);
       toast({
@@ -29,6 +40,39 @@ const Library = () => {
       });
     } finally {
       setLoading(false);
+    }
+  }, [itemsPerPage, toast]);
+
+  // Update novels when items per page changes
+  useEffect(() => {
+    fetchNovels(1, itemsPerPage);
+  }, [fetchNovels, itemsPerPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.total_pages) {
+      fetchNovels(newPage, itemsPerPage);
+    }
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '' || /^\d+$/.test(value)) {
+      setPageInput(value);
+    }
+  };
+
+  const handlePageInputBlur = () => {
+    const page = parseInt(pageInput, 10);
+    if (!isNaN(page) && page >= 1 && page <= pagination.total_pages) {
+      handlePageChange(page);
+    } else {
+      setPageInput(String(pagination.current_page));
+    }
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handlePageInputBlur();
     }
   };
 
@@ -40,7 +84,7 @@ const Library = () => {
     setRefreshing(true);
     
     try {
-      await fetchNovels();
+      await fetchNovels(pagination.current_page, itemsPerPage);
       toast({
         title: "Library Refreshed",
         description: "Your library has been updated with the latest information.",
@@ -82,22 +126,104 @@ const Library = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="glass-card rounded-lg p-10 text-center">
-            <p className="text-xl text-muted-foreground mb-4">Loading your library...</p>
-          </div>
-        ) : novels.length > 0 ? (
-          <div className="glass-card rounded-lg p-6">
-            <NovelGrid novels={novels} />
-          </div>
-        ) : (
-          <div className="glass-card rounded-lg p-10 text-center">
-            <p className="text-xl text-muted-foreground mb-4">Your library is empty</p>
-            <Button asChild className="bg-gradient-to-r from-indigo-600 to-blue-400 hover:from-indigo-700 hover:to-blue-500 border-none">
-              <Link to="/add">Add Your First Novel</Link>
-            </Button>
-          </div>
-        )}
+        <div className="space-y-6">
+          {loading ? (
+            <div className="glass-card rounded-lg p-10 text-center">
+              <p className="text-xl text-muted-foreground mb-4">Loading your library...</p>
+            </div>
+          ) : pagination.novels.length > 0 ? (
+            <div className="glass-card rounded-lg p-6">
+              <NovelGrid novels={pagination.novels} />
+            </div>
+          ) : (
+            <div className="glass-card rounded-lg p-10 text-center">
+              <p className="text-xl text-muted-foreground mb-4">Your library is empty</p>
+              <Button asChild className="bg-gradient-to-r from-indigo-600 to-blue-400 hover:from-indigo-700 hover:to-blue-500 border-none">
+                <Link to="/add">Add Your First Novel</Link>
+              </Button>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {pagination.total_pages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">
+                  Showing {pagination.novels.length} of {pagination.total_count} novels
+                </span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Select
+                  value={String(itemsPerPage)}
+                  onValueChange={(value) => setItemsPerPage(Number(value))}
+                >
+                  <SelectTrigger className="w-[100px] h-9">
+                    <SelectValue placeholder="Items per page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={String(option)}>
+                        {option} / page
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="outline"
+                    className="h-9 w-9 p-0"
+                    onClick={() => handlePageChange(1)}
+                    disabled={pagination.current_page === 1 || loading}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                    <span className="sr-only">First page</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-9 w-9 p-0"
+                    onClick={() => handlePageChange(pagination.current_page - 1)}
+                    disabled={pagination.current_page === 1 || loading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="sr-only">Previous page</span>
+                  </Button>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-sm px-2">Page</span>
+                    <Input
+                      className="w-16 h-9 text-center"
+                      value={pageInput}
+                      onChange={handlePageInputChange}
+                      onBlur={handlePageInputBlur}
+                      onKeyDown={handlePageInputKeyDown}
+                      disabled={loading}
+                    />
+                    <span className="text-sm px-2">of {pagination.total_pages}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="h-9 w-9 p-0"
+                    onClick={() => handlePageChange(pagination.current_page + 1)}
+                    disabled={pagination.current_page >= pagination.total_pages || loading}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="sr-only">Next page</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-9 w-9 p-0"
+                    onClick={() => handlePageChange(pagination.total_pages)}
+                    disabled={pagination.current_page >= pagination.total_pages || loading}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                    <span className="sr-only">Last page</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

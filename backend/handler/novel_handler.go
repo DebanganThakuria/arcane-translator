@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,42 +9,72 @@ import (
 	"backend/service"
 )
 
-// getAllNovels handles GET /novels
-func getAllNovels(w http.ResponseWriter, r *http.Request) {
-	novels, err := service.GetNovelService().GetAllNovels()
+// getNovelsUsingFilter handles GET /novels?filter={filter}&value={value}&page={page}&limit={limit}
+func getNovelsUsingFilter(w http.ResponseWriter, r *http.Request) {
+	filter, value, page, limit := getAllRequestParams(r)
+
+	offset := (page - 1) * limit
+
+	var err error
+	var response *models.NovelListResponse
+
+	if filter != "" {
+		response, err = service.GetNovelService().GetNovelsByFilter(filter, value, offset, limit)
+	} else {
+		response, err = service.GetNovelService().GetAllNovels(offset, limit)
+	}
+
 	if err != nil {
 		http.Error(w, "Failed to retrieve novels: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// If no novels found, return an empty array
-	if len(novels) == 0 {
-		writeJSON(w, []models.Novel{}, http.StatusOK)
-		return
-	}
-
-	writeJSON(w, novels, http.StatusOK)
+	writeJSON(w, response, http.StatusOK)
 }
 
-// createNovel handles POST /novels
-func createNovel(w http.ResponseWriter, r *http.Request) {
-	var novel models.Novel
+func getAllRequestParams(r *http.Request) (filter, value string, page, limit int) {
+	query := r.URL.Query()
 
-	// Decode request body
-	err := json.NewDecoder(r.Body).Decode(&novel)
-	if err != nil {
-		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
-		return
+	filter = query.Get("filter")
+
+	value = query.Get("value")
+
+	page = 1
+	if p := query.Get("page"); p != "" {
+		if pInt, err := strconv.Atoi(p); err == nil && pInt > 0 {
+			page = pInt
+		}
 	}
 
-	// Create novel
-	createdNovel, err := service.GetNovelService().CreateNovel(&novel)
+	limit = 20
+	if l := query.Get("limit"); l != "" {
+		if lInt, err := strconv.Atoi(l); err == nil && lInt > 0 {
+			if lInt > 100 {
+				lInt = 100
+			}
+			limit = lInt
+		}
+	}
+
+	return
+}
+
+// searchNovel handles GET /novels/search/{query}
+func searchNovel(w http.ResponseWriter, r *http.Request) {
+	// Extract query from URL path
+	query := strings.TrimPrefix(r.URL.Path, "/novels/search/")
+	if idx := strings.Index(query, "/"); idx > -1 {
+		query = query[:idx]
+	}
+
+	// Search novel
+	foundNovels, err := service.GetNovelService().SearchNovel(query)
 	if err != nil {
 		http.Error(w, "Failed to create novel: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	writeJSON(w, createdNovel, http.StatusCreated)
+	writeJSON(w, foundNovels, http.StatusCreated)
 }
 
 // getNovelByID handles GET /novels/{id}
@@ -59,11 +87,7 @@ func getNovelByID(w http.ResponseWriter, r *http.Request) {
 
 	novel, err := service.GetNovelService().GetNovelByID(id)
 	if err != nil {
-		if errors.Is(err, errors.New("novel not found")) {
-			http.Error(w, "Novel not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to retrieve novel: "+err.Error(), http.StatusInternalServerError)
-		}
+		http.Error(w, "Failed to retrieve novel: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -84,11 +108,7 @@ func getNovelChapters(w http.ResponseWriter, r *http.Request) {
 
 	chapters, err := service.GetNovelService().GetNovelChapters(novelID)
 	if err != nil {
-		if errors.Is(err, errors.New("novel not found")) {
-			http.Error(w, "Novel not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to retrieve chapters: "+err.Error(), http.StatusInternalServerError)
-		}
+		http.Error(w, "Failed to retrieve chapters: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -101,9 +121,9 @@ func getNovelChapters(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, chapters, http.StatusOK)
 }
 
-// getNovelChapterByID handles GET /novels/{id}/chapters/{chapterId}
-func getNovelChapterByID(w http.ResponseWriter, r *http.Request) {
-	// Extract novel ID and chapter ID from URL path
+// getNovelChapterByNumber handles GET /novels/{id}/chapters/num/{chapterNumber}
+func getNovelChapterByNumber(w http.ResponseWriter, r *http.Request) {
+	// Extract novel ID and chapter number from URL path
 	path := strings.TrimPrefix(r.URL.Path, "/novels/")
 	pathParts := strings.Split(path, "/")
 	if len(pathParts) < 3 {
@@ -112,35 +132,15 @@ func getNovelChapterByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	novelID := pathParts[0]
-
-	// The chapterId could be either an ID or a chapter number
-	chapterParam := pathParts[2]
-
-	// Try to parse as chapter number first
-	if chapterNumber, err := strconv.Atoi(chapterParam); err == nil {
-		// It's a number, so get chapter by number
-		chapter, err := service.GetNovelService().GetChapterByNumber(novelID, chapterNumber)
-		if err != nil {
-			if errors.Is(err, errors.New("chapter not found")) {
-				http.Error(w, "Chapter not found", http.StatusNotFound)
-			} else {
-				http.Error(w, "Failed to retrieve chapter: "+err.Error(), http.StatusInternalServerError)
-			}
-			return
-		}
-
-		writeJSON(w, chapter, http.StatusOK)
+	chapterNumber, err := strconv.Atoi(pathParts[2])
+	if err != nil {
+		http.Error(w, "Invalid chapter number", http.StatusBadRequest)
 		return
 	}
 
-	// Not a number, so treat as chapter ID
-	chapter, err := service.GetNovelService().GetChapterByID(novelID, chapterParam)
+	chapter, err := service.GetNovelService().GetChapterByNumber(novelID, chapterNumber)
 	if err != nil {
-		if errors.Is(err, errors.New("chapter not found")) {
-			http.Error(w, "Chapter not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Failed to retrieve chapter: "+err.Error(), http.StatusInternalServerError)
-		}
+		http.Error(w, "Failed to retrieve chapter: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
