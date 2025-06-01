@@ -129,6 +129,11 @@ func initSchema(db *sql.DB) error {
 	_, err = db.Exec(`
 		CREATE INDEX IF NOT EXISTS idx_chapters_novel_id ON chapters(novel_id);
 		CREATE INDEX IF NOT EXISTS idx_chapters_number ON chapters(novel_id, number);
+
+		CREATE INDEX IF NOT EXISTS idx_novels_source ON novels(source);
+		CREATE INDEX IF NOT EXISTS idx_novels_last_read_timestamp ON novels(last_read_timestamp);
+		CREATE INDEX IF NOT EXISTS idx_novels_last_updated ON novels(last_updated);
+		CREATE INDEX IF NOT EXISTS idx_novels_date_added ON novels(date_added);
 	`)
 	if err != nil {
 		return err
