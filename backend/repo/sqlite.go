@@ -20,12 +20,12 @@ func NewSQLiteDB(dbPath string) (*SQLiteDB, error) {
 	}
 
 	// Test the connection
-	if err := db.Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		return nil, err
 	}
 
 	// Initialize the database schema
-	if err := initSchema(db); err != nil {
+	if err = initSchema(db); err != nil {
 		return nil, err
 	}
 
@@ -117,7 +117,8 @@ func initSchema(db *sql.DB) error {
 			content TEXT NOT NULL,
 			date_translated INTEGER NOT NULL,
 			word_count INTEGER,
-			url TEXT,               
+			url TEXT,
+			next_chapter_url TEXT,               
 			FOREIGN KEY (novel_id) REFERENCES novels(id)
 		);
 	`)

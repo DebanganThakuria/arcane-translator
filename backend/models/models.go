@@ -35,6 +35,7 @@ type Chapter struct {
 	DateTranslated int64  `json:"date_translated"`
 	WordCount      int    `json:"word_count,omitempty"`
 	URL            string `json:"url,omitempty"`
+	NextChapterURL string `json:"next_chapter_url,omitempty"`
 }
 
 // SourceSite represents a source site for novels
@@ -149,6 +150,7 @@ func ScanChapter(row *sql.Row) (*Chapter, error) {
 		&dateTranslatedUnix,
 		&chapter.WordCount,
 		&chapter.URL,
+		&chapter.NextChapterURL,
 	)
 	if err != nil {
 		return nil, err
@@ -177,6 +179,7 @@ func ScanChapters(rows *sql.Rows) ([]*Chapter, error) {
 			&dateTranslatedUnix,
 			&chapter.WordCount,
 			&chapter.URL,
+			&chapter.NextChapterURL,
 		)
 		if err != nil {
 			return nil, err

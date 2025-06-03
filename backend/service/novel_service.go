@@ -369,7 +369,7 @@ var allSources = []*models.SourceSite{
 		ID:       "69shuba",
 		Name:     "69shuba",
 		URL:      "https://www.69shuba.com",
-		Language: "Chinese",
+		Language: "chinese",
 	},
 }
 

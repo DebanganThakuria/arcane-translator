@@ -17,7 +17,7 @@ func RegisterHandlers(mux *http.ServeMux) {
 
 	// Novels CRUD APIs
 	mux.HandleFunc("GET /novels", getNovelsUsingFilter)
-	mux.HandleFunc("GET /novels/search/{query}", searchNovel)
+	mux.HandleFunc("GET /search/novels/{query}", searchNovel)
 	mux.HandleFunc("GET /novels/{id}", getNovelByID)
 	mux.HandleFunc("GET /novels/{id}/chapters", getNovelChapters)
 	mux.HandleFunc("GET /novels/{id}/chapters/num/{chapterNumber}", getNovelChapterByNumber)

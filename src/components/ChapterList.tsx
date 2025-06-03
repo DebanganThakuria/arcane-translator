@@ -58,7 +58,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
             className="flex items-center justify-between hover:bg-indigo-50/50 p-2 rounded-md transition-colors"
           >
             <div className="truncate">
-              <span className="text-sm">Ch. {chapter.number}: </span>
+              <span className="text-sm">{chapter.number}: </span>
               <span className="font-medium">{chapter.title}</span>
               {chapter.word_count && (
                 <span className="text-xs text-muted-foreground ml-2">

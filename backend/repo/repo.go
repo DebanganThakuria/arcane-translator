@@ -3,7 +3,9 @@ package repo
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"backend/models"
@@ -117,16 +119,28 @@ func (r *repo) GetNovelByID(id string) (*models.Novel, error) {
 }
 
 func (r *repo) GetNovelsBySourceIDs(sources []string) ([]*models.Novel, int, error) {
-	query := `
+	if len(sources) == 0 {
+		return []*models.Novel{}, 0, nil
+	}
+
+	// Create placeholders for each source
+	placeholders := make([]string, len(sources))
+	args := make([]interface{}, len(sources))
+	for i, source := range sources {
+		placeholders[i] = "?"
+		args[i] = source
+	}
+
+	query := fmt.Sprintf(`
 		SELECT id, title, original_title, cover, source, url, summary, author, status, 
 		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
 		FROM novels
-		WHERE source IN (?)
+		WHERE source IN (%s)
 		ORDER BY last_read_timestamp, last_updated, date_added DESC
 		LIMIT 20
-	`
+	`, strings.Join(placeholders, ","))
 
-	rows, err := r.db.Query(query, sources)
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -138,7 +152,7 @@ func (r *repo) GetNovelsBySourceIDs(sources []string) ([]*models.Novel, int, err
 	}
 
 	var count int
-	err = r.db.QueryRow("SELECT COUNT(*) FROM novels WHERE source IN (?)", sources).Scan(&count)
+	err = r.db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM novels WHERE source IN (%s)", strings.Join(placeholders, ",")), args...).Scan(&count)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -213,7 +227,7 @@ func (r *repo) GetNovelsByRecentlyRead(count int) ([]*models.Novel, error) {
 }
 
 func (r *repo) SearchNovel(query string) ([]*models.Novel, error) {
-	query = `
+	sqlQuery := `
 		SELECT id, title, original_title, cover, source, url, summary, author, status, 
 		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
 		FROM novels
@@ -222,7 +236,9 @@ func (r *repo) SearchNovel(query string) ([]*models.Novel, error) {
 		LIMIT 20
 	`
 
-	rows, err := r.db.Query(query, "%"+query+"%")
+	searchTerm := "%" + query + "%"
+
+	rows, err := r.db.Query(sqlQuery, searchTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +375,7 @@ func (r *repo) UpdateLastReadChapter(novelID string, chapterNumber int) error {
 
 func (r *repo) GetNovelChapters(novelID string) ([]*models.Chapter, error) {
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url
+		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
 		FROM chapters
 		WHERE novel_id = ?
 		ORDER BY number
@@ -376,7 +392,7 @@ func (r *repo) GetNovelChapters(novelID string) ([]*models.Chapter, error) {
 
 func (r *repo) GetLastChapter(novelID string) (*models.Chapter, error) {
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url
+		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
 		FROM chapters
 		WHERE novel_id = ?
 		ORDER BY number DESC
@@ -389,7 +405,7 @@ func (r *repo) GetLastChapter(novelID string) (*models.Chapter, error) {
 
 func (r *repo) GetChapterByID(novelID string, chapterID string) (*models.Chapter, error) {
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url
+		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
 		FROM chapters
 		WHERE novel_id = ? AND id = ?
 	`
@@ -400,7 +416,7 @@ func (r *repo) GetChapterByID(novelID string, chapterID string) (*models.Chapter
 
 func (r *repo) GetChapterByNumber(novelID string, chapterNumber int) (*models.Chapter, error) {
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url
+		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
 		FROM chapters
 		WHERE novel_id = ? AND number = ?
 	`
@@ -417,8 +433,8 @@ func (r *repo) CreateChapter(chapter *models.Chapter) (*models.Chapter, error) {
 
 	query := `
 		INSERT INTO chapters (
-			id, novel_id, number, title, original_title, content, date_translated, word_count, url
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	_, err := r.db.Exec(
@@ -432,6 +448,7 @@ func (r *repo) CreateChapter(chapter *models.Chapter) (*models.Chapter, error) {
 		chapter.DateTranslated,
 		chapter.WordCount,
 		chapter.URL,
+		chapter.NextChapterURL,
 	)
 	if err != nil {
 		return nil, err
@@ -455,7 +472,7 @@ func (r *repo) UpdateChapter(chapter *models.Chapter) error {
 	query := `
 		UPDATE chapters
 		SET number = ?, title = ?, original_title = ?, content = ?, 
-		    date_translated = ?, word_count = ?, url = ?
+		    date_translated = ?, word_count = ?, url = ?, next_chapter_url = ?
 		WHERE id = ? AND novel_id = ?
 	`
 
@@ -468,6 +485,7 @@ func (r *repo) UpdateChapter(chapter *models.Chapter) error {
 		chapter.DateTranslated,
 		chapter.WordCount,
 		chapter.URL,
+		chapter.NextChapterURL,
 		chapter.ID,
 		chapter.NovelID,
 	)

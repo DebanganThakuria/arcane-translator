@@ -5,10 +5,11 @@ import (
 	"errors"
 	"time"
 
+	"backend/provider/webscraper"
+
 	"backend/models"
 	"backend/provider/gemini"
 	"backend/provider/sources"
-	"backend/provider/webscraper"
 	"backend/repo"
 	"backend/utils"
 )
@@ -18,7 +19,7 @@ type TranslationService interface {
 	ExtractNovelDetails(ctx context.Context, request *models.NovelExtractionRequest) (*models.Novel, error)
 	TranslateChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
 	TranslateFirstChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
-	RefreshNovel(ctx context.Context, request *models.NovelRefreshRequest) (*models.Novel, error)
+	RefreshNovel(ctx context.Context, novelId string) (*models.Novel, error)
 }
 
 type translationService struct {
@@ -62,6 +63,12 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		return nil, err
 	}
 
+	// Get cover image URL
+	coverUrl, err := sources.GetSource(request.Source).GetNovelCoverImageUrl(webpageContent)
+	if err != nil {
+		return nil, err
+	}
+
 	// Translate the novel details
 	novelDetails, err := gemini.GetClient().TranslateNovelDetails(ctx, webpageContent)
 	if err != nil {
@@ -73,7 +80,7 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		ID:            sources.GetSource(request.Source).GetNovelId(request.URL),
 		Title:         novelDetails.NovelTitleTranslated,
 		OriginalTitle: novelDetails.NovelTitleOriginal,
-		Cover:         "",
+		Cover:         coverUrl,
 		Source:        request.Source,
 		URL:           request.URL,
 		Summary:       novelDetails.NovelSummaryTranslated,
@@ -116,6 +123,12 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		return nil, err
 	}
 
+	// Get the next chapter URL
+	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent)
+	if err != nil {
+		return nil, err
+	}
+
 	novel.Genres = append(novel.Genres, translatedContent.PossibleNewGenres...)
 	novel.Genres = utils.RemoveDuplicatesFromSlice(novel.Genres)
 	if err = s.repo.UpdateNovel(novel); err != nil {
@@ -133,6 +146,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		DateTranslated: time.Now().Unix(),
 		WordCount:      utils.CountWords(translatedContent.TranslatedChapterContents),
 		URL:            request.ChapterURL,
+		NextChapterURL: nextChapterURL,
 	}
 
 	return s.repo.CreateChapter(chapter)
@@ -159,18 +173,19 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, err
 	}
 
-	nextChapterUrl, err := sources.GetSource(novel.Source).GetChapterUrl(lastChapter.URL)
-	if err != nil {
-		return nil, err
-	}
-
-	chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(nextChapterUrl)
+	chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(lastChapter.NextChapterURL)
 	if err != nil {
 		return nil, err
 	}
 
 	// Translate the chapter content
 	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the next chapter URL
+	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(lastChapter.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -183,26 +198,27 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 
 	// Create a new chapter entry
 	chapter := &models.Chapter{
-		ID:             sources.GetSource(novel.Source).GetChapterId(nextChapterUrl),
+		ID:             sources.GetSource(novel.Source).GetChapterId(lastChapter.NextChapterURL),
 		NovelID:        novel.ID,
 		Number:         lastChapter.Number + 1,
 		Title:          translatedContent.TranslatedChapterTitle,
 		OriginalTitle:  translatedContent.OriginalChapterTitle,
 		Content:        translatedContent.TranslatedChapterContents,
 		DateTranslated: time.Now().Unix(),
-		URL:            nextChapterUrl,
+		URL:            lastChapter.NextChapterURL, // Last Chapter's next chapter URL is the current chapter's URL
+		NextChapterURL: nextChapterUrl,
 	}
 
 	return s.repo.CreateChapter(chapter)
 }
 
-func (s *translationService) RefreshNovel(ctx context.Context, request *models.NovelRefreshRequest) (*models.Novel, error) {
-	if request.NovelID == "" {
+func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (*models.Novel, error) {
+	if novelId == "" {
 		return nil, errors.New("novel ID cannot be empty")
 	}
 
 	// Get the novel by ID to ensure it exists
-	novel, err := s.repo.GetNovelByID(request.NovelID)
+	novel, err := s.repo.GetNovelByID(novelId)
 	if err != nil {
 		return nil, err
 	}
@@ -219,6 +235,13 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 		return nil, err
 	}
 
+	// Add the next chapter URL to the last chapter if there are new chapters
+	if novelDetails.NumberOfChapters > novel.ChaptersCount {
+		if err = s.addNextChapterUrlToLastChapter(novel.ID, novel.Source); err != nil {
+			return nil, err
+		}
+	}
+
 	// Update the novel details in the database
 	novel.Title = novelDetails.NovelTitleTranslated
 	novel.OriginalTitle = novelDetails.NovelTitleOriginal
@@ -232,5 +255,25 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 		return nil, err
 	}
 
-	return s.repo.GetNovelByID(request.NovelID)
+	return s.repo.GetNovelByID(novelId)
+}
+
+func (s *translationService) addNextChapterUrlToLastChapter(novelId, source string) error {
+	lastChapter, err := s.repo.GetLastChapter(novelId)
+	if err != nil {
+		return err
+	}
+
+	webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(lastChapter.URL)
+	if err != nil {
+		return err
+	}
+
+	nextChapterUrl, err := sources.GetSource(source).GetNextChapterUrl(webpageContent)
+	if err != nil {
+		return err
+	}
+
+	lastChapter.NextChapterURL = nextChapterUrl
+	return s.repo.UpdateChapter(lastChapter)
 }

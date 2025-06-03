@@ -91,7 +91,7 @@ export const getAllSourceSites = async (): Promise<SourceSite[]> => {
 // Search novels
 export const searchNovelsByQuery = async (query: string): Promise<Novel[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/novels/search/${query}`);
+    const response = await fetch(`${API_BASE_URL}/search/novels/${query}`);
     if (!response.ok) throw new Error('Failed to search novels');
     return await response.json();
   } catch (error) {

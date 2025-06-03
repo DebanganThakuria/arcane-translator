@@ -66,6 +66,7 @@ func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 		GenerateContentModel,
 		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleUser)},
 		&genai.GenerateContentConfig{
+			MaxOutputTokens:  50000,
 			ResponseMIMEType: ResponseMimeType,
 			ResponseSchema: &genai.Schema{
 				Type: "object",
@@ -137,6 +138,7 @@ func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 		GenerateContentModel,
 		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleUser)},
 		&genai.GenerateContentConfig{
+			MaxOutputTokens:  50000,
 			ResponseMIMEType: ResponseMimeType,
 			ResponseSchema: &genai.Schema{
 				Type: "object",

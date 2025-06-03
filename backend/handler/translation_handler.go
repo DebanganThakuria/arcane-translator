@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"backend/models"
 	"backend/service"
@@ -68,14 +69,16 @@ func translateFirstChapter(w http.ResponseWriter, r *http.Request) {
 }
 
 // refreshNovel handles the POST request to refresh a novel's details
+// endpoint /novels/{id}/refresh
 func refreshNovel(w http.ResponseWriter, r *http.Request) {
-	var request models.NovelRefreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
-		return
+	// parse the id from the URL path
+	var id string
+	urlParts := strings.TrimPrefix(r.URL.Path, "/novels/")
+	if parts := strings.Split(urlParts, "/"); len(parts) == 2 {
+		id = parts[0]
 	}
 
-	response, err := service.GetTranslationService().RefreshNovel(r.Context(), &request)
+	response, err := service.GetTranslationService().RefreshNovel(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Failed to refresh novel: "+err.Error(), http.StatusInternalServerError)
 		return

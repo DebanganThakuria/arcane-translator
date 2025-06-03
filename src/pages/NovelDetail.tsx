@@ -73,11 +73,8 @@ const NovelDetail = () => {
           description: result.message,
           variant: "default",
         });
-        
-        if (result.newChaptersCount) {
-          // Refetch the novel data to get updated chapters
-          await fetchNovelData();
-        }
+
+        window.location.reload();
       } else {
         toast({
           title: "Refresh Failed",
@@ -185,7 +182,7 @@ const NovelDetail = () => {
                   <p className="mb-1"><span className="text-indigo-600 font-medium">Chapters:</span> {novel.chapters_count}</p>
                   <p className="mb-1">
                     <span className="text-indigo-600 font-medium">Last Updated:</span>{" "}
-                    {novel.chapters_count ? formatDistanceToNow(new Date(parseInt(String(novel.chapters_count)) * 1000)) : "unknown"} ago
+                    {novel.last_updated ? formatDistanceToNow(new Date(parseInt(String(novel.last_updated)) * 1000)) : "unknown"} ago
                   </p>
                   {novel.source && (
                     <p className="mb-1">
@@ -242,30 +239,34 @@ const NovelDetail = () => {
           </div>
         </div>
         
-        {/* First Chapter Button */}
-        <div className="fixed bottom-4 right-4">
-          <Button 
-            onClick={() => setFirstChapterDialogOpen(true)} 
-            className="gradient-button flex items-center"
-          >
-            <LinkIcon className="mr-2 h-5 w-5" />
-            First Chapter
-          </Button>
-        </div>
+        {/* First Chapter Button - Only show when there are no chapters */}
+        {chapters.length === 0 && (
+          <div className="fixed bottom-4 right-4">
+            <Button 
+              onClick={() => setFirstChapterDialogOpen(true)} 
+              className="gradient-button flex items-center"
+            >
+              <LinkIcon className="mr-2 h-5 w-5" />
+              First Chapter
+            </Button>
+          </div>
+        )}
         
-        {/* First Chapter Dialog */}
-        <FirstChapterDialog 
-          isOpen={firstChapterDialogOpen} 
-          onOpenChange={setFirstChapterDialogOpen} 
-          novelId={id || ''}
-          onSuccess={() => {
-            toast({
-              title: "Ready to Read",
-              description: "You can now start reading the first chapter.",
-            });
-            navigate(`/novel/${id}/chapter/1`);
-          }}
-        />
+        {/* First Chapter Dialog - Only show when there are no chapters */}
+        {chapters.length === 0 && (
+          <FirstChapterDialog 
+            isOpen={firstChapterDialogOpen} 
+            onOpenChange={setFirstChapterDialogOpen} 
+            novelId={id || ''}
+            onSuccess={() => {
+              toast({
+                title: "Ready to Read",
+                description: "You can now start reading the first chapter.",
+              });
+              navigate(`/novel/${id}/chapter/1`);
+            }}
+          />
+        )}
       </div>
     </Layout>
   );

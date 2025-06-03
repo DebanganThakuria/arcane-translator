@@ -29,6 +29,10 @@ func getNovelsUsingFilter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if response.Novels == nil {
+		response.Novels = []*models.Novel{}
+	}
+
 	writeJSON(w, response, http.StatusOK)
 }
 
@@ -59,10 +63,10 @@ func getAllRequestParams(r *http.Request) (filter, value string, page, limit int
 	return
 }
 
-// searchNovel handles GET /novels/search/{query}
+// searchNovel handles GET /search/novels/{query}
 func searchNovel(w http.ResponseWriter, r *http.Request) {
 	// Extract query from URL path
-	query := strings.TrimPrefix(r.URL.Path, "/novels/search/")
+	query := strings.TrimPrefix(r.URL.Path, "/search/novels/")
 	if idx := strings.Index(query, "/"); idx > -1 {
 		query = query[:idx]
 	}
@@ -72,6 +76,10 @@ func searchNovel(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to create novel: "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if len(foundNovels) == 0 {
+		foundNovels = []*models.Novel{}
 	}
 
 	writeJSON(w, foundNovels, http.StatusCreated)
@@ -126,13 +134,13 @@ func getNovelChapterByNumber(w http.ResponseWriter, r *http.Request) {
 	// Extract novel ID and chapter number from URL path
 	path := strings.TrimPrefix(r.URL.Path, "/novels/")
 	pathParts := strings.Split(path, "/")
-	if len(pathParts) < 3 {
+	if len(pathParts) < 4 {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
 
 	novelID := pathParts[0]
-	chapterNumber, err := strconv.Atoi(pathParts[2])
+	chapterNumber, err := strconv.Atoi(pathParts[3])
 	if err != nil {
 		http.Error(w, "Invalid chapter number", http.StatusBadRequest)
 		return
