@@ -23,8 +23,7 @@ const ChapterReader = () => {
     chapterNumber: number | null;
     progress: number;
   }>({ inProgress: false, chapterNumber: null, progress: 0 });
-  
-  // State to track background translation status to avoid duplicate translations
+
   const [translationState, setTranslationState] = useState<{
     inProgress: boolean;
     chapterNumber: number | null;
@@ -127,9 +126,7 @@ const ChapterReader = () => {
     if (nextChapterNum > (novel.chapters_count || 0)) return; // No more chapters
     
     // Skip if already translating this chapter
-    if (translationState.inProgress
-        && translationState.chapterNumber === nextChapterNum
-        && translationState.novelId === novelId) {
+    if (translationState.inProgress) {
       return;
     }
 

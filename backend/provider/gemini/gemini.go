@@ -126,9 +126,9 @@ func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 
         Return ONLY a valid JSON object with this exact structure:
         {{
-            "translated_chapter_title": "The translated title of the chapter. Please make sure the title is there. Even if it is not there in the source, you can create one yourself",
-			"original_chapter_title": "The original title in the source language. If this is not there, please create one yourself",
-            "translated_chapter_contents": "The translated content in HTML format with paragraph tags. Please ensure that the summary has valid HTML tags for rendering on the frontend.",
+            "translated_chapter_title": "The translated title of the chapter.",
+			"original_chapter_title": "The original title in the source language.",
+            "translated_chapter_contents": "The translated content of the chapter in HTML format with paragraph tags. Please ensure that the chapter content has valid HTML tags for rendering on the frontend.",
             "possible_new_genres": "Array of any genres you detect that aren't already listed (leave empty if none). Response should be like this ["Genre1", "Genre2", ...]"
         }}
 

@@ -50,6 +50,12 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		return nil, errors.New("request cannot be nil")
 	}
 
+	success := utils.Mutex.TryLock(request.URL+request.Source, time.Millisecond)
+	if !success {
+		return nil, errors.New("another request is in progress")
+	}
+	defer utils.Mutex.Unlock(request.URL + request.Source)
+
 	// Validate required fields
 	if request.URL == "" {
 		return nil, errors.New("URL cannot be empty")
@@ -100,6 +106,12 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	if request == nil {
 		return nil, errors.New("request cannot be nil")
 	}
+
+	success := utils.Mutex.TryLock(request.NovelID, time.Millisecond)
+	if !success {
+		return nil, errors.New("another request is in progress")
+	}
+	defer utils.Mutex.Unlock(request.NovelID)
 
 	// Validate required fields
 	if request.NovelID == "" {
@@ -157,6 +169,12 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 	if request == nil {
 		return nil, errors.New("request cannot be nil")
 	}
+
+	success := utils.Mutex.TryLock(request.NovelID, time.Millisecond)
+	if !success {
+		return nil, errors.New("another request is in progress")
+	}
+	defer utils.Mutex.Unlock(request.NovelID)
 
 	// Validate required fields
 	if request.NovelID == "" {
