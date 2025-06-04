@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Novel, Chapter } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
-import { refreshNovelData } from '../services/refreshService';
+import { refreshNovel } from "@/services/translationService.ts";
 
 const NovelDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -65,23 +65,19 @@ const NovelDetail = () => {
     
     setRefreshing(true);
     try {
-      const result = await refreshNovelData(id);
-      
-      if (result.success) {
-        toast({
-          title: "Refresh Complete",
-          description: result.message,
-          variant: "default",
-        });
+      const result = await refreshNovel(id);
 
-        window.location.reload();
-      } else {
-        toast({
-          title: "Refresh Failed",
-          description: result.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Refresh Complete",
+        variant: "default",
+      });
+
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        variant: "destructive",
+      });
     } finally {
       setRefreshing(false);
     }

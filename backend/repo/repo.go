@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -22,8 +21,8 @@ type Repo interface {
 	// Novel methods
 	GetAllNovels(offset, limit int) ([]*models.Novel, int, error)
 	GetNovelByID(id string) (*models.Novel, error)
-	GetNovelsBySourceIDs(source []string) ([]*models.Novel, int, error)
-	GetNovelsByGenre(genre string) ([]*models.Novel, int, error)
+	GetNovelsBySourceIDs(source []string, offset, limit int) ([]*models.Novel, int, error)
+	GetNovelsByGenre(genre string, offset, limit int) ([]*models.Novel, int, error)
 	GetNovelsByRecentlyUpdated(count int) ([]*models.Novel, error)
 	GetNovelsByRecentlyRead(count int) ([]*models.Novel, error)
 	CreateNovel(novel *models.Novel) (*models.Novel, error)
@@ -39,7 +38,6 @@ type Repo interface {
 	GetChapterByNumber(novelID string, chapterNumber int) (*models.Chapter, error)
 	CreateChapter(chapter *models.Chapter) (*models.Chapter, error)
 	UpdateChapter(chapter *models.Chapter) error
-	DeleteChapter(id string) error
 }
 
 type repo struct {
@@ -118,7 +116,7 @@ func (r *repo) GetNovelByID(id string) (*models.Novel, error) {
 	return models.ScanNovel(row)
 }
 
-func (r *repo) GetNovelsBySourceIDs(sources []string) ([]*models.Novel, int, error) {
+func (r *repo) GetNovelsBySourceIDs(sources []string, offset, limit int) ([]*models.Novel, int, error) {
 	if len(sources) == 0 {
 		return []*models.Novel{}, 0, nil
 	}
@@ -130,6 +128,8 @@ func (r *repo) GetNovelsBySourceIDs(sources []string) ([]*models.Novel, int, err
 		placeholders[i] = "?"
 		args[i] = source
 	}
+	args = append(args, limit)
+	args = append(args, offset)
 
 	query := fmt.Sprintf(`
 		SELECT id, title, original_title, cover, source, url, summary, author, status, 
@@ -137,7 +137,7 @@ func (r *repo) GetNovelsBySourceIDs(sources []string) ([]*models.Novel, int, err
 		FROM novels
 		WHERE source IN (%s)
 		ORDER BY last_read_timestamp, last_updated, date_added DESC
-		LIMIT 20
+		LIMIT ? OFFSET ?
 	`, strings.Join(placeholders, ","))
 
 	rows, err := r.db.Query(query, args...)
@@ -160,17 +160,17 @@ func (r *repo) GetNovelsBySourceIDs(sources []string) ([]*models.Novel, int, err
 	return novels, count, nil
 }
 
-func (r *repo) GetNovelsByGenre(genre string) ([]*models.Novel, int, error) {
+func (r *repo) GetNovelsByGenre(genre string, offset, limit int) ([]*models.Novel, int, error) {
 	query := `
 		SELECT id, title, original_title, cover, source, url, summary, author, status, 
 		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
 		FROM novels
 		WHERE genres LIKE ? COLLATE NOCASE
 		ORDER BY last_read_timestamp, last_updated, date_added DESC
-		LIMIT 20
+		LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.db.Query(query, "%"+genre+"%")
+	rows, err := r.db.Query(query, "%"+genre+"%", limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -454,17 +454,6 @@ func (r *repo) CreateChapter(chapter *models.Chapter) (*models.Chapter, error) {
 		return nil, err
 	}
 
-	// Update the novel's chapters count
-	_, err = r.db.Exec(
-		"UPDATE novels SET chapters_count = (SELECT COUNT(*) FROM chapters WHERE novel_id = ?), last_updated = ? WHERE id = ?",
-		chapter.NovelID,
-		time.Now().Unix(),
-		chapter.NovelID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	return chapter, nil
 }
 
@@ -500,56 +489,6 @@ func (r *repo) UpdateChapter(chapter *models.Chapter) error {
 
 	if rowsAffected == 0 {
 		return errors.New("chapter not found")
-	}
-
-	// Update the novel's last_updated timestamp
-	_, err = r.db.Exec(
-		"UPDATE novels SET last_updated = ? WHERE id = ?",
-		time.Now().Unix(),
-		chapter.NovelID,
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *repo) DeleteChapter(id string) error {
-	// Get the novel ID before deleting the chapter
-	var novelID string
-	err := r.db.QueryRow("SELECT novel_id FROM chapters WHERE id = ?", id).Scan(&novelID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return errors.New("chapter not found")
-		}
-		return err
-	}
-
-	// Delete the chapter
-	result, err := r.db.Exec("DELETE FROM chapters WHERE id = ?", id)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return errors.New("chapter not found")
-	}
-
-	// Update the novel's chapters count and last_updated timestamp
-	_, err = r.db.Exec(
-		"UPDATE novels SET chapters_count = (SELECT COUNT(*) FROM chapters WHERE novel_id = ?), last_updated = ? WHERE id = ?",
-		novelID,
-		time.Now().Unix(),
-		novelID,
-	)
-	if err != nil {
-		return err
 	}
 
 	return nil

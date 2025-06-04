@@ -55,19 +55,25 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
           <Link 
             key={chapter.id} 
             to={`/novel/${novelId}/chapter/${chapter.number}`}
-            className="flex items-center justify-between hover:bg-indigo-50/50 p-2 rounded-md transition-colors"
+            className="flex items-start hover:bg-indigo-50/50 p-2 rounded-md transition-colors group"
           >
-            <div className="truncate">
-              <span className="text-sm">{chapter.number}: </span>
-              <span className="font-medium">{chapter.title}</span>
-              {chapter.word_count && (
-                <span className="text-xs text-muted-foreground ml-2">
-                  ({chapter.word_count} words)
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline">
+                <span className="text-sm font-medium text-muted-foreground mr-2 flex-shrink-0">
+                  {chapter.number}.
                 </span>
+                <span className="font-medium truncate">
+                  {chapter.title}
+                </span>
+              </div>
+              {chapter.word_count && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  {chapter.word_count} words
+                </div>
               )}
             </div>
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(chapter.date_translated * 1000))} ago
+            <span className="text-xs text-muted-foreground whitespace-nowrap ml-2 self-center">
+              {chapter.date_translated ? formatDistanceToNow(new Date(chapter.date_translated * 1000)) + ' ago' : 'Not translated'}
             </span>
           </Link>
         ))}

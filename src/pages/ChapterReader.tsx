@@ -4,6 +4,8 @@ import {getNovelById, getChapterByNumber} from '../database/db';
 import Layout from '../components/Layout';
 import Reader from '../components/Reader';
 import { useToast } from '@/components/ui/use-toast';
+import { Progress } from '@/components/ui/progress';
+import { Loader2 } from 'lucide-react';
 import { Novel, Chapter } from '../types/novel';
 import { getNovel } from '../services/translationService';
 
@@ -16,12 +18,19 @@ const ChapterReader = () => {
   const [novel, setNovel] = useState<Novel | undefined>(undefined);
   const [chapter, setChapter] = useState<Chapter | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  
-  // Ref to track background translation status to avoid duplicate translations
-  const backgroundTranslationRef = useRef<{
+  const [translationProgress, setTranslationProgress] = useState<{
     inProgress: boolean;
     chapterNumber: number | null;
-  }>({ inProgress: false, chapterNumber: null });
+    progress: number;
+  }>({ inProgress: false, chapterNumber: null, progress: 0 });
+  
+  // State to track background translation status to avoid duplicate translations
+  const [translationState, setTranslationState] = useState<{
+    inProgress: boolean;
+    chapterNumber: number | null;
+    novelId: string | null;
+    progress: number;
+  }>({ inProgress: false, chapterNumber: null, novelId: null, progress: 0 });
   
   const chapterNum = chapterNumber ? parseInt(chapterNumber) : 1;
   
@@ -64,9 +73,9 @@ const ChapterReader = () => {
             navigate(`/novel/${novelId}`);
             return;
           }
-          
+
           setChapter(fetchedChapter);
-          
+
           // Ensure next chapter is available in background
           ensureNextChapterAvailable(chapterNum);
         } else {
@@ -91,7 +100,24 @@ const ChapterReader = () => {
     };
 
     fetchData()
+    
+    // Cleanup function to reset translation state
+    return () => {
+      setTranslationState({
+        inProgress: false,
+        chapterNumber: null,
+        novelId: null,
+        progress: 0
+      });
+    };
   }, [novelId, chapterNum, navigate, toast]);
+  
+  // Effect to ensure next chapter is prepared when current chapter is loaded
+  useEffect(() => {
+    if (chapter && novel) {
+      ensureNextChapterAvailable(chapterNum);
+    }
+  }, [chapter, chapterNum, novel]);
   
   // Function to ensure next chapter is available
   const ensureNextChapterAvailable = async (currentChapterNum: number) => {
@@ -101,10 +127,12 @@ const ChapterReader = () => {
     if (nextChapterNum > (novel.chapters_count || 0)) return; // No more chapters
     
     // Skip if already translating this chapter
-    if (backgroundTranslationRef.current.inProgress && backgroundTranslationRef.current.chapterNumber === nextChapterNum) {
+    if (translationState.inProgress
+        && translationState.chapterNumber === nextChapterNum
+        && translationState.novelId === novelId) {
       return;
     }
-    
+
     try {
       // Check if next chapter already exists
       const existingChapter = await getChapterByNumber(novelId, nextChapterNum);
@@ -113,30 +141,68 @@ const ChapterReader = () => {
       console.log(`Requesting translation for chapter ${nextChapterNum} in background...`);
       
       // Set translation in progress
-      backgroundTranslationRef.current = {
+      const newState = {
         inProgress: true,
-        chapterNumber: nextChapterNum
+        chapterNumber: nextChapterNum,
+        novelId: novelId,
+        progress: 0
       };
+      setTranslationState(newState);
+      setTranslationProgress({
+        inProgress: true,
+        chapterNumber: nextChapterNum,
+        progress: 0
+      });
+      
+      // Start progress simulation
+      const progressInterval = setInterval(() => {
+        setTranslationProgress(prev => ({
+          ...prev,
+          progress: Math.min(prev.progress + 5, 90) // Cap at 90% until complete
+        }));
+      }, 1000);
       
       // Don't await this, let it happen in background
       fetch(`${API_BASE_URL}/novels/translate/chapter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          novelId,
+          novel_id:novelId,
         })
-      }).catch(error => {
+      })
+      .then(() => {
+        clearInterval(progressInterval);
+        setTranslationProgress(prev => ({ ...prev, progress: 100 }));
+        toast({
+          title: "Translation Complete",
+          description: `Chapter ${nextChapterNum} has been translated and is ready to read!`,
+          variant: "default",
+        });
+        // Reset after showing completion
+        setTimeout(() => {
+          setTranslationProgress({ inProgress: false, chapterNumber: null, progress: 0 });
+        }, 2000);
+      })
+      .catch(error => {
+        clearInterval(progressInterval);
         console.error(`Background translation failed for chapter ${nextChapterNum}:`, error);
+        toast({
+          title: "Translation Failed",
+          description: `Failed to translate chapter ${nextChapterNum}. Please try again later.`,
+          variant: "destructive",
+        });
       });
       
     } catch (error) {
       console.error('Error translating next chapter:', error);
     } finally {
       // Reset translation status
-      backgroundTranslationRef.current = {
+      setTranslationState({
         inProgress: false,
-        chapterNumber: null
-      };
+        chapterNumber: null,
+        novelId: null,
+        progress: 0
+      });
     }
   };
   
@@ -169,13 +235,39 @@ const ChapterReader = () => {
 
   return (
     <Layout hideNavigation>
-      <Reader
-        chapter={chapter}
-        novel={novel}
-        hasPreviousChapter={hasPreviousChapter}
-        hasNextChapter={hasNextChapter}
-        onNavigate={handleNavigate}
-      />
+      <div className="relative
+        {translationProgress.inProgress ? 'pb-16' : ''}
+      ">
+        <Reader
+          chapter={chapter}
+          novel={novel}
+          hasPreviousChapter={hasPreviousChapter}
+          hasNextChapter={hasNextChapter}
+          onNavigate={handleNavigate}
+        />
+        
+        {translationProgress.inProgress && (
+          <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm p-4 border-t border-border shadow-lg">
+            <div className="container mx-auto max-w-4xl">
+              <div className="flex items-center gap-4">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium mb-1">
+                    Translating Chapter {translationProgress.chapterNumber}...
+                  </div>
+                  <Progress 
+                    value={translationProgress.progress} 
+                    className="h-2"
+                  />
+                  <div className="text-xs text-muted-foreground mt-1 text-right">
+                    {translationProgress.progress}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </Layout>
   );
 };

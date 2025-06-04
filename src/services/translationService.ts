@@ -1,5 +1,5 @@
 // Standard library imports
-import { Novel } from '../types/novel';
+import {Chapter, Novel} from '../types/novel';
 import { NovelDetails, TranslatedChapter } from '../types/api';
 
 // API base URL - will be replaced by actual backend calls
@@ -128,17 +128,7 @@ export const getNovel = async (novelId: string): Promise<Novel> => {
 };
 
 // Refresh a novel (check for new chapters)
-export const refreshNovel = async (novelId: string): Promise<{
-  success: boolean;
-  newChaptersCount: number;
-  message: string;
-  updatedDetails: {
-    summary: string;
-    author: string;
-    status: string;
-    genres: string[];
-  };
-}> => {
+export const refreshNovel = async (novelId: string): Promise<Novel> => {
   try {
     const response = await fetch(`${API_BASE_URL}/novels/${novelId}/refresh`, {
       method: 'POST'
@@ -161,13 +151,7 @@ export const setFirstChapterUrl = async (
   novelId: string, 
   firstChapterUrl: string, 
   autoTranslate: boolean = true
-): Promise<{
-  success: boolean;
-  message: string;
-  firstChapterUrl?: string;
-  urlPattern?: string;
-  chapterTranslated?: boolean;
-}> => {
+): Promise<Chapter> => {
   try {
     // Validate URL format
     if (!firstChapterUrl.startsWith('http://') && !firstChapterUrl.startsWith('https://')) {

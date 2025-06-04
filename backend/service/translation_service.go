@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"backend/provider/webscraper"
@@ -117,14 +118,14 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		return nil, err
 	}
 
-	// Translate the chapter content
-	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
+	// Get the next chapter URL
+	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get the next chapter URL
-	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent)
+	// Translate the chapter content
+	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +133,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	novel.Genres = append(novel.Genres, translatedContent.PossibleNewGenres...)
 	novel.Genres = utils.RemoveDuplicatesFromSlice(novel.Genres)
 	if err = s.repo.UpdateNovel(novel); err != nil {
-		return nil, err
+		log.Printf("Failed to update novel genres: %v", err)
 	}
 
 	// Create a new chapter entry
@@ -178,14 +179,14 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, err
 	}
 
-	// Translate the chapter content
-	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
+	// Get the next chapter URL
+	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get the next chapter URL
-	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(lastChapter.URL)
+	// Translate the chapter content
+	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +194,7 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 	novel.Genres = append(novel.Genres, translatedContent.PossibleNewGenres...)
 	novel.Genres = utils.RemoveDuplicatesFromSlice(novel.Genres)
 	if err = s.repo.UpdateNovel(novel); err != nil {
-		return nil, err
+		log.Printf("Failed to update novel genres: %v", err)
 	}
 
 	// Create a new chapter entry
@@ -205,6 +206,7 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		OriginalTitle:  translatedContent.OriginalChapterTitle,
 		Content:        translatedContent.TranslatedChapterContents,
 		DateTranslated: time.Now().Unix(),
+		WordCount:      utils.CountWords(translatedContent.TranslatedChapterContents),
 		URL:            lastChapter.NextChapterURL, // Last Chapter's next chapter URL is the current chapter's URL
 		NextChapterURL: nextChapterUrl,
 	}
@@ -229,6 +231,12 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 		return nil, err
 	}
 
+	// Cover image URL
+	coverUrl, err := sources.GetSource(novel.Source).GetNovelCoverImageUrl(webpageContent)
+	if err != nil {
+		return nil, err
+	}
+
 	// Translate the novel details
 	novelDetails, err := gemini.GetClient().TranslateNovelDetails(ctx, webpageContent)
 	if err != nil {
@@ -238,7 +246,7 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 	// Add the next chapter URL to the last chapter if there are new chapters
 	if novelDetails.NumberOfChapters > novel.ChaptersCount {
 		if err = s.addNextChapterUrlToLastChapter(novel.ID, novel.Source); err != nil {
-			return nil, err
+			log.Printf("Failed to add next chapter URL to last chapter: %v\n", err)
 		}
 	}
 
@@ -246,6 +254,7 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 	novel.Title = novelDetails.NovelTitleTranslated
 	novel.OriginalTitle = novelDetails.NovelTitleOriginal
 	novel.Summary = novelDetails.NovelSummaryTranslated
+	novel.Cover = coverUrl
 	novel.Author = novelDetails.NovelAuthorNameTranslated
 	novel.Status = novelDetails.Status
 	novel.ChaptersCount = novelDetails.NumberOfChapters

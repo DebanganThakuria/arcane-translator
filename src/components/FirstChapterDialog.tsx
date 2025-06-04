@@ -45,13 +45,11 @@ const FirstChapterDialog = ({ novelId, isOpen, onOpenChange, onSuccess }: FirstC
         title: "Setting first chapter URL",
       }).id;
       
-      const result = await setFirstChapterUrl(novelId, url);
+      const firstChapter = await setFirstChapterUrl(novelId, url);
       
       toast({
         title: "Success",
-        description: result.chapterTranslated 
-          ? "First chapter URL set and chapter translated successfully. You can now start reading." 
-          : "First chapter URL set successfully. You can now start reading.",
+        description: "First chapter URL set and chapter translated successfully. You can now start reading."
       });
       
       setUrl('');
@@ -94,7 +92,7 @@ const FirstChapterDialog = ({ novelId, isOpen, onOpenChange, onSuccess }: FirstC
             />
             <p className="text-xs text-muted-foreground">
               Enter the complete URL to the first chapter of the novel.
-              Next chapters will be automatically detected using the pattern.
+              The links of subsequent chapters will be parsed from here.
             </p>
           </div>
           

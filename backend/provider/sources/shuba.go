@@ -96,7 +96,7 @@ func (s *shuba) GetNovelCoverImageUrl(pageContent string) (string, error) {
 		return "", err
 	}
 
-	bookImageURL, found := findBookImageLink(doc)
+	bookImageURL, found := findMetaOgImage(doc)
 	if found {
 		return bookImageURL, nil
 	}
@@ -104,47 +104,27 @@ func (s *shuba) GetNovelCoverImageUrl(pageContent string) (string, error) {
 	return "", fmt.Errorf("book image link not found")
 }
 
-// hasClass checks if a given html.Node has a specific CSS class.
-func hasClass(n *html.Node, className string) bool {
-	if n == nil {
-		return false
-	}
-	for _, attr := range n.Attr {
-		if attr.Key == "class" {
-			classes := strings.Fields(attr.Val) // Split by space to handle multiple classes
-			for _, c := range classes {
-				if c == className {
-					return true
-				}
+// findMetaOgImage traverses the HTML nodes to find the content of <meta property="og:image">.
+func findMetaOgImage(n *html.Node) (string, bool) {
+	if n.Type == html.ElementNode && n.Data == "meta" {
+		var property, content string
+		for _, attr := range n.Attr {
+			if attr.Key == "property" && attr.Val == "og:image" {
+				property = attr.Val
+			}
+			if attr.Key == "content" {
+				content = attr.Val
 			}
 		}
-	}
-	return false
-}
-
-// findBookImageLink traverses the HTML nodes to find the book image link.
-// It looks for a <div> with class "bookimg2", then finds an <img> tag inside it.
-func findBookImageLink(n *html.Node) (string, bool) {
-	// Check if the current node is a <div> with class "bookimg2"
-	if n.Type == html.ElementNode && n.Data == "div" && hasClass(n, "bookimg2") {
-		// If it is, search for an <img> tag among its direct children
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			if c.Type == html.ElementNode && c.Data == "img" {
-				for _, attr := range c.Attr {
-					if attr.Key == "src" {
-						return attr.Val, true
-					}
-				}
-			}
+		if property == "og:image" && content != "" {
+			return content, true
 		}
 	}
 
-	// Recursively search in child nodes
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if imgLink, found := findBookImageLink(c); found {
-			return imgLink, true
+		if url, found := findMetaOgImage(c); found {
+			return url, true
 		}
 	}
-
 	return "", false
 }
