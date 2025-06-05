@@ -374,8 +374,9 @@ func (r *repo) UpdateLastReadChapter(novelID string, chapterNumber int) error {
 // Chapter CRUD Operations
 
 func (r *repo) GetNovelChapters(novelID string) ([]*models.Chapter, error) {
+	// We are not loading the content of the chapters to decrease the memory usage
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
+		SELECT id, novel_id, number, title, original_title, date_translated, word_count, url, next_chapter_url
 		FROM chapters
 		WHERE novel_id = ?
 		ORDER BY number

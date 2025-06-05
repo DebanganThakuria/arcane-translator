@@ -175,7 +175,6 @@ func ScanChapters(rows *sql.Rows) ([]*Chapter, error) {
 			&chapter.Number,
 			&chapter.Title,
 			&chapter.OriginalTitle,
-			&chapter.Content,
 			&dateTranslatedUnix,
 			&chapter.WordCount,
 			&chapter.URL,

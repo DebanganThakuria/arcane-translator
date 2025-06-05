@@ -133,7 +133,7 @@ func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
         }}
 
         Content: ` + webpageContent +
-		`Please terminate the translation and return when the chapter ends. Do not include any commentary, explanation, or preamble. Only return the JSON object.`
+		`Please terminate the translation and return when the chapter ends. The contents of the translated chapter is important. Do not miss it. Finally, do not include any commentary, explanation, or preamble. Only return the JSON object.`
 
 	response, err := g.geminiClient.Models.GenerateContent(ctx,
 		GenerateContentModel,

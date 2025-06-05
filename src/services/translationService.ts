@@ -60,7 +60,7 @@ export const translateChapter = async (
   novelId: string,
 ): Promise<Chapter> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/chapters/translate`, {
+    const response = await fetch(`${API_BASE_URL}/novels/translate/chapter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
