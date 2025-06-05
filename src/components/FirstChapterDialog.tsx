@@ -30,7 +30,7 @@ const FirstChapterDialog = ({ novelId, isOpen, novelUrl, onOpenChange, onSuccess
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!url.trim() || url.includes(novelUrl.split('/')[2])) {
+    if (!url.trim() || !url.includes(novelUrl.split('/')[2])) {
       toast({
         title: "Error",
         description: "Please enter a valid URL",
