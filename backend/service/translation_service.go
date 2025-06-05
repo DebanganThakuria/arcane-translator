@@ -50,11 +50,11 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		return nil, errors.New("request cannot be nil")
 	}
 
-	success := utils.Mutex.TryLock(request.URL+request.Source, time.Millisecond)
+	success := utils.Mutex.TryLock("extractNovelDetails"+request.URL, time.Millisecond)
 	if !success {
 		return nil, errors.New("another request is in progress")
 	}
-	defer utils.Mutex.Unlock(request.URL + request.Source)
+	defer utils.Mutex.Unlock("extractNovelDetails" + request.URL)
 
 	// Validate required fields
 	if request.URL == "" {
@@ -107,11 +107,11 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		return nil, errors.New("request cannot be nil")
 	}
 
-	success := utils.Mutex.TryLock(request.NovelID, time.Millisecond)
+	success := utils.Mutex.TryLock("translateChapter"+request.NovelID, time.Millisecond)
 	if !success {
 		return nil, errors.New("another request is in progress")
 	}
-	defer utils.Mutex.Unlock(request.NovelID)
+	defer utils.Mutex.Unlock("translateChapter" + request.NovelID)
 
 	// Validate required fields
 	if request.NovelID == "" {
@@ -170,11 +170,11 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, errors.New("request cannot be nil")
 	}
 
-	success := utils.Mutex.TryLock(request.NovelID, time.Millisecond)
+	success := utils.Mutex.TryLock("translateChapter"+request.NovelID, time.Millisecond)
 	if !success {
 		return nil, errors.New("another request is in progress")
 	}
-	defer utils.Mutex.Unlock(request.NovelID)
+	defer utils.Mutex.Unlock("translateChapter" + request.NovelID)
 
 	// Validate required fields
 	if request.NovelID == "" {
@@ -236,6 +236,12 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 	if novelId == "" {
 		return nil, errors.New("novel ID cannot be empty")
 	}
+
+	success := utils.Mutex.TryLock("refreshNovel"+novelId, time.Millisecond)
+	if !success {
+		return nil, errors.New("another request is in progress")
+	}
+	defer utils.Mutex.Unlock("refreshNovel" + novelId)
 
 	// Get the novel by ID to ensure it exists
 	novel, err := s.repo.GetNovelByID(novelId)

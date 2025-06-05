@@ -82,10 +82,32 @@ const Reader: React.FC<ReaderProps> = ({
     <div className={`min-h-screen pb-20 ${themeClasses[theme]}`}>
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 dark:bg-background/80 border-b">
         <div className="container mx-auto p-4 flex justify-between items-center">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/novel/${novel.id}`)}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Novel
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate(`/novel/${novel.id}`)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Novel
+            </Button>
+            {!hasNextChapter && (
+              <Button
+                onClick={handleTranslateNext}
+                disabled={isTranslating}
+                variant="default"
+                className="ml-2 bg-green-600 hover:bg-green-700 text-white shadow hover:shadow-md transition-all"
+              >
+                {isTranslating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Translating...
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium">Translate Next Chapter</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center space-x-2">
               <div className="flex items-center space-x-2 rounded-full bg-secondary p-1">
@@ -156,30 +178,12 @@ const Reader: React.FC<ReaderProps> = ({
             Previous Chapter
           </Button>
           
-          {hasNextChapter ? (
+          {hasNextChapter && (
             <Button
               onClick={() => handleNavigate('next')}
             >
               Next Chapter
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleTranslateNext}
-              disabled={isTranslating}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {isTranslating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Translating...
-                </>
-              ) : (
-                <>
-                  Translate Next Chapter
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
             </Button>
           )}
         </div>

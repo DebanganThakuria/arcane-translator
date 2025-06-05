@@ -13,8 +13,10 @@ const ChapterReader = () => {
   const [novel, setNovel] = useState<Novel | undefined>(undefined);
   const [chapter, setChapter] = useState<Chapter | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  
+  const [hasNextChapter, setHasNextChapter] = useState(false);
+
   const chapterNum = chapterNumber ? parseInt(chapterNumber) : 1;
+  const hasPreviousChapter = chapterNum > 1;
   
   useEffect(() => {
     const fetchData = async () => {
@@ -67,7 +69,17 @@ const ChapterReader = () => {
 
     fetchData();
   }, [novelId, chapterNum, navigate, toast]);
-  
+
+  useEffect(() => {
+    const checkNextChapter = async () => {
+      if (!novelId) return;
+      const nextChapter = await getChapterByNumber(novelId, chapterNum + 1);
+      setHasNextChapter(!!nextChapter);
+    };
+
+    checkNextChapter();
+  }, [chapterNum, novelId]);
+
   if (loading || !novel || !chapter) {
     return (
       <Layout hideNavigation>
@@ -90,10 +102,18 @@ const ChapterReader = () => {
     navigate(`/novel/${novelId}/chapter/${targetChapterNum}`);
   };
 
-  const handleTranslateNext = async () => {};
-  
-  const hasPreviousChapter = chapterNum > 1;
-  const hasNextChapter = chapterNum < (novel.chapters_count || 0);
+  const handleTranslateNext = async () => {
+    if (!novelId) return;
+    
+    try {
+      const nextChapter = await getChapterByNumber(novelId, chapterNum + 1);
+      if (nextChapter) {
+        setHasNextChapter(true);
+      }
+    } catch (error) {
+      console.error('Error checking for next chapter after translation:', error);
+    }
+  };
 
   return (
     <Layout hideNavigation>
