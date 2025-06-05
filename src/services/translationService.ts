@@ -1,3 +1,4 @@
+
 // Standard library imports
 import {Chapter, Novel} from '../types/novel';
 import { NovelDetails, TranslatedChapter } from '../types/api';
@@ -81,59 +82,6 @@ export const translateChapter = async (
   }
 };
 
-// Get all novels
-export const getNovels = async (): Promise<Novel[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/novels`);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(errorData.detail || 'Failed to fetch novels');
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching novels:', error);
-    throw error;
-  }
-};
-
-// Get a single novel by ID
-export const getNovel = async (novelId: string): Promise<Novel> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/novels/${novelId}`);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(errorData.detail || 'Failed to fetch novel');
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`Error fetching novel with ID ${novelId}:`, error);
-    throw error;
-  }
-};
-
-// Refresh a novel (check for new chapters)
-export const refreshNovel = async (novelId: string): Promise<Novel> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/novels/${novelId}/refresh`, {
-      method: 'POST'
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(errorData.detail || 'Failed to refresh novel');
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`Error refreshing novel with ID ${novelId}:`, error);
-    throw error;
-  }
-};
-
 // Set the first chapter URL for a novel
 export const setFirstChapterUrl = async (
   novelId: string, 
@@ -180,8 +128,5 @@ export const setFirstChapterUrl = async (
 export default {
   extractNovelDetails,
   translateChapter,
-  getNovels,
-  getNovel,
-  refreshNovel,
   setFirstChapterUrl,
 };
