@@ -58,27 +58,15 @@ export const extractNovelDetails = async (url: string, sourceSite: string): Prom
 
 // Translate a chapter
 export const translateChapter = async (
-  novelId: string, 
-  chapterNumber: number, 
-  chapterUrl?: string, 
-  originalContent?: string,
-  saveToDb: boolean = false
-): Promise<TranslatedChapter> => {
+  novelId: string,
+): Promise<Chapter> => {
   try {
-    // Build the query parameters for the POST request
-    const url = new URL(`${API_BASE_URL}/chapters/translate`);
-    url.searchParams.append("novel_id", novelId);
-    url.searchParams.append("chapter_number", chapterNumber.toString());
-    url.searchParams.append("save_to_db", saveToDb.toString());
-    
-    if (chapterUrl) url.searchParams.append("chapter_url", chapterUrl);
-    if (originalContent) url.searchParams.append("original_content", originalContent);
-    
-    const response = await fetch(url.toString(), {
+    const response = await fetch(`${API_BASE_URL}/chapters/translate`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ novel_id: novelId})
     });
     
     if (!response.ok) {
@@ -189,32 +177,6 @@ export const setFirstChapterUrl = async (
   }
 };
 
-// Get the URL for a specific chapter
-export const getChapterUrl = async (novelId: string, chapterNumber: number): Promise<string> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/novels/${novelId}/chapter-url/${chapterNumber}`);
-    
-    if (!response.ok) {
-      let errorMessage = 'Failed to get chapter URL';
-      
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.detail || errorMessage;
-      } catch (e) {
-        // If parsing JSON fails, use the generic message
-      }
-      
-      throw new Error(errorMessage);
-    }
-    
-    const result = await response.json();
-    return result.url;
-  } catch (error) {
-    console.error(`Error getting chapter URL for novel ID ${novelId}, chapter ${chapterNumber}:`, error);
-    throw error;
-  }
-};
-
 export default {
   extractNovelDetails,
   translateChapter,
@@ -222,5 +184,4 @@ export default {
   getNovel,
   refreshNovel,
   setFirstChapterUrl,
-  getChapterUrl
 };

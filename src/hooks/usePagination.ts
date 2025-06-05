@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { PaginatedNovels } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';

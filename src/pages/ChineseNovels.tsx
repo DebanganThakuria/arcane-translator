@@ -1,4 +1,3 @@
-
 import React, { useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
