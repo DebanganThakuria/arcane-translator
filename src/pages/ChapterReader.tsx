@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getNovelById, getChapterByNumber } from '../database/db';
@@ -89,6 +90,21 @@ const ChapterReader = () => {
     
     navigate(`/novel/${novelId}/chapter/${targetChapterNum}`);
   };
+
+  const handleTranslateNext = async () => {
+    // Refresh the novel data to get updated chapter count
+    try {
+      const updatedNovel = await getNovelById(novelId!);
+      if (updatedNovel) {
+        setNovel(updatedNovel);
+        // Navigate to the next chapter after translation
+        const nextChapterNum = chapterNum + 1;
+        navigate(`/novel/${novelId}/chapter/${nextChapterNum}`);
+      }
+    } catch (error) {
+      console.error('Error refreshing novel data:', error);
+    }
+  };
   
   const hasPreviousChapter = chapterNum > 1;
   const hasNextChapter = chapterNum < (novel.chapters_count || 0);
@@ -101,6 +117,7 @@ const ChapterReader = () => {
         hasPreviousChapter={hasPreviousChapter}
         hasNextChapter={hasNextChapter}
         onNavigate={handleNavigate}
+        onTranslateNext={handleTranslateNext}
       />
     </Layout>
   );

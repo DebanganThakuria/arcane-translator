@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { translateChapter } from '../services/translationService';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ReaderProps {
   chapter: Chapter;
@@ -10,6 +13,7 @@ interface ReaderProps {
   hasPreviousChapter: boolean;
   hasNextChapter: boolean;
   onNavigate: (direction: 'next' | 'prev') => void;
+  onTranslateNext?: () => void;
 }
 
 const Reader: React.FC<ReaderProps> = ({
@@ -18,10 +22,13 @@ const Reader: React.FC<ReaderProps> = ({
   hasPreviousChapter,
   hasNextChapter,
   onNavigate,
+  onTranslateNext,
 }) => {
   const [theme, setTheme] = useState<'light' | 'sepia' | 'dark'>('sepia');
   const [fontSize, setFontSize] = useState(18);
+  const [isTranslating, setIsTranslating] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Scroll to top when chapter changes
@@ -37,6 +44,29 @@ const Reader: React.FC<ReaderProps> = ({
 
   const handleNavigate = (direction: 'next' | 'prev') => {
     onNavigate(direction);
+  };
+
+  const handleTranslateNext = async () => {
+    setIsTranslating(true);
+    try {
+      await translateChapter(novel.id);
+      toast({
+        title: "Success",
+        description: "Next chapter has been translated successfully!",
+      });
+      if (onTranslateNext) {
+        onTranslateNext();
+      }
+    } catch (error) {
+      console.error('Error translating chapter:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to translate chapter",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   // Format chapter content to add line breaks between paragraphs
@@ -127,13 +157,32 @@ const Reader: React.FC<ReaderProps> = ({
             Previous Chapter
           </Button>
           
-          <Button
-            onClick={() => handleNavigate('next')}
-            disabled={!hasNextChapter}
-          >
-            Next Chapter
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          {hasNextChapter ? (
+            <Button
+              onClick={() => handleNavigate('next')}
+            >
+              Next Chapter
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleTranslateNext}
+              disabled={isTranslating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isTranslating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Translating...
+                </>
+              ) : (
+                <>
+                  Translate Next Chapter
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>
