@@ -8,7 +8,7 @@ const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
 
 interface PaginationControlsProps {
   pagination: {
-    novels: any[];
+    novels: never[];
     total_count: number;
     current_page: number;
     total_pages: number;

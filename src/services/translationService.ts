@@ -1,7 +1,5 @@
-
 // Standard library imports
 import {Chapter, Novel} from '../types/novel';
-import { NovelDetails, TranslatedChapter } from '../types/api';
 
 // API base URL - will be replaced by actual backend calls
 const API_BASE_URL = 'http://localhost:8088';
