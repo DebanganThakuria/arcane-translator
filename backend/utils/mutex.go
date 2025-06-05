@@ -14,24 +14,23 @@ type KeyMutex struct {
 
 // TryLock locks the mutex for the given key
 func (km *KeyMutex) TryLock(key string, timeout time.Duration) bool {
-	mu, loaded := km.mutexes.LoadOrStore(key, &sync.Mutex{})
-	if !loaded {
-		return false
-	}
+	mu, _ := km.mutexes.LoadOrStore(key, &sync.Mutex{})
+	mutex := mu.(*sync.Mutex)
 
 	// Try to get the lock with a timeout
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		if mu.(*sync.Mutex).TryLock() {
+		if mutex.TryLock() {
 			return true
 		}
-		time.Sleep(10 * time.Millisecond) // Small delay between attempts
+		time.Sleep(10 * time.Millisecond)
 	}
 	return false
 }
 
 // Unlock unlocks the mutex for the given key
 func (km *KeyMutex) Unlock(key string) {
-	mu, _ := km.mutexes.Load(key)
-	mu.(*sync.Mutex).Unlock()
+	if mu, ok := km.mutexes.Load(key); ok {
+		mu.(*sync.Mutex).Unlock()
+	}
 }
