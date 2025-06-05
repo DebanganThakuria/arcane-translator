@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Novel, Chapter } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
-import { refreshNovel } from "@/services/translationService.ts";
+
+const API_BASE_URL = 'http://localhost:8088';
 
 const NovelDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -65,7 +66,13 @@ const NovelDetail = () => {
     
     setRefreshing(true);
     try {
-      const result = await refreshNovel(id);
+      const response = await fetch(`${API_BASE_URL}/novels/${id}/refresh`, {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to refresh novel');
+      }
 
       toast({
         title: "Refresh Complete",
@@ -108,21 +115,19 @@ const NovelDetail = () => {
   
   const continueReading = () => {
     if (novel.last_read_chapter_number) {
-      // Find the chapter that matches the last read chapter number
       const lastReadChapter = chapters.find(chapter => 
         chapter.number === novel.last_read_chapter_number
       );
       
       if (lastReadChapter) {
-        navigate(`/novel/${id}/chapter/${lastReadChapter.id}`);
+        navigate(`/novel/${id}/chapter/${lastReadChapter.number}`);
         return;
       }
     }
     
-    // If no last read chapter or not found, go to first chapter
     if (chapters.length > 0) {
       const firstChapter = chapters[0];
-      navigate(`/novel/${id}/chapter/${firstChapter.id}`);
+      navigate(`/novel/${id}/chapter/${firstChapter.number}`);
     }
   };
 
@@ -149,7 +154,6 @@ const NovelDetail = () => {
         </div>
         
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Left Column - Novel Info */}
           <div className="md:w-1/3 lg:w-1/4">
             <div className="glass-card p-6 rounded-lg">
               <div className="book-cover aspect-[2/3] max-w-[300px] mx-auto mb-6 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -208,7 +212,6 @@ const NovelDetail = () => {
             </div>
           </div>
           
-          {/* Right Column - Details and Chapters */}
           <div className="md:w-2/3 lg:w-3/4">
             <div className="glass-card p-6 rounded-lg mb-6">
               <h1 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">{novel.title}</h1>
@@ -235,7 +238,6 @@ const NovelDetail = () => {
           </div>
         </div>
         
-        {/* First Chapter Button - Only show when there are no chapters */}
         {chapters.length === 0 && (
           <div className="fixed bottom-4 right-4">
             <Button 
@@ -248,7 +250,6 @@ const NovelDetail = () => {
           </div>
         )}
         
-        {/* First Chapter Dialog - Only show when there are no chapters */}
         {chapters.length === 0 && (
           <FirstChapterDialog 
             isOpen={firstChapterDialogOpen} 
