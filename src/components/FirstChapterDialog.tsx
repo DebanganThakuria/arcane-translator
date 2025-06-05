@@ -17,11 +17,12 @@ import { setFirstChapterUrl } from '../services/translationService';
 interface FirstChapterDialogProps {
   novelId: string;
   isOpen: boolean;
+  novelUrl: string;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-const FirstChapterDialog = ({ novelId, isOpen, onOpenChange, onSuccess }: FirstChapterDialogProps) => {
+const FirstChapterDialog = ({ novelId, isOpen, novelUrl, onOpenChange, onSuccess }: FirstChapterDialogProps) => {
   const [url, setUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -29,7 +30,7 @@ const FirstChapterDialog = ({ novelId, isOpen, onOpenChange, onSuccess }: FirstC
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!url.trim()) {
+    if (!url.trim() || url.includes(novelUrl.split('/')[2])) {
       toast({
         title: "Error",
         description: "Please enter a valid URL",
