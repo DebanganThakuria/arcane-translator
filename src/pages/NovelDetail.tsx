@@ -215,7 +215,9 @@ const NovelDetail = () => {
               <h1 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-400">{novel.title}</h1>
               
               {novel.original_title && (
-                <p className="text-lg text-muted-foreground mb-2">{novel.original_title}</p>
+                <span>
+                  <p className="text-lg text-muted-foreground mb-2">{novel.original_title} | <a href={novel.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600">{novel.url}</a></p>
+                </span>
               )}
               
               {novel.author && (
@@ -251,8 +253,9 @@ const NovelDetail = () => {
         {chapters.length === 0 && (
           <FirstChapterDialog 
             isOpen={firstChapterDialogOpen} 
-            onOpenChange={setFirstChapterDialogOpen} 
+            onOpenChange={setFirstChapterDialogOpen}
             novelId={id || ''}
+            novelUrl={novel.url}
             onSuccess={() => {
               toast({
                 title: "Ready to Read",
