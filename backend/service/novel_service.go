@@ -362,6 +362,12 @@ var allSources = []*models.SourceSite{
 		URL:      "https://www.69shuba.com",
 		Language: "chinese",
 	},
+	{
+		ID:       "syosetu",
+		Name:     "syosetu",
+		URL:      "https://syosetu.com/",
+		Language: "japanese",
+	},
 }
 
 func (s *novelService) GetAllSources() ([]*models.SourceSite, error) {

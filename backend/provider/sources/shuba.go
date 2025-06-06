@@ -46,7 +46,7 @@ func (s *shuba) GetChapterId(chapterUrl string) string {
 }
 
 // GetNextChapterUrl constructs the chapter URL based on the previous chapter URL
-func (s *shuba) GetNextChapterUrl(chapterContent string) (string, error) {
+func (s *shuba) GetNextChapterUrl(chapterContent, currentChapterUrl string) (string, error) {
 	doc, err := html.Parse(strings.NewReader(chapterContent))
 	if err != nil {
 		return "", err
