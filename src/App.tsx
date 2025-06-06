@@ -15,38 +15,49 @@ import ChineseNovels from "./pages/ChineseNovels";
 import KoreanNovels from "./pages/KoreanNovels";
 import JapaneseNovels from "./pages/JapaneseNovels";
 import GenrePage from "./pages/GenrePage";
+import { sourceManager } from "./utils/sourceManager";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/novel/:id" element={<NovelDetail />} />
-            <Route path="/novel/:novelId/chapter/:chapterNumber" element={<ChapterReader />} />
-            <Route path="/add" element={<AddNovel />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/chinese" element={<ChineseNovels />} />
-            <Route path="/korean" element={<KoreanNovels />} />
-            <Route path="/japanese" element={<JapaneseNovels />} />
-            <Route path="/genre/:genre" element={<GenrePage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Preload source sites when app starts
+  useEffect(() => {
+    sourceManager.loadSources().catch(error => {
+      console.error('Failed to preload source sites:', error);
+    });
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/novel/:id" element={<NovelDetail />} />
+              <Route path="/novel/:novelId/chapter/:chapterNumber" element={<ChapterReader />} />
+              <Route path="/add" element={<AddNovel />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/chinese" element={<ChineseNovels />} />
+              <Route path="/korean" element={<KoreanNovels />} />
+              <Route path="/japanese" element={<JapaneseNovels />} />
+              <Route path="/genre/:genre" element={<GenrePage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

@@ -3,16 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { PaginatedNovels } from '../types/novel';
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
 
 interface PaginationControlsProps {
-  pagination: {
-    novels: never[];
-    total_count: number;
-    current_page: number;
-    total_pages: number;
-  };
+  pagination: PaginatedNovels;
   loading: boolean;
   itemsPerPage: number;
   pageInput: string;

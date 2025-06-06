@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
-import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye, Bookmark, Share2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye } from 'lucide-react';
 import { translateChapter } from '../services/translationService';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -39,20 +39,15 @@ const Reader: React.FC<ReaderProps> = ({
   const [lineHeight, setLineHeight] = useState(1.6);
   const [isTranslating, setIsTranslating] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
-  const [readingTime, setReadingTime] = useState(0);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
-  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     // Scroll to top when chapter changes
     window.scrollTo(0, 0);
-    startTimeRef.current = Date.now();
     setReadingProgress(0);
-    setReadingTime(0);
 
     // Load saved preferences
     const savedTheme = localStorage.getItem('readerTheme') as 'light' | 'sepia' | 'dark';
@@ -62,10 +57,6 @@ const Reader: React.FC<ReaderProps> = ({
     if (savedTheme) setTheme(savedTheme);
     if (savedFontSize) setFontSize(parseInt(savedFontSize));
     if (savedLineHeight) setLineHeight(parseFloat(savedLineHeight));
-
-    // Check if chapter is bookmarked
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-    setIsBookmarked(bookmarks.includes(`${novel.id}-${chapter.number}`));
   }, [chapter.id, novel.id, chapter.number]);
 
   // Track reading progress
@@ -78,14 +69,9 @@ const Reader: React.FC<ReaderProps> = ({
       }
     };
 
-    const timer = setInterval(() => {
-      setReadingTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
-    }, 1000);
-
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearInterval(timer);
     };
   }, []);
 
@@ -107,28 +93,6 @@ const Reader: React.FC<ReaderProps> = ({
   };
 
   const handleNavigate = (direction: 'next' | 'prev') => {
-    // Save reading progress
-    const progress = {
-      novelId: novel.id,
-      chapterNumber: chapter.number,
-      readingTime: Math.floor((Date.now() - startTimeRef.current) / 1000),
-      progress: readingProgress,
-      timestamp: Date.now()
-    };
-    
-    const savedProgress = JSON.parse(localStorage.getItem('readingProgress') || '[]');
-    const existingIndex = savedProgress.findIndex((p: any) => 
-      p.novelId === novel.id && p.chapterNumber === chapter.number
-    );
-    
-    if (existingIndex >= 0) {
-      savedProgress[existingIndex] = progress;
-    } else {
-      savedProgress.push(progress);
-    }
-    
-    localStorage.setItem('readingProgress', JSON.stringify(savedProgress.slice(-100))); // Keep last 100 entries
-    
     onNavigate(direction);
   };
 
@@ -153,59 +117,6 @@ const Reader: React.FC<ReaderProps> = ({
     } finally {
       setIsTranslating(false);
     }
-  };
-
-  const toggleBookmark = () => {
-    const bookmarkId = `${novel.id}-${chapter.number}`;
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-    
-    if (isBookmarked) {
-      const filtered = bookmarks.filter((id: string) => id !== bookmarkId);
-      localStorage.setItem('bookmarks', JSON.stringify(filtered));
-      setIsBookmarked(false);
-      toast({
-        title: "Bookmark removed",
-        description: "Chapter removed from bookmarks",
-      });
-    } else {
-      bookmarks.push(bookmarkId);
-      localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-      setIsBookmarked(true);
-      toast({
-        title: "Bookmarked",
-        description: "Chapter added to bookmarks",
-      });
-    }
-  };
-
-  const shareChapter = async () => {
-    const url = window.location.href;
-    const text = `Reading "${chapter.title}" from ${novel.title}`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: text, url });
-      } catch (error) {
-        // Fallback to clipboard
-        navigator.clipboard.writeText(url);
-        toast({
-          title: "Link copied",
-          description: "Chapter link copied to clipboard",
-        });
-      }
-    } else {
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "Link copied",
-        description: "Chapter link copied to clipboard",
-      });
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const estimatedReadingTime = Math.ceil((chapter.word_count || 1000) / 200); // 200 WPM average
@@ -244,7 +155,7 @@ const Reader: React.FC<ReaderProps> = ({
                 </div>
                 <div className="flex items-center space-x-1">
                   <Clock className="h-4 w-4" />
-                  <span>{formatTime(readingTime)} / ~{estimatedReadingTime}m</span>
+                  <span>~{estimatedReadingTime} min read</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Eye className="h-4 w-4" />
@@ -254,85 +165,158 @@ const Reader: React.FC<ReaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Quick Actions */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleBookmark}
-                className={isBookmarked ? 'text-yellow-500' : ''}
-              >
-                <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-current' : ''}`} />
-              </Button>
-
-              <Button variant="ghost" size="icon" onClick={shareChapter}>
-                <Share2 className="h-4 w-4" />
-              </Button>
-
               {/* Reader Settings */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`gap-2 ${
+                      theme === 'dark' 
+                        ? 'bg-gray-800 border-gray-600 text-gray-100 hover:bg-gray-700 hover:text-white' 
+                        : theme === 'sepia'
+                        ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
                     <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Settings</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel>Reading Settings</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  
-                  <div className="p-4 space-y-4">
+                <DropdownMenuContent align="end" className="w-96 p-0">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold mb-6 text-center">Reading Settings</h3>
+                    
                     {/* Theme Selection */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Theme</label>
-                      <div className="flex items-center space-x-2">
+                    <div className="mb-8">
+                      <label className="text-sm font-medium mb-4 block text-muted-foreground">Reading Theme</label>
+                      <div className="grid grid-cols-3 gap-3">
                         <button
                           onClick={() => handleThemeChange('light')}
-                          className={`h-8 w-8 rounded-full border-2 ${theme === 'light' ? 'border-primary' : 'border-gray-300'}`}
-                          style={{ backgroundColor: 'white' }}
-                          aria-label="Light theme"
-                        />
+                          className={`relative p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                            theme === 'light' 
+                              ? 'border-primary ring-2 ring-primary/20 shadow-lg' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="w-full h-16 bg-white rounded-lg mb-3 shadow-inner border border-gray-100 flex items-center justify-center">
+                            <div className="text-xs font-medium text-gray-800">Aa</div>
+                          </div>
+                          <div className="text-xs font-medium text-center">Light</div>
+                          {theme === 'light' && (
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                          )}
+                        </button>
+                        
                         <button
                           onClick={() => handleThemeChange('sepia')}
-                          className={`h-8 w-8 rounded-full border-2 ${theme === 'sepia' ? 'border-primary' : 'border-gray-300'}`}
-                          style={{ backgroundColor: '#FEF7CD' }}
-                          aria-label="Sepia theme"
-                        />
+                          className={`relative p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                            theme === 'sepia' 
+                              ? 'border-primary ring-2 ring-primary/20 shadow-lg' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="w-full h-16 bg-amber-50 rounded-lg mb-3 shadow-inner border border-amber-100 flex items-center justify-center">
+                            <div className="text-xs font-medium text-amber-800">Aa</div>
+                          </div>
+                          <div className="text-xs font-medium text-center">Sepia</div>
+                          {theme === 'sepia' && (
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                          )}
+                        </button>
+                        
                         <button
                           onClick={() => handleThemeChange('dark')}
-                          className={`h-8 w-8 rounded-full border-2 ${theme === 'dark' ? 'border-primary' : 'border-gray-300'}`}
-                          style={{ backgroundColor: '#1f2937' }}
-                          aria-label="Dark theme"
-                        />
+                          className={`relative p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                            theme === 'dark' 
+                              ? 'border-primary ring-2 ring-primary/20 shadow-lg' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="w-full h-16 bg-gray-800 rounded-lg mb-3 shadow-inner border border-gray-700 flex items-center justify-center">
+                            <div className="text-xs font-medium text-gray-100">Aa</div>
+                          </div>
+                          <div className="text-xs font-medium text-center">Dark</div>
+                          {theme === 'dark' && (
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                          )}
+                        </button>
                       </div>
                     </div>
 
-                    {/* Font Size */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        Font Size: {fontSize}px
-                      </label>
-                      <Slider
-                        value={[fontSize]}
-                        onValueChange={handleFontSizeChange}
-                        max={28}
-                        min={12}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
+                    {/* Typography Controls */}
+                    <div className="space-y-6">
+                      {/* Font Size */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-sm font-medium text-muted-foreground">Font Size</label>
+                          <div className="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
+                            {fontSize}px
+                          </div>
+                        </div>
+                        <div className="px-3">
+                          <Slider
+                            value={[fontSize]}
+                            onValueChange={handleFontSizeChange}
+                            max={28}
+                            min={12}
+                            step={1}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                            <span>Small</span>
+                            <span>Large</span>
+                          </div>
+                        </div>
+                      </div>
 
-                    {/* Line Height */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        Line Height: {lineHeight}
-                      </label>
-                      <Slider
-                        value={[lineHeight]}
-                        onValueChange={handleLineHeightChange}
-                        max={2.5}
-                        min={1.2}
-                        step={0.1}
-                        className="w-full"
-                      />
+                      {/* Line Height */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-sm font-medium text-muted-foreground">Line Height</label>
+                          <div className="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
+                            {lineHeight.toFixed(1)}
+                          </div>
+                        </div>
+                        <div className="px-3">
+                          <Slider
+                            value={[lineHeight]}
+                            onValueChange={handleLineHeightChange}
+                            max={2.5}
+                            min={1.2}
+                            step={0.1}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                            <span>Tight</span>
+                            <span>Loose</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Preview */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <div className="text-xs text-muted-foreground mb-2">Preview</div>
+                      <div 
+                        className={`p-4 rounded-lg border ${
+                          theme === 'light' ? 'bg-white border-gray-200' :
+                          theme === 'sepia' ? 'bg-amber-50 border-amber-200' :
+                          'bg-gray-800 border-gray-700 text-gray-100'
+                        }`}
+                        style={{ 
+                          fontSize: `${fontSize}px`,
+                          lineHeight: lineHeight
+                        }}
+                      >
+                        The quick brown fox jumps over the lazy dog. This is how your reading experience will look.
+                      </div>
                     </div>
                   </div>
                 </DropdownMenuContent>
@@ -364,7 +348,7 @@ const Reader: React.FC<ReaderProps> = ({
           <div className="sm:hidden mt-4 flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center space-x-4">
               <span>Ch. {chapter.number}</span>
-              <span>{formatTime(readingTime)}</span>
+              <span>~{estimatedReadingTime} min read</span>
               <span>{Math.round(readingProgress)}%</span>
             </div>
             <Badge variant="secondary">
@@ -408,8 +392,7 @@ const Reader: React.FC<ReaderProps> = ({
         <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
           <div className="text-center space-y-4">
             <p className="text-muted-foreground">
-              You've finished reading this chapter! 
-              {readingTime > 0 && ` Reading time: ${formatTime(readingTime)}`}
+              You've finished reading this chapter!
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Button

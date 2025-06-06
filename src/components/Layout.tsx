@@ -94,10 +94,6 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
                     <Moon className="mr-2 h-4 w-4" />
                     Dark
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("system")}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    System
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -135,33 +131,33 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
           
           <div className="container mx-auto px-4 pb-2">
             <Tabs value={pathname === "/" ? "/" : pathname.split("/")[1]} className="w-full">
-              <TabsList className="w-full justify-start bg-white/70 backdrop-blur-sm dark:bg-gray-800/70">
+              <TabsList className="w-full justify-start bg-white/80 backdrop-blur-sm dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600">
                 <TabsTrigger value="/" asChild>
-                  <Link to="/" className="">
+                  <Link to="/" className="nav-item">
                     <Book className="h-4 w-4 mr-2" />
                     Home
                   </Link>
                 </TabsTrigger>
                 <TabsTrigger value="library" asChild>
-                  <Link to="/library" className="">
+                  <Link to="/library" className="nav-item">
                     <Library className="h-4 w-4 mr-2" />
                     Library
                   </Link>
                 </TabsTrigger>
                 <TabsTrigger value="chinese" asChild>
-                  <Link to="/chinese" className="">
+                  <Link to="/chinese" className="nav-item">
                     <span className="mr-2">🇨🇳</span>
                     Chinese
                   </Link>
                 </TabsTrigger>
                 <TabsTrigger value="korean" asChild>
-                  <Link to="/korean" className="">
+                  <Link to="/korean" className="nav-item">
                     <span className="mr-2">🇰🇷</span>
                     Korean
                   </Link>
                 </TabsTrigger>
                 <TabsTrigger value="japanese" asChild>
-                  <Link to="/japanese" className="">
+                  <Link to="/japanese" className="nav-item">
                     <span className="mr-2">🇯🇵</span>
                     Japanese
                   </Link>

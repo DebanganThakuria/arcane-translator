@@ -68,14 +68,14 @@ const Index = () => {
     value: string | number;
     description: string;
   }) => (
-    <Card className="glass-card">
+    <Card className="stat-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-200">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold gradient-text">{value}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-gray-600 dark:text-gray-300">{description}</p>
       </CardContent>
     </Card>
   );
@@ -209,16 +209,16 @@ const Index = () => {
             <h2 className="text-2xl font-bold mb-6 gradient-text">Browse by Language</h2>
             <div className="glass-card rounded-lg p-6">
               <Tabs defaultValue="chinese" className="w-full">
-                <TabsList className="mb-6 bg-white/60 backdrop-blur-sm dark:bg-gray-800/60">
-                  <TabsTrigger value="chinese" className="">
+                <TabsList className="mb-6 bg-white/80 backdrop-blur-sm dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600">
+                  <TabsTrigger value="chinese" className="data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-900 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300">
                     <span className="mr-2">🇨🇳</span>
                     Chinese ({chineseNovels.length})
                   </TabsTrigger>
-                  <TabsTrigger value="korean" className="">
+                  <TabsTrigger value="korean" className="data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-900 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300">
                     <span className="mr-2">🇰🇷</span>
                     Korean ({koreanNovels.length})
                   </TabsTrigger>
-                  <TabsTrigger value="japanese" className="">
+                  <TabsTrigger value="japanese" className="data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-900 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300">
                     <span className="mr-2">🇯🇵</span>
                     Japanese ({japaneseNovels.length})
                   </TabsTrigger>

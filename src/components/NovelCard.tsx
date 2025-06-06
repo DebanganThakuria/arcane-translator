@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Novel } from '../types/novel';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { BookOpen, Clock, Star, TrendingUp, Eye, EyeOff } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { sourceManager } from '../utils/sourceManager';
 
 interface NovelCardProps {
   novel: Novel;
@@ -16,10 +17,23 @@ interface NovelCardProps {
 const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [sourcesLoaded, setSourcesLoaded] = useState(sourceManager.isLoaded());
   
   const readingProgress = novel.last_read_chapter_number && novel.chapters_count 
     ? Math.round((novel.last_read_chapter_number / novel.chapters_count) * 100)
     : 0;
+
+  // Load source sites on component mount
+  useEffect(() => {
+    const loadSources = async () => {
+      if (!sourceManager.isLoaded()) {
+        await sourceManager.loadSources();
+        setSourcesLoaded(true);
+      }
+    };
+
+    loadSources();
+  }, []);
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -33,10 +47,7 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
   };
 
   const getLanguageFlag = (source: string) => {
-    if (source.toLowerCase().includes('chinese') || source.toLowerCase().includes('cn')) return '🇨🇳';
-    if (source.toLowerCase().includes('korean') || source.toLowerCase().includes('kr')) return '🇰🇷';
-    if (source.toLowerCase().includes('japanese') || source.toLowerCase().includes('jp')) return '🇯🇵';
-    return '🌐';
+    return sourceManager.getLanguageFlag(source);
   };
 
   return (
@@ -87,10 +98,8 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
             </div>
           </div>
 
-
-
           {/* Language Flag */}
-          <div className="absolute top-2 left-2 text-lg">
+          <div className="absolute top-2 left-2 text-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center">
             {getLanguageFlag(novel.source)}
           </div>
 
@@ -104,23 +113,21 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
               <Progress value={readingProgress} className="h-1" />
             </div>
           )}
-
-
         </div>
 
         {/* Novel Info */}
         <div className="mt-3 space-y-2">
-          <h3 className="font-medium text-sm line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-            {novel.title}
-          </h3>
+                  <h3 className="font-medium text-sm line-clamp-2 text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+          {novel.title}
+        </h3>
           
           {novel.author && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               by {novel.author}
             </p>
           )}
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
             <span>
               {novel.chapters_count} chapters
             </span>
