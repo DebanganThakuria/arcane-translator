@@ -131,7 +131,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	}
 
 	// Get the next chapter URL
-	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent)
+	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent, request.ChapterURL)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 	}
 
 	// Get the next chapter URL
-	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent)
+	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent, lastChapter.NextChapterURL)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +302,7 @@ func (s *translationService) addNextChapterUrlToLastChapter(novelId, source stri
 		return err
 	}
 
-	nextChapterUrl, err := sources.GetSource(source).GetNextChapterUrl(webpageContent)
+	nextChapterUrl, err := sources.GetSource(source).GetNextChapterUrl(webpageContent, lastChapter.URL)
 	if err != nil {
 		return err
 	}
