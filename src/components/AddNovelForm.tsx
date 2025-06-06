@@ -79,7 +79,7 @@ const AddNovelForm = () => {
       setTimeout(() => {
         setIsSubmitting(false);
         navigate(`/novel/${novel.id}`);
-      }, 60000);
+      }, 1000);
     } catch (error) {
       console.error('Error processing novel:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

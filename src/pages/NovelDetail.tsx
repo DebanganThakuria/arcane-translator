@@ -187,9 +187,7 @@ const NovelDetail = () => {
                   {novel.source && (
                     <p className="mb-1">
                       <span className="text-indigo-600 font-medium">Source:</span>{' '}
-                      <Link to={`/source/${novel.source}`} className="hover:underline text-blue-500 hover:text-blue-600">
-                        {novel.source}
-                      </Link>
+                      <span>{novel.source}</span>
                     </p>
                   )}
                 </div>

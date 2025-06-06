@@ -26,7 +26,6 @@ type TranslatedChapter struct {
 	OriginalChapterTitle      string   `json:"original_chapter_title,omitempty"`
 	TranslatedChapterContents string   `json:"translated_chapter_contents"`
 	PossibleNewGenres         []string `json:"possible_new_genres,omitempty"`
-	WordCount                 int      `json:"word_count,omitempty"`
 }
 
 // NovelExtractionRequest represents a request to extract novel details from a URL
