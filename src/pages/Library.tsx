@@ -178,15 +178,8 @@ const Library = () => {
               disabled={refreshing || loading}
               className="border-indigo-200 hover:bg-indigo-50 dark:border-indigo-800 dark:hover:bg-indigo-950"
             >
-              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                              <RefreshCw className="mr-2 h-4 w-4" />
               {refreshing ? 'Updating...' : 'Refresh'}
-            </Button>
-            
-            <Button asChild className="btn-primary">
-              <Link to="/add">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Novel
-              </Link>
             </Button>
           </div>
         </div>

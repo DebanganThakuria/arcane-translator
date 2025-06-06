@@ -57,7 +57,7 @@ const SearchResults = () => {
         
         <div className="glass-card rounded-lg p-6">
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 animate-pulse">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                 <div key={i} className="flex flex-col space-y-3">
                   <div className="bg-indigo-100 aspect-[2/3] rounded-md"></div>

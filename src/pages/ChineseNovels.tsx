@@ -44,7 +44,7 @@ const ChineseNovels = () => {
             disabled={refreshing || loading}
             className="border-indigo-200 hover:bg-indigo-50"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className="mr-2 h-4 w-4" />
             {refreshing ? 'Updating...' : 'Refresh'}
           </Button>
         </div>

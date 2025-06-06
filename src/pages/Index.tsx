@@ -15,7 +15,6 @@ const Index = () => {
   const [koreanNovels, setKoreanNovels] = useState<Novel[]>([]);
   const [japaneseNovels, setJapaneseNovels] = useState<Novel[]>([]);
   const [recentlyUpdatedNovels, setRecentlyUpdatedNovels] = useState<Novel[]>([]);
-  const [recentlyReadNovels, setRecentlyReadNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalNovels: 0,
@@ -29,19 +28,17 @@ const Index = () => {
       try {
         setLoading(true);
 
-        const [chinese, korean, japanese, recentlyUpdated, recentlyRead] = await Promise.all([
+        const [chinese, korean, japanese, recentlyUpdated] = await Promise.all([
           getNovelsByFilter('language', 'chinese', 1, 6),
           getNovelsByFilter('language', 'korean', 1, 6),
           getNovelsByFilter('language', 'japanese', 1, 6),
-          getNovelsByFilter('recently_updated', '6'),
-          getNovelsByFilter('recently_read', '6')
+          getNovelsByFilter('recently_updated', '6')
         ]);
 
         setChineseNovels(chinese.novels);
         setKoreanNovels(korean.novels);
         setJapaneseNovels(japanese.novels);
         setRecentlyUpdatedNovels(recentlyUpdated.novels);
-        setRecentlyReadNovels(recentlyRead.novels);
 
         // Calculate stats
         const allNovels = [...chinese.novels, ...korean.novels, ...japanese.novels];
@@ -71,7 +68,7 @@ const Index = () => {
     value: string | number;
     description: string;
   }) => (
-    <Card className="glass-card hover:scale-105 transition-transform duration-200">
+    <Card className="glass-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className="h-4 w-4 text-muted-foreground" />
@@ -129,7 +126,7 @@ const Index = () => {
           <div className="relative overflow-hidden rounded-xl mb-12">
             <div className="glass-card bg-gradient-to-br from-indigo-600/90 to-blue-500/90 text-white p-8 sm:p-12 rounded-xl">
               <div className="max-w-3xl mx-auto text-center">
-                <div className="floating-animation inline-block text-4xl mb-4">✨</div>
+                <div className="inline-block text-4xl mb-4">✨</div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
                   Your Favorite Webnovels, <br />
                   <span className="text-yellow-300">Translated With AI</span>
@@ -184,39 +181,44 @@ const Index = () => {
             />
           </div>
 
-          {/* Continue Reading Section */}
-          {recentlyReadNovels.length > 0 && (
-            <div className="mb-12">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold gradient-text">Continue Reading</h2>
-                <Button asChild variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300">
-                  <Link to="/library">
-                    View All
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-              <div className="glass-card rounded-lg p-6">
-                <NovelGrid novels={recentlyReadNovels} recent={true} />
-              </div>
+          {/* Recently Updated Section */}
+          <div className="mb-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold gradient-text">Recently Updated</h2>
+              <Button asChild variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300">
+                <Link to="/library">
+                  View All
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-          )}
-
-          {/* Novels by Language */}
+            <div className="glass-card rounded-lg p-6">
+              {recentlyUpdatedNovels.length > 0 ? (
+                <NovelGrid novels={recentlyUpdatedNovels} />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No recently updated novels. <Link to="/add" className="text-indigo-600 hover:underline">Add some novels to get started!</Link></p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Browse by Language Section */}
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-6 gradient-text">Browse by Language</h2>
             <div className="glass-card rounded-lg p-6">
               <Tabs defaultValue="chinese" className="w-full">
                 <TabsList className="mb-6 bg-white/60 backdrop-blur-sm dark:bg-gray-800/60">
-                  <TabsTrigger value="chinese" className="transition-all duration-200">
+                  <TabsTrigger value="chinese" className="">
                     <span className="mr-2">🇨🇳</span>
                     Chinese ({chineseNovels.length})
                   </TabsTrigger>
-                  <TabsTrigger value="korean" className="transition-all duration-200">
+                  <TabsTrigger value="korean" className="">
                     <span className="mr-2">🇰🇷</span>
                     Korean ({koreanNovels.length})
                   </TabsTrigger>
-                  <TabsTrigger value="japanese" className="transition-all duration-200">
+                  <TabsTrigger value="japanese" className="">
                     <span className="mr-2">🇯🇵</span>
                     Japanese ({japaneseNovels.length})
                   </TabsTrigger>
@@ -291,48 +293,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Recently Updated Section */}
-          <div className="mb-12">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold gradient-text">Recently Updated</h2>
-              <Button asChild variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300">
-                <Link to="/library">
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="glass-card rounded-lg p-6">
-              {recentlyUpdatedNovels.length > 0 ? (
-                <NovelGrid novels={recentlyUpdatedNovels} showStats={true} />
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No recently updated novels. <Link to="/add" className="text-indigo-600 hover:underline">Add some novels to get started!</Link></p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          {stats.totalNovels === 0 && (
-            <div className="glass-card rounded-xl p-8 text-center">
-              <div className="max-w-md mx-auto">
-                <div className="floating-animation inline-block text-4xl mb-4">📚</div>
-                <h3 className="text-xl font-semibold mb-4">Ready to Start Reading?</h3>
-                <p className="text-muted-foreground mb-6">
-                  Add your first novel and experience AI-powered translation that brings 
-                  international stories to life in English.
-                </p>
-                <Button asChild size="lg" className="btn-primary">
-                  <Link to="/add">
-                    <Sparkles className="mr-2 h-5 w-5" />
-                    Add Your First Novel
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </section>
     </Layout>

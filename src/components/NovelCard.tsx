@@ -49,8 +49,8 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
               <img 
                 src={novel.cover || '/placeholder.svg'} 
                 alt={novel.title} 
-                className={`w-full h-full object-cover transition-all duration-500 ${
-                  imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+                className={`w-full h-full object-cover ${
+                  imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageError(true)}
@@ -70,7 +70,7 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
           </div>
 
           {/* Overlay Content */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100">
             <div className="absolute bottom-4 left-4 right-4">
               {showStats && (
                 <div className="flex items-center space-x-2 text-white text-xs mb-2">
@@ -87,12 +87,7 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
             </div>
           </div>
 
-          {/* Status Badge */}
-          {novel.status && (
-            <Badge className={`absolute top-2 right-2 text-white border-none ${getStatusColor(novel.status)}`}>
-              {novel.status}
-            </Badge>
-          )}
+
 
           {/* Language Flag */}
           <div className="absolute top-2 left-2 text-lg">
@@ -110,20 +105,12 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
             </div>
           )}
 
-          {/* New/Updated Indicator */}
-          {novel.last_updated && Date.now() - (novel.last_updated * 1000) < 7 * 24 * 60 * 60 * 1000 && (
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
-              <Badge className="bg-gradient-to-r from-orange-500 to-red-400 text-white animate-pulse">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                New
-              </Badge>
-            </div>
-          )}
+
         </div>
 
         {/* Novel Info */}
         <div className="mt-3 space-y-2">
-          <h3 className="font-medium text-sm line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">
+          <h3 className="font-medium text-sm line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
             {novel.title}
           </h3>
           
@@ -167,7 +154,7 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
       </Link>
 
       {/* Quick Actions (visible on hover) */}
-      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 space-y-2">
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 space-y-2">
         {isRecent && novel.last_read_chapter_number && (
           <Link to={`/novel/${novel.id}/chapter/${novel.last_read_chapter_number}`}>
             <Button size="sm" className="btn-primary text-xs">

@@ -148,7 +148,7 @@ const NovelDetail = () => {
             disabled={refreshing}
             className="border-indigo-200 hover:bg-indigo-50"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                          <RefreshCw className="mr-2 h-4 w-4" />
             {refreshing ? 'Checking...' : 'Check for Updates'}
           </Button>
         </div>
@@ -156,7 +156,7 @@ const NovelDetail = () => {
         <div className="flex flex-col md:flex-row gap-8">
           <div className="md:w-1/3 lg:w-1/4">
             <div className="glass-card p-6 rounded-lg">
-              <div className="book-cover aspect-[2/3] max-w-[300px] mx-auto mb-6 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="book-cover aspect-[2/3] max-w-[300px] mx-auto mb-6 shadow-lg hover:shadow-xl">
                 <img 
                   src={novel.cover || '/placeholder.svg'} 
                   alt={novel.title} 
