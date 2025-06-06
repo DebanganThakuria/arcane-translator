@@ -77,14 +77,17 @@ func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 					"novel_title_original": {
 						Type:        "string",
 						Description: "Original title in the source language",
+						Nullable:    genai.Ptr(false),
 					},
 					"novel_title_translated": {
 						Type:        "string",
 						Description: "Translated title in English",
+						Nullable:    genai.Ptr(false),
 					},
 					"novel_summary_translated": {
 						Type:        "string",
 						Description: "Translated summary in English in HTML format with paragraph tags. Please ensure that the summary has valid HTML tags for rendering on the frontend.",
+						Nullable:    genai.Ptr(false),
 					},
 					"possible_novel_genres": {
 						Type:        "array",
@@ -92,14 +95,17 @@ func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 						Items: &genai.Schema{
 							Type: "string",
 						},
+						Nullable: genai.Ptr(false),
 					},
 					"number_of_chapters": {
 						Type:        "integer",
 						Description: "Total number of chapters in original as integer",
+						Nullable:    genai.Ptr(false),
 					},
 					"status": {
 						Type:        "string",
 						Description: "Status of the novel, can be 'Ongoing', 'Completed', or 'Unknown'",
+						Nullable:    genai.Ptr(false),
 					},
 				},
 			},
@@ -151,14 +157,17 @@ func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 					"translated_chapter_title": {
 						Type:        "string",
 						Description: "The translated title of the chapter.",
+						Nullable:    genai.Ptr(false),
 					},
 					"original_chapter_title": {
 						Type:        "string",
 						Description: "The original title in the source language.",
+						Nullable:    genai.Ptr(false),
 					},
 					"translated_chapter_contents": {
 						Type:        "string",
 						Description: "The translated content of the chapter in HTML format with paragraph tags. Please ensure that the chapter content has valid HTML tags for rendering on the frontend.",
+						Nullable:    genai.Ptr(false),
 					},
 					"possible_new_genres": {
 						Type:        "array",
@@ -166,6 +175,7 @@ func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 						Items: &genai.Schema{
 							Type: "string",
 						},
+						Nullable: genai.Ptr(false),
 					},
 				},
 			},
