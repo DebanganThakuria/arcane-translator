@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
-import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye, ScrollText, Maximize, Minimize } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye, ScrollText, Maximize, Minimize, List, X } from 'lucide-react';
 import { translateChapter } from '../services/translationService';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
-import { saveReadingProgress } from '../utils/readingProgress';
+import { saveReadingProgress, getReadingProgress } from '../utils/readingProgress';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 interface ReaderProps {
   chapter: Chapter;
   novel: Novel;
+  chapters: Chapter[];
   hasPreviousChapter: boolean;
   hasNextChapter: boolean;
   onNavigate: (direction: 'next' | 'prev') => void;
@@ -30,6 +31,7 @@ interface ReaderProps {
 const Reader: React.FC<ReaderProps> = ({
   chapter,
   novel,
+  chapters,
   hasPreviousChapter,
   hasNextChapter,
   onNavigate,
@@ -43,9 +45,11 @@ const Reader: React.FC<ReaderProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullscreenBanner, setShowFullscreenBanner] = useState(false);
+  const [showChapterSidebar, setShowChapterSidebar] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Scroll to top when chapter changes
@@ -112,6 +116,41 @@ const Reader: React.FC<ReaderProps> = ({
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [novel.id, chapter.number, readingProgress, chapter.title]);
+
+  // Prevent body scroll when sidebar is open and reset sidebar scroll
+  useEffect(() => {
+    if (showChapterSidebar) {
+      // Prevent main page scrolling
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${window.scrollY}px`;
+      document.body.style.width = '100%';
+      
+      // Scroll to current chapter after a delay
+      setTimeout(() => {
+        scrollToCurrentChapter();
+      }, 150);
+    } else {
+      // Restore main page scrolling
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup function to restore scroll when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+    };
+  }, [showChapterSidebar]);
 
   // Fullscreen and ESC key handler
   useEffect(() => {
@@ -182,6 +221,65 @@ const Reader: React.FC<ReaderProps> = ({
     }
   };
 
+  const closeSidebar = () => {
+    setShowChapterSidebar(false);
+  };
+
+  const handleChapterNavigation = (targetChapterNumber: number) => {
+    // Save current progress before navigating
+    if (novel.id && chapter.number) {
+      saveReadingProgress(
+        novel.id,
+        chapter.number,
+        readingProgress,
+        chapter.title
+      );
+    }
+    
+    // Navigate to the selected chapter
+    navigate(`/novel/${novel.id}/chapter/${targetChapterNumber}`);
+    closeSidebar();
+  };
+
+  const scrollToCurrentChapter = () => {
+    if (sidebarScrollRef.current) {
+      // Find the current chapter button in the sidebar
+      const currentChapterButton = sidebarScrollRef.current.querySelector(`[data-chapter="${chapter.number}"]`);
+      if (currentChapterButton) {
+        // Scroll the current chapter into view with some padding
+        currentChapterButton.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center', // Center the chapter in the view
+          inline: 'nearest'
+        });
+      }
+    }
+  };
+
+  const toggleChapterSidebar = () => {
+    setShowChapterSidebar(!showChapterSidebar);
+    
+    // Scroll to current chapter when opening
+    if (!showChapterSidebar) {
+      setTimeout(() => {
+        scrollToCurrentChapter();
+      }, 100); // Small delay to ensure DOM is updated and sidebar is visible
+    }
+  };
+
+  // Get reading progress for chapter list
+  const novelProgress = getReadingProgress(novel.id);
+  const isChapterRead = (chapterNumber: number) => {
+    return novelProgress && novelProgress.lastChapter >= chapterNumber;
+  };
+
+  const getChapterProgress = (chapterNumber: number) => {
+    if (novelProgress && novelProgress.lastChapter === chapterNumber) {
+      return novelProgress.progress;
+    }
+    return 0;
+  };
+
   const enterFullscreen = async () => {
     try {
       await document.documentElement.requestFullscreen();
@@ -236,6 +334,145 @@ const Reader: React.FC<ReaderProps> = ({
         </div>
       )}
 
+      {/* Chapter Navigation Sidebar */}
+      {showChapterSidebar && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={closeSidebar}
+          />
+          
+          {/* Sidebar */}
+          <div className={`fixed top-0 right-0 h-full w-80 z-50 shadow-2xl border-l transform transition-transform duration-300 flex flex-col ${
+            theme === 'dark' 
+              ? 'bg-gray-900 border-gray-700' 
+              : theme === 'sepia'
+              ? 'bg-amber-50 border-amber-300'
+              : 'bg-white border-gray-300'
+          }`}>
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <h3 className="text-lg font-semibold">Chapters</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={closeSidebar}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Current Chapter Info */}
+            <div className={`p-4 border-b flex-shrink-0 ${
+              theme === 'dark' 
+                ? 'border-gray-700 bg-gray-800' 
+                : theme === 'sepia'
+                ? 'border-amber-200 bg-amber-100'
+                : 'border-gray-200 bg-gray-50'
+            }`}>
+              <p className="text-sm text-muted-foreground mb-1">Currently Reading</p>
+              <p className="font-medium">Chapter {chapter.number}: {chapter.title}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <div className={`w-full h-2 rounded-full ${
+                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                }`}>
+                  <div 
+                    className="h-2 bg-indigo-500 rounded-full transition-all duration-300"
+                    style={{ width: `${readingProgress}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  {Math.round(readingProgress)}%
+                </span>
+              </div>
+            </div>
+            
+            {/* Chapters List */}
+            <div 
+              ref={sidebarScrollRef}
+              className="flex-1 overflow-y-auto min-h-0"
+              style={{ 
+                maxHeight: 'calc(100vh - 200px)', // Ensure it doesn't exceed viewport
+                overflowY: 'scroll', // Force scrollbar
+                WebkitOverflowScrolling: 'touch' // Smooth scrolling on mobile
+              }}
+            >
+              <div className="p-2">
+                {chapters.map((chapterItem) => {
+                  const isCurrentChapter = chapterItem.number === chapter.number;
+                  const isRead = isChapterRead(chapterItem.number);
+                  const progress = getChapterProgress(chapterItem.number);
+                  
+                  return (
+                    <button
+                      key={chapterItem.id}
+                      data-chapter={chapterItem.number}
+                      onClick={() => handleChapterNavigation(chapterItem.number)}
+                      className={`w-full text-left p-3 rounded-lg mb-1 transition-colors ${
+                        isCurrentChapter
+                          ? theme === 'dark'
+                            ? 'bg-indigo-900 text-indigo-100 border border-indigo-700'
+                            : theme === 'sepia'
+                            ? 'bg-indigo-100 text-indigo-900 border border-indigo-300'
+                            : 'bg-indigo-50 text-indigo-900 border border-indigo-200'
+                          : theme === 'dark'
+                          ? 'hover:bg-gray-800 text-gray-100'
+                          : theme === 'sepia'
+                          ? 'hover:bg-amber-100 text-amber-900'
+                          : 'hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">
+                              {chapterItem.number}.
+                            </span>
+                            {isCurrentChapter && (
+                              <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 text-xs">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Reading
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm font-medium truncate mt-1">
+                            {chapterItem.title}
+                          </p>
+                          {chapterItem.word_count && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {chapterItem.word_count} words
+                            </p>
+                          )}
+                          
+                          {/* Progress bar for read chapters */}
+                          {isRead && progress > 0 && (
+                            <div className="mt-2">
+                              <div className={`w-full h-1 rounded-full ${
+                                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                              }`}>
+                                <div 
+                                  className="h-1 bg-green-500 rounded-full"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {Math.round(progress)}% complete
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Reading Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Progress value={readingProgress} className="h-1 rounded-none" />
@@ -272,6 +509,23 @@ const Reader: React.FC<ReaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Chapter Navigation Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleChapterSidebar}
+                className={`gap-2 ${
+                  theme === 'dark' 
+                    ? 'bg-gray-800 border-gray-600 text-gray-100 hover:bg-gray-700 hover:text-white' 
+                    : theme === 'sepia'
+                    ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <List className="h-4 w-4" />
+                <span className="hidden sm:inline">Chapters</span>
+              </Button>
+
               {/* Fullscreen Button */}
               <Button
                 variant="outline"

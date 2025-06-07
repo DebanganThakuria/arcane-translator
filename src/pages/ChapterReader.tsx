@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getNovelById, getChapterByNumber } from '../database/db';
+import { getNovelById, getChapterByNumber, getChaptersForNovel } from '../database/db';
 import Layout from '../components/Layout';
 import Reader from '../components/Reader';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,6 +13,7 @@ const ChapterReader = () => {
   const { toast } = useToast();
   const [novel, setNovel] = useState<Novel | undefined>(undefined);
   const [chapter, setChapter] = useState<Chapter | undefined>(undefined);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasNextChapter, setHasNextChapter] = useState(false);
 
@@ -33,6 +34,10 @@ const ChapterReader = () => {
         
         if (fetchedNovel) {
           setNovel(fetchedNovel);
+          
+          // Fetch all chapters for navigation
+          const allChapters = await getChaptersForNovel(novelId);
+          setChapters(allChapters);
           
           const fetchedChapter = await getChapterByNumber(novelId, chapterNum);
           
@@ -124,6 +129,7 @@ const ChapterReader = () => {
       <Reader
         chapter={chapter}
         novel={novel}
+        chapters={chapters}
         hasPreviousChapter={hasPreviousChapter}
         hasNextChapter={hasNextChapter}
         onNavigate={handleNavigate}

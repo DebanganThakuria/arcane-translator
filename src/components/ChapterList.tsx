@@ -100,11 +100,6 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
                 </div>
                 
                 <div className="flex items-center gap-2 mt-1">
-                  {chapter.word_count && (
-                    <span className="text-xs text-muted-foreground">
-                      {chapter.word_count} words
-                    </span>
-                  )}
                   {isCurrentlyReading && progressPercentage > 0 && (
                     <span className="text-xs text-indigo-600 font-medium">
                       {Math.round(progressPercentage)}% complete
