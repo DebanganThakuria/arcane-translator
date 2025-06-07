@@ -17,6 +17,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ReaderProps {
   chapter: Chapter;
@@ -97,6 +103,20 @@ const Reader: React.FC<ReaderProps> = ({
 
     return () => clearTimeout(saveProgressDebounced);
   }, [readingProgress, novel.id, chapter.number, chapter.title]);
+
+  // Save progress immediately when component unmounts
+  useEffect(() => {
+    return () => {
+      if (novel.id && chapter.number) {
+        saveReadingProgress(
+          novel.id,
+          chapter.number,
+          readingProgress,
+          chapter.title
+        );
+      }
+    };
+  }, [novel.id, chapter.number, readingProgress, chapter.title]);
 
   // Save progress when user leaves the page
   useEffect(() => {
@@ -314,6 +334,12 @@ const Reader: React.FC<ReaderProps> = ({
   // Format chapter content to add line breaks between paragraphs
   const formattedContent = chapter.content.replace(/<\/p>/g, '</p><br/>');
 
+  // Truncate novel title if it's too long
+  const truncateTitle = (title: string, maxLength: number = 45) => {
+    if (title.length <= maxLength) return title;
+    return title.substring(0, maxLength).trim() + '...';
+  };
+
   // Apply theme classes to the root element
   const themeClasses = {
     light: 'bg-white text-foreground',
@@ -482,7 +508,18 @@ const Reader: React.FC<ReaderProps> = ({
         <div className="container mx-auto p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate(`/novel/${novel.id}`)}>
+              <Button variant="ghost" size="sm" onClick={() => {
+                // Save progress immediately before navigating
+                if (novel.id && chapter.number) {
+                  saveReadingProgress(
+                    novel.id,
+                    chapter.number,
+                    readingProgress,
+                    chapter.title
+                  );
+                }
+                navigate(`/novel/${novel.id}`);
+              }}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Novel
               </Button>
@@ -491,7 +528,18 @@ const Reader: React.FC<ReaderProps> = ({
               <div className="hidden sm:flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
                   <ScrollText className="h-4 w-4" />
-                  <span>{novel.title}</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          {truncateTitle(novel.title)}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">{novel.title}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 <div className="flex items-center space-x-1">
                   <BookOpen className="h-4 w-4" />

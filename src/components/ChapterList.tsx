@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Chapter } from '../types/novel';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,12 +14,18 @@ interface ChapterListProps {
 
 const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
   const [sortAscending, setSortAscending] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Force refresh when component mounts to get latest progress
+  useEffect(() => {
+    setRefreshKey(prev => prev + 1);
+  }, [novelId]);
   
   if (!chapters.length) {
     return <p className="text-center py-8 text-muted-foreground">No chapters available</p>;
   }
 
-  // Get reading progress for this novel
+  // Get reading progress for this novel (force refresh with key)
   const readingProgress = getReadingProgress(novelId);
 
   // Sort chapters by number based on sort direction
