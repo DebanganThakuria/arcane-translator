@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
-import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye, ScrollText, Maximize, Minimize } from 'lucide-react';
 import { translateChapter } from '../services/translationService';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
+import { saveReadingProgress } from '../utils/readingProgress';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,8 @@ const Reader: React.FC<ReaderProps> = ({
   const [isTranslating, setIsTranslating] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFullscreenBanner, setShowFullscreenBanner] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -74,6 +77,66 @@ const Reader: React.FC<ReaderProps> = ({
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Save reading progress to localStorage
+  useEffect(() => {
+    const saveProgressDebounced = setTimeout(() => {
+      if (novel.id && chapter.number) {
+        saveReadingProgress(
+          novel.id,
+          chapter.number,
+          readingProgress,
+          chapter.title
+        );
+      }
+    }, 1000); // Debounce for 1 second
+
+    return () => clearTimeout(saveProgressDebounced);
+  }, [readingProgress, novel.id, chapter.number, chapter.title]);
+
+  // Save progress when user leaves the page
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (novel.id && chapter.number) {
+        saveReadingProgress(
+          novel.id,
+          chapter.number,
+          readingProgress,
+          chapter.title
+        );
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [novel.id, chapter.number, readingProgress, chapter.title]);
+
+  // Fullscreen and ESC key handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullscreen) {
+        exitFullscreen();
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      const isNowFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isNowFullscreen);
+      if (!isNowFullscreen) {
+        setShowFullscreenBanner(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [isFullscreen]);
 
   const handleFontSizeChange = (value: number[]) => {
     const newSize = value[0];
@@ -119,6 +182,35 @@ const Reader: React.FC<ReaderProps> = ({
     }
   };
 
+  const enterFullscreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+      setShowFullscreenBanner(true);
+      // Hide banner after 2 seconds
+      setTimeout(() => setShowFullscreenBanner(false), 2000);
+    } catch (error) {
+      console.error('Error entering fullscreen:', error);
+      toast({
+        title: "Error",
+        description: "Failed to enter fullscreen mode",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+      setIsFullscreen(false);
+      setShowFullscreenBanner(false);
+    } catch (error) {
+      console.error('Error exiting fullscreen:', error);
+    }
+  };
+
   const estimatedReadingTime = Math.ceil((chapter.word_count || 1000) / 200); // 200 WPM average
 
   // Format chapter content to add line breaks between paragraphs
@@ -133,6 +225,17 @@ const Reader: React.FC<ReaderProps> = ({
 
   return (
     <div className={`min-h-screen pb-20 ${themeClasses[theme]}`}>
+      {/* Fullscreen Banner */}
+      {showFullscreenBanner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="bg-black/80 text-white px-6 py-3 rounded-lg backdrop-blur-sm">
+            <p className="text-center text-sm font-medium">
+              Press <kbd className="px-2 py-1 bg-white/20 rounded text-xs">ESC</kbd> to toggle fullscreen
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Reading Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Progress value={readingProgress} className="h-1 rounded-none" />
@@ -150,6 +253,10 @@ const Reader: React.FC<ReaderProps> = ({
               {/* Chapter Info */}
               <div className="hidden sm:flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
+                  <ScrollText className="h-4 w-4" />
+                  <span>{novel.title}</span>
+                </div>
+                <div className="flex items-center space-x-1">
                   <BookOpen className="h-4 w-4" />
                   <span>Chapter {chapter.number}</span>
                 </div>
@@ -165,6 +272,32 @@ const Reader: React.FC<ReaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Fullscreen Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+                className={`gap-2 ${
+                  theme === 'dark' 
+                    ? 'bg-gray-800 border-gray-600 text-gray-100 hover:bg-gray-700 hover:text-white' 
+                    : theme === 'sepia'
+                    ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {isFullscreen ? (
+                  <>
+                    <Minimize className="h-4 w-4" />
+                    <span className="hidden sm:inline">Exit Fullscreen</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize className="h-4 w-4" />
+                    <span className="hidden sm:inline">Fullscreen</span>
+                  </>
+                )}
+              </Button>
+
               {/* Reader Settings */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -365,8 +498,6 @@ const Reader: React.FC<ReaderProps> = ({
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold mb-4">{chapter.title}</h1>
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span>{novel.title}</span>
-            <span>•</span>
             <span>Chapter {chapter.number}</span>
             {chapter.word_count && (
               <>
@@ -433,37 +564,6 @@ const Reader: React.FC<ReaderProps> = ({
               )}
             </div>
           </div>
-        </div>
-      </div>
-      
-      {/* Fixed Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-md bg-background/90 border-t">
-        <div className="container mx-auto flex justify-between items-center">
-          <Button
-            variant="outline"
-            onClick={() => handleNavigate('prev')}
-            disabled={!hasPreviousChapter}
-            size="sm"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Previous</span>
-          </Button>
-          
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <span className="hidden sm:inline">{Math.round(readingProgress)}% complete</span>
-            <Progress value={readingProgress} className="w-24 h-2" />
-          </div>
-          
-          {hasNextChapter && (
-            <Button
-              onClick={() => handleNavigate('next')}
-              size="sm"
-              className="btn-primary"
-            >
-              <span className="hidden sm:inline">Next</span>
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
     </div>

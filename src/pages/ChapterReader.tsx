@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import Reader from '../components/Reader';
 import { useToast } from '@/components/ui/use-toast';
 import { Novel, Chapter } from '../types/novel';
+import { saveReadingProgress } from '../utils/readingProgress';
 
 const ChapterReader = () => {
   const { novelId, chapterNumber } = useParams<{ novelId: string; chapterNumber: string }>();
@@ -46,6 +47,9 @@ const ChapterReader = () => {
           }
 
           setChapter(fetchedChapter);
+          
+          // Save reading progress when chapter loads
+          saveReadingProgress(novelId, chapterNum, 0, fetchedChapter.title);
         } else {
           toast({
             title: "Novel not found",
