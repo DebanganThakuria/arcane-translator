@@ -373,7 +373,7 @@ const Reader: React.FC<ReaderProps> = ({
                 : 'border-gray-200 bg-gray-50'
             }`}>
               <p className="text-sm text-muted-foreground mb-1">Currently Reading</p>
-              <p className="font-medium">Chapter {chapter.number}: {chapter.title}</p>
+              <p className="font-medium">{chapter.title}</p>
               <div className="mt-2 flex items-center gap-2">
                 <div className={`w-full h-2 rounded-full ${
                   theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
