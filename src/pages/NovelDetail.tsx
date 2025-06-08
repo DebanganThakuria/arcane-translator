@@ -189,7 +189,7 @@ const NovelDetail = () => {
               </div>
               
               <div className="space-y-4">
-                {(hasReadingProgress(id || '') || novel.last_read_timestamp) && (
+                {(hasReadingProgress(id || '') || novel.last_read_timestamp) && chapters.length > 0 && (
                   <div className="space-y-2">
                     <Button className="w-full gradient-button" onClick={continueReading}>
                       <BookOpen className="mr-2 h-4 w-4" />
@@ -210,7 +210,7 @@ const NovelDetail = () => {
                   </Button>
                 )}
                 
-                {hasReadingProgress(id || '') && (
+                {hasReadingProgress(id || '') && chapters.length > 0 && (
                   <Button 
                     variant="outline" 
                     className="w-full border-indigo-200 hover:bg-indigo-50 text-indigo-600"
