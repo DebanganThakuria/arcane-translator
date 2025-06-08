@@ -146,9 +146,9 @@ const NovelDetail = () => {
             variant="outline" 
             onClick={handleRefresh}
             disabled={refreshing}
-            className="border-indigo-200 hover:bg-indigo-50"
+            className="border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400"
           >
-                          <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Checking...' : 'Check for Updates'}
           </Button>
         </div>
@@ -198,7 +198,10 @@ const NovelDetail = () => {
                     <div className="flex flex-wrap gap-2">
                       {novel.genres.map(genre => (
                         <Link to={`/genre/${genre}`} key={genre}>
-                          <Badge variant="secondary" className="bg-gradient-to-r from-indigo-600/20 to-blue-400/20 text-indigo-700 hover:from-indigo-600/30 hover:to-blue-400/30 cursor-pointer">
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-gradient-to-r from-indigo-600/20 to-blue-400/20 dark:from-indigo-500/30 dark:to-blue-500/30 text-indigo-700 dark:text-indigo-200 hover:from-indigo-600/30 hover:to-blue-400/30 dark:hover:from-indigo-500/40 dark:hover:to-blue-500/40 cursor-pointer transition-colors"
+                          >
                             {genre}
                           </Badge>
                         </Link>
@@ -225,7 +228,16 @@ const NovelDetail = () => {
               )}
               
               <div 
-                className="mb-0 text-gray-700 prose prose-sm max-w-none" 
+                className="mb-0 prose prose-sm max-w-none dark:prose-invert"
+                style={{
+                  color: 'inherit',
+                  '--tw-prose-body': 'var(--foreground)',
+                  '--tw-prose-headings': 'var(--foreground)',
+                  '--tw-prose-links': 'var(--primary)',
+                  '--tw-prose-bold': 'var(--foreground)',
+                  '--tw-prose-counters': 'var(--muted-foreground)',
+                  '--tw-prose-bullets': 'var(--muted-foreground)',
+                }}
                 dangerouslySetInnerHTML={{ __html: novel.summary }}
               />
             </div>

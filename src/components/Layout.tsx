@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SearchBar from './SearchBar';
-import { Book, Library, Plus, Moon, Sun, Settings } from 'lucide-react';
+import { Book, Library, Plus, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import {
   DropdownMenu,
@@ -75,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
             
             <div className="flex items-center space-x-4">
               <SearchBar />
-              
+
               {/* Theme Toggle */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

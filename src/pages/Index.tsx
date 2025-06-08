@@ -29,10 +29,10 @@ const Index = () => {
         setLoading(true);
 
         const [chinese, korean, japanese, recentlyUpdated] = await Promise.all([
-          getNovelsByFilter('language', 'chinese', 1, 6),
-          getNovelsByFilter('language', 'korean', 1, 6),
-          getNovelsByFilter('language', 'japanese', 1, 6),
-          getNovelsByFilter('recently_updated', '6')
+          getNovelsByFilter('language', 'chinese', 1, 5),
+          getNovelsByFilter('language', 'korean', 1, 5),
+          getNovelsByFilter('language', 'japanese', 1, 5),
+          getNovelsByFilter('recently_updated', '5')
         ]);
 
         setChineseNovels(chinese.novels);

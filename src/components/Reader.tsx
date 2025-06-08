@@ -138,11 +138,16 @@ const Reader: React.FC<ReaderProps> = ({
         <Progress value={readingProgress} className="h-1 rounded-none" />
       </div>
 
-      <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 dark:bg-background/80 border-b">
+      <header className="sticky top-0 z-10 backdrop-blur-md bg-white/90 dark:bg-gray-900/90 border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate(`/novel/${novel.id}`)}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate(`/novel/${novel.id}`)}
+                className="text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Novel
               </Button>
@@ -150,16 +155,16 @@ const Reader: React.FC<ReaderProps> = ({
               {/* Chapter Info */}
               <div className="hidden sm:flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
-                  <BookOpen className="h-4 w-4" />
-                  <span>Chapter {chapter.number}</span>
-                </div>
-                <div className="flex items-center space-x-1">
                   <Clock className="h-4 w-4" />
                   <span>~{estimatedReadingTime} min read</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <Eye className="h-4 w-4" />
-                  <span>{Math.round(readingProgress)}%</span>
+                  <BookOpen className="h-4 w-4" />
+                  <span>{chapter.word_count} words</span>
+                </div>
+                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                  <span className="hidden sm:inline">{Math.round(readingProgress)}% complete</span>
+                  <Progress value={readingProgress} className="w-24 h-2" />
                 </div>
               </div>
             </div>
@@ -335,7 +340,7 @@ const Reader: React.FC<ReaderProps> = ({
                     </>
                   ) : (
                     <>
-                      Translate Next
+                      Translate Next Chapter
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}
@@ -366,16 +371,6 @@ const Reader: React.FC<ReaderProps> = ({
           <h1 className="text-2xl sm:text-3xl font-bold mb-4">{chapter.title}</h1>
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span>{novel.title}</span>
-            <span>•</span>
-            <span>Chapter {chapter.number}</span>
-            {chapter.word_count && (
-              <>
-                <span>•</span>
-                <span>{chapter.word_count.toLocaleString()} words</span>
-              </>
-            )}
-            <span>•</span>
-            <span>~{estimatedReadingTime} min read</span>
           </div>
         </div>
         
@@ -387,78 +382,27 @@ const Reader: React.FC<ReaderProps> = ({
           }}
           dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
-
-        {/* Chapter End Actions */}
-        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              You've finished reading this chapter!
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Button
-                variant="outline"
-                onClick={() => handleNavigate('prev')}
-                disabled={!hasPreviousChapter}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Previous Chapter
-              </Button>
-              
-              {hasNextChapter ? (
-                <Button
-                  onClick={() => handleNavigate('next')}
-                  className="btn-primary"
-                >
-                  Next Chapter
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleTranslateNext}
-                  disabled={isTranslating}
-                  className="btn-primary"
-                >
-                  {isTranslating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Translating Next...
-                    </>
-                  ) : (
-                    <>
-                      Translate Next Chapter
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
       
       {/* Fixed Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-md bg-background/90 border-t">
+      <div className="sticky fixed bottom-0 left-0 right-0 p-4 transparent bg-background/0.001">
         <div className="container mx-auto flex justify-between items-center">
           <Button
             variant="outline"
             onClick={() => handleNavigate('prev')}
             disabled={!hasPreviousChapter}
             size="sm"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Previous</span>
           </Button>
           
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <span className="hidden sm:inline">{Math.round(readingProgress)}% complete</span>
-            <Progress value={readingProgress} className="w-24 h-2" />
-          </div>
-          
           {hasNextChapter && (
             <Button
               onClick={() => handleNavigate('next')}
               size="sm"
-              className="btn-primary"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-700 dark:hover:bg-indigo-800"
             >
               <span className="hidden sm:inline">Next</span>
               <ArrowRight className="ml-2 h-4 w-4" />

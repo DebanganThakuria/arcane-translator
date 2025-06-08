@@ -167,7 +167,6 @@ func ScanChapters(rows *sql.Rows) ([]*Chapter, error) {
 
 	for rows.Next() {
 		var chapter Chapter
-		var dateTranslatedUnix int64
 
 		err := rows.Scan(
 			&chapter.ID,
@@ -175,7 +174,7 @@ func ScanChapters(rows *sql.Rows) ([]*Chapter, error) {
 			&chapter.Number,
 			&chapter.Title,
 			&chapter.OriginalTitle,
-			&dateTranslatedUnix,
+			&chapter.DateTranslated,
 			&chapter.WordCount,
 			&chapter.URL,
 			&chapter.NextChapterURL,
@@ -183,8 +182,6 @@ func ScanChapters(rows *sql.Rows) ([]*Chapter, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		chapter.DateTranslated = dateTranslatedUnix
 
 		chapters = append(chapters, &chapter)
 	}
