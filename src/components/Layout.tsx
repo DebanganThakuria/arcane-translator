@@ -198,7 +198,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
                   <li>• Real-time AI translation</li>
                   <li>• Multiple reading themes</li>
                   <li>• Progress tracking</li>
-                  <li>• Novel's genres updates as you read</li>
+                  <li>• Novel's genres update as you read</li>
                   <li>• Refresh novel details</li>
                 </ul>
               </div>
