@@ -129,7 +129,6 @@ const ChapterReader = () => {
       <Reader
         chapter={chapter}
         novel={novel}
-        chapters={chapters}
         hasPreviousChapter={hasPreviousChapter}
         hasNextChapter={hasNextChapter}
         onNavigate={handleNavigate}
