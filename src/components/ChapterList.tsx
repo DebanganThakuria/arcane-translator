@@ -81,6 +81,8 @@ const ChapterList: React.FC<ChapterListProps> = ({ chapters, novelId }) => {
             <Link 
               key={chapter.id} 
               to={`/novel/${novelId}/chapter/${chapter.number}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className={`flex items-start p-2 rounded-md transition-colors group relative ${
                 isCurrentlyReading 
                   ? 'bg-indigo-50 border border-indigo-200 hover:bg-indigo-100' 

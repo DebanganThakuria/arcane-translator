@@ -29,7 +29,7 @@ build-backend:
 	cd backend && go build -o ../bin/server main.go
 
 # Start frontend only  
-start-frontend:
+start-frontend: stop
 	@echo "Starting React frontend..."
 	npm run dev &
 	@echo "Frontend started on http://localhost:5173"

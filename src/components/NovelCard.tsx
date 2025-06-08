@@ -163,7 +163,7 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, isRecent, showStats = fals
       {/* Quick Actions (visible on hover) */}
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 space-y-2">
         {isRecent && novel.last_read_chapter_number && (
-          <Link to={`/novel/${novel.id}/chapter/${novel.last_read_chapter_number}`}>
+          <Link to={`/novel/${novel.id}/chapter/${novel.last_read_chapter_number}`} target="_blank" rel="noopener noreferrer">
             <Button size="sm" className="btn-primary text-xs">
               Continue
             </Button>

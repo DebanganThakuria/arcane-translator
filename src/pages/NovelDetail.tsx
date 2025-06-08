@@ -125,7 +125,7 @@ const NovelDetail = () => {
       );
       
       if (lastReadChapter) {
-        navigate(`/novel/${id}/chapter/${lastReadChapter.number}`);
+        window.open(`/novel/${id}/chapter/${lastReadChapter.number}`, '_blank');
         return;
       }
     }
@@ -137,7 +137,7 @@ const NovelDetail = () => {
       );
       
       if (lastReadChapter) {
-        navigate(`/novel/${id}/chapter/${lastReadChapter.number}`);
+        window.open(`/novel/${id}/chapter/${lastReadChapter.number}`, '_blank');
         return;
       }
     }
@@ -145,14 +145,14 @@ const NovelDetail = () => {
     // Start from first chapter if no progress found
     if (chapters.length > 0) {
       const firstChapter = chapters[0];
-      navigate(`/novel/${id}/chapter/${firstChapter.number}`);
+      window.open(`/novel/${id}/chapter/${firstChapter.number}`, '_blank');
     }
   };
 
   const startReading = () => {
     if (!id || chapters.length === 0) return;
     const firstChapter = chapters[0];
-    navigate(`/novel/${id}/chapter/${firstChapter.number}`);
+    window.open(`/novel/${id}/chapter/${firstChapter.number}`, '_blank');
   };
 
   return (
@@ -317,7 +317,7 @@ const NovelDetail = () => {
                 title: "Ready to Read",
                 description: "You can now start reading the first chapter.",
               });
-              navigate(`/novel/${id}/chapter/1`);
+              window.open(`/novel/${id}/chapter/1`, '_blank');
             }}
           />
         )}
