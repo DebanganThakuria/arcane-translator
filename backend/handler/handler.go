@@ -28,6 +28,7 @@ func RegisterHandlers(mux *http.ServeMux) {
 	// Translation APIs
 	mux.HandleFunc("POST /novels/translate", extractNovelDetails)
 	mux.HandleFunc("POST /novels/translate/chapter", translateNovelChapter)
+	mux.HandleFunc("POST /novels/translate/chapter/stream", translateNovelChapterStream)
 	mux.HandleFunc("POST /novels/translate/first_chapter", translateFirstChapter)
 	mux.HandleFunc("POST /novels/{id}/refresh", refreshNovel)
 }

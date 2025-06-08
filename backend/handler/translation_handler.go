@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -85,4 +86,44 @@ func refreshNovel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, response, http.StatusOK)
+}
+
+func translateNovelChapterStream(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	var request models.ChapterTranslationRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		fmt.Fprintf(w, "event: error\ndata: Invalid request body: %s\n\n", err.Error())
+		return
+	}
+
+	responseChan, errorChan := service.GetTranslationService().TranslateChapterStream(r.Context(), &request)
+
+	for {
+		select {
+		case chunk, ok := <-responseChan:
+			if !ok {
+				return
+			}
+			fmt.Fprintf(w, "event: chunk\ndata: %s\n\n", chunk)
+
+			if flusher, ok := w.(http.Flusher); ok {
+				flusher.Flush()
+			}
+
+		case err, ok := <-errorChan:
+			if ok && err != nil {
+				fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+				return
+			}
+
+		case <-r.Context().Done():
+			// Client disconnected
+			return
+		}
+	}
 }

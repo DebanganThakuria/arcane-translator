@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
 import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye } from 'lucide-react';
-import { translateChapter } from '../services/translationService';
+import { translateChapter, translateChapterStream } from '../services/translationService';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
@@ -16,6 +16,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface ReaderProps {
   chapter: Chapter;
@@ -40,6 +43,10 @@ const Reader: React.FC<ReaderProps> = ({
   const [isTranslating, setIsTranslating] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [useStreamingTranslation, setUseStreamingTranslation] = useState(true);
+  const [streamingResponse, setStreamingResponse] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [displayedContent, setDisplayedContent] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -97,6 +104,151 @@ const Reader: React.FC<ReaderProps> = ({
   };
 
   const handleTranslateNext = async () => {
+    if (useStreamingTranslation) {
+      await handleStreamingTranslation();
+    } else {
+      await handleRegularTranslation();
+    }
+  };
+
+  const extractPartialContent = (response: string) => {
+    // Try to find the translated_chapter_contents field, even if incomplete
+    const contentStart = response.indexOf('"translated_chapter_contents":');
+    if (contentStart === -1) {
+      // Try to extract title if content not available yet
+      const titleMatch = response.match(/"translated_chapter_title":\s*"([^"]*(?:\\.[^"]*)*)"?/);
+      if (titleMatch) {
+        let title = titleMatch[1];
+        title = title.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
+        return `Chapter: ${title}\n\n[Translating content...]`;
+      }
+      return null;
+    }
+
+    // Find the start of the content value
+    const valueStart = response.indexOf('"', contentStart + '"translated_chapter_contents":'.length);
+    if (valueStart === -1) return null;
+
+    // Extract everything from the start of the content value to the end
+    let contentPart = response.substring(valueStart + 1);
+    
+    // Find the end of the string (looking for unescaped quote)
+    let content = '';
+    let i = 0;
+    while (i < contentPart.length) {
+      const char = contentPart[i];
+      if (char === '"' && contentPart[i - 1] !== '\\') {
+        break; // Found end of string
+      } else if (char === '\\' && i + 1 < contentPart.length) {
+        // Handle escaped characters
+        const nextChar = contentPart[i + 1];
+        if (nextChar === '"') {
+          content += '"';
+          i += 2;
+        } else if (nextChar === 'n') {
+          content += '\n';
+          i += 2;
+        } else if (nextChar === '\\') {
+          content += '\\';
+          i += 2;
+        } else {
+          content += char;
+          i++;
+        }
+      } else {
+        content += char;
+        i++;
+      }
+    }
+
+    if (content) {
+      // Convert HTML to readable text
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      return tempDiv.textContent || tempDiv.innerText || '';
+    }
+    
+    return null;
+  };
+
+  const processStreamingChunk = (fullResponse: string) => {
+    if (!fullResponse.trim()) {
+      setDisplayedContent("Starting translation...");
+      return;
+    }
+
+    // First try to extract partial content from incomplete JSON
+    const partialContent = extractPartialContent(fullResponse);
+    if (partialContent) {
+      setDisplayedContent(partialContent);
+      return;
+    }
+
+    // Try to parse complete JSON as fallback
+    try {
+      const parsed = JSON.parse(fullResponse);
+      
+      if (parsed.translated_chapter_contents) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = parsed.translated_chapter_contents;
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        setDisplayedContent(textContent);
+      } else if (parsed.translated_chapter_title) {
+        setDisplayedContent(`Chapter: ${parsed.translated_chapter_title}\n\n[Translating content...]`);
+      }
+    } catch (e) {
+      // If we can't extract anything useful, show progress indicator
+      setDisplayedContent("AI is generating translation...");
+    }
+  };
+
+  const handleStreamingTranslation = async () => {
+    setIsStreaming(true);
+    setStreamingResponse('');
+    setDisplayedContent('');
+    
+    try {
+      await translateChapterStream(
+        novel.id,
+        (chunk: string) => {
+          // Each chunk is a complete piece of data from SSE
+          setStreamingResponse(prev => {
+            const newResponse = prev + chunk;
+            processStreamingChunk(newResponse); // Process the accumulated response
+            return newResponse;
+          });
+        },
+        (error: string) => {
+          toast({
+            title: "Streaming Error",
+            description: error,
+            variant: "destructive",
+          });
+          setIsStreaming(false);
+        },
+        () => {
+          toast({
+            title: "Success",
+            description: "Chapter translation completed via streaming!",
+          });
+          setIsStreaming(false);
+          if (onTranslateNext) {
+            onTranslateNext();
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error in streaming translation:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to start streaming translation",
+        variant: "destructive",
+      });
+      setIsStreaming(false);
+    }
+  };
+
+  const handleRegularTranslation = async () => {
     setIsTranslating(true);
     try {
       await translateChapter(novel.id);
@@ -328,23 +480,40 @@ const Reader: React.FC<ReaderProps> = ({
               </DropdownMenu>
 
               {!hasNextChapter && (
-                <Button
-                  onClick={handleTranslateNext}
-                  disabled={isTranslating}
-                  className="btn-primary"
-                >
-                  {isTranslating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Translating...
-                    </>
-                  ) : (
-                    <>
-                      Translate Next Chapter
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="streaming-mode"
+                      checked={useStreamingTranslation}
+                      onCheckedChange={setUseStreamingTranslation}
+                    />
+                    <Label htmlFor="streaming-mode" className="text-sm">
+                      Streaming
+                    </Label>
+                  </div>
+                  <Button
+                    onClick={handleTranslateNext}
+                    disabled={isTranslating || isStreaming}
+                    className="btn-primary"
+                  >
+                    {isStreaming ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Streaming...
+                      </>
+                    ) : isTranslating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Translating...
+                      </>
+                    ) : (
+                      <>
+                        Translate Next Chapter
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -382,6 +551,63 @@ const Reader: React.FC<ReaderProps> = ({
           }}
           dangerouslySetInnerHTML={{ __html: formattedContent }}
         />
+
+        {/* Streaming Translation Display */}
+        {(isStreaming || displayedContent) && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Next Chapter Translation
+                {isStreaming && (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-pulse w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-green-600">Streaming live...</span>
+                  </div>
+                )}
+              </CardTitle>
+              <CardDescription>
+                {isStreaming ? "Watch the AI translate the next chapter in real-time" : "Translation completed"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg min-h-32 max-h-96 overflow-y-auto border">
+                <div 
+                  className="prose prose-lg max-w-none dark:prose-invert"
+                  style={{ 
+                    fontSize: `${fontSize}px`,
+                    lineHeight: lineHeight
+                  }}
+                >
+                  <div className="whitespace-pre-wrap">
+                    {displayedContent || (isStreaming && "Starting translation...")}
+                    {isStreaming && (
+                      <span className="inline-block w-2 h-5 bg-blue-500 animate-pulse ml-1 align-text-bottom"></span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Show chapter title when available */}
+              {streamingResponse && (() => {
+                try {
+                  const parsed = JSON.parse(streamingResponse);
+                  if (parsed.translated_chapter_title) {
+                    return (
+                      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          Chapter Title: {parsed.translated_chapter_title}
+                        </p>
+                      </div>
+                    );
+                  }
+                } catch (e) {
+                  return null;
+                }
+                return null;
+              })()}
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       {/* Fixed Bottom Navigation */}

@@ -19,6 +19,7 @@ import (
 type TranslationService interface {
 	ExtractNovelDetails(ctx context.Context, request *models.NovelExtractionRequest) (*models.Novel, error)
 	TranslateChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
+	TranslateChapterStream(ctx context.Context, request *models.ChapterTranslationRequest) (<-chan string, <-chan error)
 	TranslateFirstChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
 	RefreshNovel(ctx context.Context, novelId string) (*models.Novel, error)
 }
@@ -100,6 +101,76 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 	}
 
 	return s.repo.CreateNovel(newNovel)
+}
+
+func (s *translationService) TranslateChapterStream(ctx context.Context, request *models.ChapterTranslationRequest) (<-chan string, <-chan error) {
+	responseChan := make(chan string, 10)
+	errorChan := make(chan error, 1)
+
+	go func() {
+		defer close(responseChan)
+		defer close(errorChan)
+
+		if request == nil {
+			errorChan <- errors.New("request cannot be nil")
+			return
+		}
+
+		success := utils.Mutex.TryLock("translateChapter"+request.NovelID, time.Millisecond)
+		if !success {
+			errorChan <- errors.New("another request is in progress")
+			return
+		}
+		defer utils.Mutex.Unlock("translateChapter" + request.NovelID)
+
+		if request.NovelID == "" {
+			errorChan <- errors.New("novel ID cannot be empty")
+			return
+		}
+
+		novel, err := s.repo.GetNovelByID(request.NovelID)
+		if err != nil {
+			errorChan <- err
+			return
+		}
+
+		lastChapter, err := s.repo.GetLastChapter(novel.ID)
+		if err != nil {
+			errorChan <- err
+			return
+		}
+
+		chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(lastChapter.NextChapterURL)
+		if err != nil {
+			errorChan <- err
+			return
+		}
+
+		geminiResponseChan, geminiErrorChan := gemini.GetClient().TranslateNovelChapterStream(ctx, novel.Genres, chapterContent)
+
+		for {
+			select {
+			case chunk, ok := <-geminiResponseChan:
+				if !ok {
+					return // Channel closed
+				}
+				select {
+				case responseChan <- chunk:
+				case <-ctx.Done():
+					return
+				}
+			case err, ok := <-geminiErrorChan:
+				if ok && err != nil {
+					errorChan <- err
+					return
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return responseChan, errorChan
 }
 
 func (s *translationService) TranslateFirstChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error) {

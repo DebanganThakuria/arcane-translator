@@ -55,6 +55,98 @@ export const extractNovelDetails = async (url: string, sourceSite: string): Prom
   }
 };
 
+// Translate a chapter with streaming response
+export const translateChapterStream = async (
+  novelId: string,
+  onChunk: (chunk: string) => void,
+  onError: (error: string) => void,
+  onComplete: () => void
+): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/novels/translate/chapter/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ novel_id: novelId })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Failed to get response reader');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break;
+        }
+
+        // Decode the chunk and add to buffer
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process complete SSE messages
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        
+        let currentData = '';
+        let isCollectingData = false;
+        
+        for (const line of lines) {
+          if (line.startsWith('event: chunk')) {
+            // Reset data collection for new chunk
+            if (currentData.trim()) {
+              onChunk(currentData.trim());
+            }
+            currentData = '';
+            isCollectingData = true;
+          } else if (line.startsWith('data: ')) {
+            if (isCollectingData) {
+              const data = line.slice(6); // Remove 'data: ' prefix
+              currentData += data;
+            }
+          } else if (line.startsWith('event: error')) {
+            continue; // Skip event type line, error data comes next
+          } else if (line.startsWith('event: done')) {
+            // Send any remaining data before completing
+            if (currentData.trim()) {
+              onChunk(currentData.trim());
+            }
+            onComplete();
+            return;
+          } else if (line.trim() === '' && currentData.trim()) {
+            // Empty line indicates end of SSE message, send accumulated data
+            onChunk(currentData.trim());
+            currentData = '';
+            isCollectingData = false;
+          }
+        }
+        
+        // Handle any remaining data at the end
+        if (currentData.trim()) {
+          onChunk(currentData.trim());
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    onComplete();
+  } catch (error) {
+    console.error('Error in streaming chapter translation:', error);
+    onError(error instanceof Error ? error.message : 'Unknown error occurred');
+  }
+};
+
 // Translate a chapter
 export const translateChapter = async (
   novelId: string,
@@ -126,5 +218,6 @@ export const setFirstChapterUrl = async (
 export default {
   extractNovelDetails,
   translateChapter,
+  translateChapterStream,
   setFirstChapterUrl,
 };
