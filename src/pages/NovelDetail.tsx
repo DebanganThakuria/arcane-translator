@@ -5,12 +5,13 @@ import ChapterList from '../components/ChapterList';
 import FirstChapterDialog from '../components/FirstChapterDialog';
 import { getNovelById, getChaptersForNovel } from '../database/db';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Link as LinkIcon, BookOpen, Play } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Novel, Chapter } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
+import { getReadingProgress, hasReadingProgress, getReadingProgressSummary } from '../utils/readingProgress';
 
 const API_BASE_URL = 'http://localhost:8088';
 
@@ -114,6 +115,22 @@ const NovelDetail = () => {
   }
   
   const continueReading = () => {
+    if (!id) return;
+    
+    // Check localStorage first for reading progress
+    const progress = getReadingProgress(id);
+    if (progress && progress.lastChapter) {
+      const lastReadChapter = chapters.find(chapter => 
+        chapter.number === progress.lastChapter
+      );
+      
+      if (lastReadChapter) {
+        navigate(`/novel/${id}/chapter/${lastReadChapter.number}`);
+        return;
+      }
+    }
+    
+    // Fallback to database last read chapter
     if (novel.last_read_chapter_number) {
       const lastReadChapter = chapters.find(chapter => 
         chapter.number === novel.last_read_chapter_number
@@ -125,10 +142,17 @@ const NovelDetail = () => {
       }
     }
     
+    // Start from first chapter if no progress found
     if (chapters.length > 0) {
       const firstChapter = chapters[0];
       navigate(`/novel/${id}/chapter/${firstChapter.number}`);
     }
+  };
+
+  const startReading = () => {
+    if (!id || chapters.length === 0) return;
+    const firstChapter = chapters[0];
+    navigate(`/novel/${id}/chapter/${firstChapter.number}`);
   };
 
   return (
@@ -146,7 +170,7 @@ const NovelDetail = () => {
             variant="outline" 
             onClick={handleRefresh}
             disabled={refreshing}
-            className="border-indigo-200 hover:bg-indigo-50"
+            className="border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Checking...' : 'Check for Updates'}
@@ -156,7 +180,7 @@ const NovelDetail = () => {
         <div className="flex flex-col md:flex-row gap-8">
           <div className="md:w-1/3 lg:w-1/4">
             <div className="glass-card p-6 rounded-lg">
-              <div className="book-cover aspect-[2/3] max-w-[300px] mx-auto mb-6 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="book-cover aspect-[2/3] max-w-[300px] mx-auto mb-6 shadow-lg hover:shadow-xl">
                 <img 
                   src={novel.cover || '/placeholder.svg'} 
                   alt={novel.title} 
@@ -165,15 +189,35 @@ const NovelDetail = () => {
               </div>
               
               <div className="space-y-4">
-                {novel.last_read_timestamp && (
-                  <Button className="w-full gradient-button" onClick={continueReading}>
-                    Continue Reading
+                {(hasReadingProgress(id || '') || novel.last_read_timestamp) && (
+                  <div className="space-y-2">
+                    <Button className="w-full gradient-button" onClick={continueReading}>
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Continue Reading
+                    </Button>
+                    {hasReadingProgress(id || '') && (
+                      <p className="text-xs text-center text-muted-foreground">
+                        {getReadingProgressSummary(id || '')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {!hasReadingProgress(id || '') && !novel.last_read_timestamp && chapters.length > 0 && (
+                  <Button className="w-full gradient-button" onClick={startReading}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Reading
                   </Button>
                 )}
                 
-                {!novel.last_read_timestamp && chapters.length > 0 && (
-                  <Button className="w-full gradient-button" onClick={continueReading}>
-                    Start Reading
+                {hasReadingProgress(id || '') && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-indigo-200 hover:bg-indigo-50 text-indigo-600"
+                    onClick={startReading}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Start from Beginning
                   </Button>
                 )}
                 
@@ -198,7 +242,10 @@ const NovelDetail = () => {
                     <div className="flex flex-wrap gap-2">
                       {novel.genres.map(genre => (
                         <Link to={`/genre/${genre}`} key={genre}>
-                          <Badge variant="secondary" className="bg-gradient-to-r from-indigo-600/20 to-blue-400/20 text-indigo-700 hover:from-indigo-600/30 hover:to-blue-400/30 cursor-pointer">
+                          <Badge 
+                            variant="secondary" 
+                            className="bg-gradient-to-r from-indigo-600/20 to-blue-400/20 dark:from-indigo-500/30 dark:to-blue-500/30 text-indigo-700 dark:text-indigo-200 hover:from-indigo-600/30 hover:to-blue-400/30 dark:hover:from-indigo-500/40 dark:hover:to-blue-500/40 cursor-pointer transition-colors"
+                          >
                             {genre}
                           </Badge>
                         </Link>
@@ -225,7 +272,16 @@ const NovelDetail = () => {
               )}
               
               <div 
-                className="mb-0 text-gray-700 prose prose-sm max-w-none" 
+                className="mb-0 prose prose-sm max-w-none dark:prose-invert"
+                style={{
+                  color: 'inherit',
+                  ['--tw-prose-body' as string]: 'var(--foreground)',
+                  ['--tw-prose-headings' as string]: 'var(--foreground)',
+                  ['--tw-prose-links' as string]: 'var(--primary)',
+                  ['--tw-prose-bold' as string]: 'var(--foreground)',
+                  ['--tw-prose-counters' as string]: 'var(--muted-foreground)',
+                  ['--tw-prose-bullets' as string]: 'var(--muted-foreground)',
+                } as React.CSSProperties}
                 dangerouslySetInnerHTML={{ __html: novel.summary }}
               />
             </div>

@@ -18,6 +18,9 @@ var repository Repo
 type Repo interface {
 	GetStatus() (bool, error)
 
+	// Stats methods
+	GetStats() (int, int, error) // Returns (novelCount, chapterCount, error)
+
 	// Novel methods
 	GetAllNovels(offset, limit int) ([]*models.Novel, int, error)
 	GetNovelByID(id string) (*models.Novel, error)
@@ -73,12 +76,30 @@ func (r *repo) GetStatus() (bool, error) {
 	return err == nil, err
 }
 
+// GetStats returns the total count of novels and chapters
+func (r *repo) GetStats() (int, int, error) {
+	// Get novel count
+	var novelCount int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM novels").Scan(&novelCount)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// Get chapter count
+	var chapterCount int
+	err = r.db.QueryRow("SELECT COUNT(*) FROM chapters").Scan(&chapterCount)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return novelCount, chapterCount, nil
+}
+
 // Novel CRUD Operations
 
 func (r *repo) GetAllNovels(offset, limit int) ([]*models.Novel, int, error) {
 	query := `
-		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		SELECT *
 		FROM novels
 		ORDER BY title
 		LIMIT ? OFFSET ?
@@ -106,8 +127,7 @@ func (r *repo) GetAllNovels(offset, limit int) ([]*models.Novel, int, error) {
 
 func (r *repo) GetNovelByID(id string) (*models.Novel, error) {
 	query := `
-		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		SELECT *
 		FROM novels
 		WHERE id = ?
 	`
@@ -132,8 +152,7 @@ func (r *repo) GetNovelsBySourceIDs(sources []string, offset, limit int) ([]*mod
 	args = append(args, offset)
 
 	query := fmt.Sprintf(`
-		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		SELECT *
 		FROM novels
 		WHERE source IN (%s)
 		ORDER BY last_read_timestamp, last_updated, date_added DESC
@@ -162,8 +181,7 @@ func (r *repo) GetNovelsBySourceIDs(sources []string, offset, limit int) ([]*mod
 
 func (r *repo) GetNovelsByGenre(genre string, offset, limit int) ([]*models.Novel, int, error) {
 	query := `
-		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		SELECT *
 		FROM novels
 		WHERE genres LIKE ? COLLATE NOCASE
 		ORDER BY last_read_timestamp, last_updated, date_added DESC
@@ -192,8 +210,7 @@ func (r *repo) GetNovelsByGenre(genre string, offset, limit int) ([]*models.Nove
 
 func (r *repo) GetNovelsByRecentlyUpdated(count int) ([]*models.Novel, error) {
 	query := `
-		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		SELECT *
 		FROM novels
 		ORDER BY last_updated DESC
 		LIMIT ?
@@ -210,8 +227,7 @@ func (r *repo) GetNovelsByRecentlyUpdated(count int) ([]*models.Novel, error) {
 
 func (r *repo) GetNovelsByRecentlyRead(count int) ([]*models.Novel, error) {
 	query := `
-		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		SELECT *
 		FROM novels
 		ORDER BY last_read_timestamp, last_updated DESC
 		LIMIT ?
@@ -228,8 +244,7 @@ func (r *repo) GetNovelsByRecentlyRead(count int) ([]*models.Novel, error) {
 
 func (r *repo) SearchNovel(query string) ([]*models.Novel, error) {
 	sqlQuery := `
-		SELECT id, title, original_title, cover, source, url, summary, author, status, 
-		       genres, chapters_count, last_read_chapter_number, last_read_timestamp, last_updated, date_added
+		SELECT *
 		FROM novels
 		WHERE title LIKE ? COLLATE NOCASE
 		ORDER BY last_read_timestamp, last_updated, date_added DESC
@@ -393,7 +408,7 @@ func (r *repo) GetNovelChapters(novelID string) ([]*models.Chapter, error) {
 
 func (r *repo) GetLastChapter(novelID string) (*models.Chapter, error) {
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
+		SELECT *
 		FROM chapters
 		WHERE novel_id = ?
 		ORDER BY number DESC
@@ -406,7 +421,7 @@ func (r *repo) GetLastChapter(novelID string) (*models.Chapter, error) {
 
 func (r *repo) GetChapterByID(novelID string, chapterID string) (*models.Chapter, error) {
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
+		SELECT *
 		FROM chapters
 		WHERE novel_id = ? AND id = ?
 	`
@@ -417,7 +432,7 @@ func (r *repo) GetChapterByID(novelID string, chapterID string) (*models.Chapter
 
 func (r *repo) GetChapterByNumber(novelID string, chapterNumber int) (*models.Chapter, error) {
 	query := `
-		SELECT id, novel_id, number, title, original_title, content, date_translated, word_count, url, next_chapter_url
+		SELECT *
 		FROM chapters
 		WHERE novel_id = ? AND number = ?
 	`

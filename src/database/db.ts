@@ -1,7 +1,29 @@
 import { Novel, PaginatedNovels, Chapter, SourceSite } from '../types/novel';
+import {NovelStats} from "@/types/api.ts";
 
 // API base URL - will be replaced by actual backend calls
 const API_BASE_URL = 'http://localhost:8088';
+
+// Fetch novels stats
+export const getNovelsStats = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/stats/novels`);
+        if (!response.ok) throw new Error('Failed to fetch novels stats');
+        const data = await response.json();
+        return {
+            novel_count: data.novelCount || 0,
+            chapter_count: data.chapterCount || 0,
+            languages_supported: 3 // This is hardcoded as it's not coming from the backend
+        };
+    } catch (error) {
+        console.error('Error fetching novels stats:', error);
+        return {
+            novel_count: 0,
+            chapter_count: 0,
+            languages_supported: 3
+        };
+    }
+};
 
 // Fetch all novels with pagination
 export const getAllNovels = async (page = 1, limit = 20): Promise<PaginatedNovels> => {

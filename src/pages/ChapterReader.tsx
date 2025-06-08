@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getNovelById, getChapterByNumber } from '../database/db';
+import { getNovelById, getChapterByNumber, getChaptersForNovel } from '../database/db';
 import Layout from '../components/Layout';
 import Reader from '../components/Reader';
 import { useToast } from '@/components/ui/use-toast';
 import { Novel, Chapter } from '../types/novel';
+import { saveReadingProgress } from '../utils/readingProgress';
 
 const ChapterReader = () => {
   const { novelId, chapterNumber } = useParams<{ novelId: string; chapterNumber: string }>();
@@ -12,6 +13,7 @@ const ChapterReader = () => {
   const { toast } = useToast();
   const [novel, setNovel] = useState<Novel | undefined>(undefined);
   const [chapter, setChapter] = useState<Chapter | undefined>(undefined);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasNextChapter, setHasNextChapter] = useState(false);
 
@@ -33,6 +35,10 @@ const ChapterReader = () => {
         if (fetchedNovel) {
           setNovel(fetchedNovel);
           
+          // Fetch all chapters for navigation
+          const allChapters = await getChaptersForNovel(novelId);
+          setChapters(allChapters);
+          
           const fetchedChapter = await getChapterByNumber(novelId, chapterNum);
           
           if (!fetchedChapter) {
@@ -46,6 +52,9 @@ const ChapterReader = () => {
           }
 
           setChapter(fetchedChapter);
+          
+          // Save reading progress when chapter loads
+          saveReadingProgress(novelId, chapterNum, 0, fetchedChapter.title);
         } else {
           toast({
             title: "Novel not found",

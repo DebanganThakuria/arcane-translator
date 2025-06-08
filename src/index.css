@@ -44,6 +44,36 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    
+    --card: 217.2 32.6% 17.5%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 217.2 32.6% 17.5%;
+    --popover-foreground: 210 40% 98%;
+    
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    
+    --secondary: 217.2 32.6% 20%;
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 217.2 32.6% 20%;
+    --muted-foreground: 215 20.2% 70%;
+    
+    --accent: 217.2 32.6% 20%;
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 217.2 32.6% 25%;
+    --input: 217.2 32.6% 20%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+
   * {
     @apply border-border;
   }
@@ -53,12 +83,18 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     background-image: 
       url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
-      linear-gradient(135deg, rgba(108,99,255,0.7) 0%, rgba(91,195,235,0.6) 100%);
+      linear-gradient(135deg, rgba(108,99,255,0.1) 0%, rgba(91,195,235,0.1) 100%);
     background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image: 
+      url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FFFFFF' fill-opacity='0.03'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+      linear-gradient(135deg, rgba(108,99,255,0.08) 0%, rgba(91,195,235,0.08) 100%);
   }
   
   .app-container {
-    @apply bg-white/90 backdrop-blur-sm shadow-xl;
+    @apply bg-white/95 backdrop-blur-sm shadow-xl dark:bg-gray-900/95;
   }
   
   .sepia-mode {
@@ -66,26 +102,99 @@
   }
   
   .book-cover {
-    @apply relative overflow-hidden rounded-md shadow-lg transition-all duration-300;
+    @apply relative overflow-hidden rounded-lg shadow-lg;
   }
-  
-  .book-cover:hover {
-    @apply shadow-xl transform -translate-y-1;
+
+  .book-cover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+    opacity: 0;
+  }
+
+  .book-cover:hover::before {
+    opacity: 1;
   }
   
   .chapter-card {
-    @apply p-4 border rounded-md transition-all duration-200 hover:bg-gray-50;
+    @apply p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800;
   }
   
   .reader-container {
-    @apply max-w-4xl mx-auto p-6 md:p-8 lg:p-10 my-8 rounded-lg shadow-md;
+    @apply max-w-4xl mx-auto p-6 md:p-8 lg:p-10 my-8 rounded-xl shadow-lg backdrop-blur-sm;
   }
   
   .reader-container.sepia {
-    @apply bg-novel-sepia;
+    @apply bg-novel-sepia/95;
+  }
+
+  .reader-container.dark {
+    @apply bg-gray-900/95 border border-gray-800;
   }
   
   .glass-card {
-    @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all;
+    @apply bg-white/95 backdrop-blur-sm border border-white/30 shadow-lg hover:shadow-xl dark:bg-gray-800/90 dark:border-gray-700/50 dark:shadow-2xl;
+  }
+
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500 dark:from-indigo-400 dark:to-blue-300;
+  }
+
+  /* Improved scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+
+  /* Custom focus styles */
+  .focus-visible:focus-visible {
+    @apply outline-none ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:shadow-xl dark:hover:shadow-2xl;
+  }
+
+  .btn-secondary {
+    @apply bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium px-4 py-2 rounded-lg shadow-sm hover:shadow-md dark:shadow-lg;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-300;
+  }
+
+  /* Enhanced Dark Theme Components */
+  .stat-card {
+    @apply bg-gradient-to-br from-white/95 to-gray-50/95 backdrop-blur-sm border border-gray-200/50 shadow-lg hover:shadow-xl dark:from-gray-800/95 dark:to-gray-700/95 dark:border-gray-600/50 dark:shadow-2xl;
+  }
+
+  .chapter-card {
+    @apply p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 dark:bg-gray-800/30 dark:border-gray-700;
+  }
+
+  .nav-item {
+    @apply hover:bg-gray-100 dark:hover:bg-gray-700/70 dark:hover:border-gray-600;
+  }
+
+  .search-container {
+    @apply bg-white/90 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-600/50 backdrop-blur-sm;
   }
 }

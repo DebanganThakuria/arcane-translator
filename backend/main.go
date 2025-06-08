@@ -25,9 +25,10 @@ func main() {
 
 	// Start the server in a goroutine
 	go func() {
-		log.Printf("Starting server on port %d...", port)
+		log.Printf("🚀 Starting Arcane Translator server on port %d...", port)
+		log.Printf("📚 Server ready to handle novel translation requests")
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Failed to start server: %v", err)
+			log.Fatalf("❌ Failed to start server: %v", err)
 		}
 	}()
 
@@ -36,7 +37,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down server...")
+	log.Println("🛑 Shutting down server...")
 
 	// Create a deadline for the shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -44,13 +45,13 @@ func main() {
 
 	// Attempt a graceful shutdown
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server shutdown failed: %v", err)
+		log.Fatalf("❌ Server shutdown failed: %v", err)
 	}
 
-	log.Println("Server gracefully stopped")
+	log.Println("✅ Server gracefully stopped")
 }
 
-// setupServer configures and returns an HTTP server
+// setupServer configures and returns an HTTP server with enhanced middleware
 func setupServer() *http.Server {
 	// Create a new router
 	mux := http.NewServeMux()
@@ -58,13 +59,25 @@ func setupServer() *http.Server {
 	// Register API handlers
 	handler.RegisterHandlers(mux)
 
-	// Create and configure the server with CORS middleware
+	// Create middleware stack
+	var middlewareStack http.Handler = mux
+
+	// Apply middleware in reverse order (last applied = first executed)
+	middlewareStack = handler.CorsMiddleware(middlewareStack)
+	middlewareStack = handler.SecurityMiddleware(middlewareStack)
+	middlewareStack = handler.ErrorHandlingMiddleware(middlewareStack)
+	middlewareStack = handler.LoggingMiddleware(middlewareStack)
+
+	// Create and configure the server
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", 8088),
-		Handler:      handler.CorsMiddleware(mux),
+		Handler:      middlewareStack,
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  60 * time.Second,
+		// Enhanced server configuration
+		ReadHeaderTimeout: 10 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1 MB
 	}
 
 	return server

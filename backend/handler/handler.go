@@ -12,6 +12,9 @@ func RegisterHandlers(mux *http.ServeMux) {
 	// Register health check endpoint
 	mux.HandleFunc("GET /health", healthCheckHandler)
 
+	// Stats endpoint
+	mux.HandleFunc("GET /stats/novels", getNovelStats)
+
 	// Sources CRUD APIs
 	mux.HandleFunc("GET /sources", getAllSources)
 

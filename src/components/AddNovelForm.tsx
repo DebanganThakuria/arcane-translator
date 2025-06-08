@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { getAllSourceSites } from '../database/db';
+import { sourceManager } from '../utils/sourceManager';
 import { SourceSite } from '../types/novel';
 import { extractNovelDetails } from '../services/translationService';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,13 +22,14 @@ const AddNovelForm = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchSites = async () => {
+    const loadSites = async () => {
       try {
         setIsLoadingSites(true);
-        const fetchedSites = await getAllSourceSites();
+        await sourceManager.loadSources();
+        const fetchedSites = sourceManager.getSourceSites();
         setSites(fetchedSites || []);
       } catch (error) {
-        console.error('Error fetching source sites:', error);
+        console.error('Error loading source sites:', error);
         setSites([]);
         toast({
           title: "Error",
@@ -40,7 +41,7 @@ const AddNovelForm = () => {
       }
     };
 
-    fetchSites();
+    loadSites();
   }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
