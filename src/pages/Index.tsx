@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import NovelGrid from '../components/NovelGrid';
 import LoadingSkeleton from '../components/LoadingSkeleton';
-import { getNovelsByFilter } from '../database/db';
+import { getNovelsByFilter, getNovelsStats } from '../database/db';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,10 +17,9 @@ const Index = () => {
   const [recentlyUpdatedNovels, setRecentlyUpdatedNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalNovels: 0,
-    totalChapters: 0,
-    languagesSupported: 3,
-    recentlyActive: 0
+    novel_count: 0,
+    chapter_count: 0,
+    languages_supported: 3,
   });
 
   useEffect(() => {
@@ -41,17 +40,13 @@ const Index = () => {
         setRecentlyUpdatedNovels(recentlyUpdated.novels);
 
         // Calculate stats
-        const allNovels = [...chinese.novels, ...korean.novels, ...japanese.novels];
-        const totalChapters = allNovels.reduce((sum, novel) => sum + novel.chapters_count, 0);
-        const recentlyActive = recentlyUpdated.novels.length;
+        const stats = await getNovelsStats();
 
         setStats({
-          totalNovels: allNovels.length,
-          totalChapters,
-          languagesSupported: 3,
-          recentlyActive
+          novel_count: stats.novel_count,
+          chapter_count: stats.chapter_count,
+          languages_supported: 3
         });
-        
       } catch (error) {
         console.error('Error fetching novels:', error);
       } finally {
@@ -97,7 +92,7 @@ const Index = () => {
 
           {/* Stats Skeleton */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="glass-card rounded-lg p-4">
                 <LoadingSkeleton variant="text" count={2} />
               </div>
@@ -154,30 +149,24 @@ const Index = () => {
           </div>
 
           {/* Statistics Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
             <StatCard
               icon={BookOpen}
               title="Total Novels"
-              value={stats.totalNovels}
+              value={stats.novel_count}
               description="In your library"
             />
             <StatCard
               icon={TrendingUp}
               title="Chapters"
-              value={stats.totalChapters.toLocaleString()}
+              value={stats.chapter_count}
               description="Ready to read"
             />
             <StatCard
               icon={Globe}
               title="Languages"
-              value={stats.languagesSupported}
+              value={stats.languages_supported}
               description="Supported"
-            />
-            <StatCard
-              icon={Clock}
-              title="Recently Active"
-              value={stats.recentlyActive}
-              description="Updated novels"
             />
           </div>
 

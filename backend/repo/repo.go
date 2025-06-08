@@ -18,6 +18,9 @@ var repository Repo
 type Repo interface {
 	GetStatus() (bool, error)
 
+	// Stats methods
+	GetStats() (int, int, error) // Returns (novelCount, chapterCount, error)
+
 	// Novel methods
 	GetAllNovels(offset, limit int) ([]*models.Novel, int, error)
 	GetNovelByID(id string) (*models.Novel, error)
@@ -71,6 +74,25 @@ func GetRepo() Repo {
 func (r *repo) GetStatus() (bool, error) {
 	err := r.db.Ping()
 	return err == nil, err
+}
+
+// GetStats returns the total count of novels and chapters
+func (r *repo) GetStats() (int, int, error) {
+	// Get novel count
+	var novelCount int
+	err := r.db.QueryRow("SELECT COUNT(*) FROM novels").Scan(&novelCount)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// Get chapter count
+	var chapterCount int
+	err = r.db.QueryRow("SELECT COUNT(*) FROM chapters").Scan(&chapterCount)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return novelCount, chapterCount, nil
 }
 
 // Novel CRUD Operations

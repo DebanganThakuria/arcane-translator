@@ -30,32 +30,39 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="light"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/library" element={<Library />} />
-              <Route path="/novel/:id" element={<NovelDetail />} />
-              <Route path="/novel/:novelId/chapter/:chapterNumber" element={<ChapterReader />} />
-              <Route path="/add" element={<AddNovel />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/chinese" element={<ChineseNovels />} />
-              <Route path="/korean" element={<KoreanNovels />} />
-              <Route path="/japanese" element={<JapaneseNovels />} />
-              <Route path="/genre/:genre" element={<GenrePage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/novel/:novelId/chapter/:chapterNumber" element={
+            <ThemeProvider attribute="class" forcedTheme="light" disableTransitionOnChange>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <ChapterReader />
+              </TooltipProvider>
+            </ThemeProvider>
+          } />
+          <Route path="*" element={
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/library" element={<Library />} />
+                  <Route path="/novel/:id" element={<NovelDetail />} />
+                  <Route path="/add" element={<AddNovel />} />
+                  <Route path="/search" element={<SearchResults />} />
+                  <Route path="/chinese" element={<ChineseNovels />} />
+                  <Route path="/korean" element={<KoreanNovels />} />
+                  <Route path="/japanese" element={<JapaneseNovels />} />
+                  <Route path="/genre/:genre" element={<GenrePage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
+            </ThemeProvider>
+          } />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };

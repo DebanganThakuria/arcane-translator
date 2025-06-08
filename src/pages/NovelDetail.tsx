@@ -231,13 +231,13 @@ const NovelDetail = () => {
                 className="mb-0 prose prose-sm max-w-none dark:prose-invert"
                 style={{
                   color: 'inherit',
-                  '--tw-prose-body': 'var(--foreground)',
-                  '--tw-prose-headings': 'var(--foreground)',
-                  '--tw-prose-links': 'var(--primary)',
-                  '--tw-prose-bold': 'var(--foreground)',
-                  '--tw-prose-counters': 'var(--muted-foreground)',
-                  '--tw-prose-bullets': 'var(--muted-foreground)',
-                }}
+                  ['--tw-prose-body' as string]: 'var(--foreground)',
+                  ['--tw-prose-headings' as string]: 'var(--foreground)',
+                  ['--tw-prose-links' as string]: 'var(--primary)',
+                  ['--tw-prose-bold' as string]: 'var(--foreground)',
+                  ['--tw-prose-counters' as string]: 'var(--muted-foreground)',
+                  ['--tw-prose-bullets' as string]: 'var(--muted-foreground)',
+                } as React.CSSProperties}
                 dangerouslySetInnerHTML={{ __html: novel.summary }}
               />
             </div>
