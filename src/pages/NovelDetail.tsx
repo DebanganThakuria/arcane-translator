@@ -5,12 +5,13 @@ import ChapterList from '../components/ChapterList';
 import FirstChapterDialog from '../components/FirstChapterDialog';
 import { getNovelById, getChaptersForNovel } from '../database/db';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Link as LinkIcon, BookOpen, Play } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Novel, Chapter } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
+import { getReadingProgress, hasReadingProgress, getReadingProgressSummary } from '../utils/readingProgress';
 
 const API_BASE_URL = 'http://localhost:8088';
 
@@ -114,6 +115,22 @@ const NovelDetail = () => {
   }
   
   const continueReading = () => {
+    if (!id) return;
+    
+    // Check localStorage first for reading progress
+    const progress = getReadingProgress(id);
+    if (progress && progress.lastChapter) {
+      const lastReadChapter = chapters.find(chapter => 
+        chapter.number === progress.lastChapter
+      );
+      
+      if (lastReadChapter) {
+        navigate(`/novel/${id}/chapter/${lastReadChapter.number}`);
+        return;
+      }
+    }
+    
+    // Fallback to database last read chapter
     if (novel.last_read_chapter_number) {
       const lastReadChapter = chapters.find(chapter => 
         chapter.number === novel.last_read_chapter_number
@@ -125,10 +142,17 @@ const NovelDetail = () => {
       }
     }
     
+    // Start from first chapter if no progress found
     if (chapters.length > 0) {
       const firstChapter = chapters[0];
       navigate(`/novel/${id}/chapter/${firstChapter.number}`);
     }
+  };
+
+  const startReading = () => {
+    if (!id || chapters.length === 0) return;
+    const firstChapter = chapters[0];
+    navigate(`/novel/${id}/chapter/${firstChapter.number}`);
   };
 
   return (
@@ -165,15 +189,35 @@ const NovelDetail = () => {
               </div>
               
               <div className="space-y-4">
-                {novel.last_read_timestamp && (
-                  <Button className="w-full gradient-button" onClick={continueReading}>
-                    Continue Reading
+                {(hasReadingProgress(id || '') || novel.last_read_timestamp) && (
+                  <div className="space-y-2">
+                    <Button className="w-full gradient-button" onClick={continueReading}>
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Continue Reading
+                    </Button>
+                    {hasReadingProgress(id || '') && (
+                      <p className="text-xs text-center text-muted-foreground">
+                        {getReadingProgressSummary(id || '')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {!hasReadingProgress(id || '') && !novel.last_read_timestamp && chapters.length > 0 && (
+                  <Button className="w-full gradient-button" onClick={startReading}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Reading
                   </Button>
                 )}
                 
-                {!novel.last_read_timestamp && chapters.length > 0 && (
-                  <Button className="w-full gradient-button" onClick={continueReading}>
-                    Start Reading
+                {hasReadingProgress(id || '') && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-indigo-200 hover:bg-indigo-50 text-indigo-600"
+                    onClick={startReading}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Start from Beginning
                   </Button>
                 )}
                 
