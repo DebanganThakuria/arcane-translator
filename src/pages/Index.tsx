@@ -42,6 +42,8 @@ const Index = () => {
         // Calculate stats
         const stats = await getNovelsStats();
 
+        console.log(stats)
+
         setStats({
           novel_count: stats.novel_count,
           chapter_count: stats.chapter_count,

@@ -11,8 +11,8 @@ export const getNovelsStats = async () => {
         if (!response.ok) throw new Error('Failed to fetch novels stats');
         const data = await response.json();
         return {
-            novel_count: data.novelCount || 0,
-            chapter_count: data.chapterCount || 0,
+            novel_count: data.novel_count || 0,
+            chapter_count: data.chapter_count || 0,
             languages_supported: 3 // This is hardcoded as it's not coming from the backend
         };
     } catch (error) {
