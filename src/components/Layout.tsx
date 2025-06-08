@@ -179,7 +179,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
               <div>
                 <h3 className="font-semibold text-lg mb-4 gradient-text">Arcane Translator</h3>
                 <p className="text-sm text-muted-foreground">
-                  AI-powered translation for your favorite webnovels. Read Chinese, Korean, and Japanese novels seamlessly.
+                  AI-powered translation for your favorite webnovels. Read Chinese, Korean, and Japanese webnovels seamlessly.
                 </p>
               </div>
               <div>
@@ -189,6 +189,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
                   <li><Link to="/add" className="text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">Add Novel</Link></li>
                   <li><Link to="/chinese" className="text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">Chinese Novels</Link></li>
                   <li><Link to="/korean" className="text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">Korean Novels</Link></li>
+                  <li><Link to="/japanese" className="text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400">Japanese Novels</Link></li>
                 </ul>
               </div>
               <div>
@@ -197,12 +198,13 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation = false }) => 
                   <li>• Real-time AI translation</li>
                   <li>• Multiple reading themes</li>
                   <li>• Progress tracking</li>
-                  <li>• Bookmark chapters</li>
+                  <li>• Novel's genres updates as you read</li>
+                  <li>• Refresh novel details</li>
                 </ul>
               </div>
             </div>
             <div className="border-t mt-8 pt-4 text-center text-sm text-muted-foreground dark:border-gray-800">
-              &copy; {new Date().getFullYear()} Arcane Translator • Built with ❤️ for novel enthusiasts
+              &copy; {new Date().getFullYear()} Arcane Translator • Built with ❤️ for webnovel enthusiasts
             </div>
           </div>
         </footer>
