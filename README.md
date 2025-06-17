@@ -1,73 +1,100 @@
-# Welcome to your Lovable project
+# Arcane Translator
 
-## Project info
+A modern web application for translating novels using AI, featuring a responsive React frontend and a high-performance Go backend.
 
-**URL**: https://lovable.dev/projects/5115f64f-ace0-4c46-9304-3bc6bb525e30
+## Features
 
-## How can I edit this code?
+- AI-powered novel translation
+- Clean, responsive user interface
+- Fast and efficient backend processing
+- Cross-platform compatibility
+- Easy installation via Homebrew
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React, TypeScript, Vite
+- **UI**: shadcn-ui, Tailwind CSS
+- **Backend**: Go
+- **Build Tool**: npm, Go modules
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/5115f64f-ace0-4c46-9304-3bc6bb525e30) and start prompting.
+## Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ and npm
+- Go 1.20+
+- Git
 
-**Use your preferred IDE**
+## Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Using Homebrew (Recommended)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Follow these steps:
+```bash
+brew tap debangandaemon/tap
+brew install arcane-translator
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Manual Installation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/DebanganDaemon/arcane-translator.git
+   cd arcane-translator
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Install dependencies and build:
+   ```bash
+   # Install frontend dependencies
+   npm install
+   
+   # Build frontend
+   npm run build
+   
+   # Install Go dependencies and build backend
+   cd backend
+   go mod download
+   go build -o arcane-translator-backend
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Usage
+
+1. Start the application:
+   ```bash
+   # If installed via Homebrew
+   arcane-translator
+   
+   # For manual installation
+   ./arcane-translator
+   ```
+
+2. Open your browser and navigate to:
+   ```
+   http://localhost:8088
+   ```
+
+## Development
+
+### Frontend Development
+
+```bash
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Backend Development
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+cd backend
+go run main.go
+```
 
-**Use GitHub Codespaces**
+## Contributing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## What technologies are used for this project?
+## License
 
-This project is built with:
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Support
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/5115f64f-ace0-4c46-9304-3bc6bb525e30) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+For support, please open an issue in the GitHub repository.
