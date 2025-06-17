@@ -203,15 +203,15 @@ const Index = () => {
                 <TabsList className="mb-6 bg-white/80 backdrop-blur-sm dark:bg-gray-700/80 border border-gray-200 dark:border-gray-600">
                   <TabsTrigger value="chinese" className="data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-900 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300">
                     <span className="mr-2">🇨🇳</span>
-                    Chinese ({chineseNovels.length})
+                    Chinese
                   </TabsTrigger>
                   <TabsTrigger value="korean" className="data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-900 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300">
                     <span className="mr-2">🇰🇷</span>
-                    Korean ({koreanNovels.length})
+                    Korean
                   </TabsTrigger>
                   <TabsTrigger value="japanese" className="data-[state=active]:bg-indigo-100 dark:data-[state=active]:bg-indigo-900 data-[state=active]:text-indigo-700 dark:data-[state=active]:text-indigo-300">
                     <span className="mr-2">🇯🇵</span>
-                    Japanese ({japaneseNovels.length})
+                    Japanese
                   </TabsTrigger>
                 </TabsList>
                 
