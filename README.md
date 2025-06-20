@@ -29,7 +29,7 @@ A modern web application for translating novels using AI, featuring a responsive
 
 
 ```bash
-brew tap debangandaemon/tap
+brew tap DebanganThakuria/tap
 brew install arcane-translator
 ```
 
@@ -37,7 +37,7 @@ brew install arcane-translator
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/DebanganDaemon/arcane-translator.git
+   git clone https://github.com/DebanganThakuria/arcane-translator.git
    cd arcane-translator
    ```
 

@@ -1,8 +1,8 @@
 class ArcaneTranslator < Formula
   desc "A web application for translating novels with AI"
-  homepage "https://github.com/DebanganDaemon/arcane-translator"
-  url "https://github.com/DebanganDaemon/arcane-translator/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "" # You'll need to calculate this after creating the release
+  homepage "https://github.com/DebanganThakuria/arcane-translator"
+  url "https://github.com/DebanganThakuria/arcane-translator/archive/refs/tags/v1.0.1.tar.gz"
+  sha256 "6e5f164ba590955477da70f36cf2ca484a3de5fc848a2a88bfcc49363ecadf75"
   license "MIT"
 
   depends_on "go" => :build
