@@ -14,7 +14,7 @@ const Index = () => {
   const [chineseNovels, setChineseNovels] = useState<Novel[]>([]);
   const [koreanNovels, setKoreanNovels] = useState<Novel[]>([]);
   const [japaneseNovels, setJapaneseNovels] = useState<Novel[]>([]);
-  const [recentlyUpdatedNovels, setRecentlyUpdatedNovels] = useState<Novel[]>([]);
+  const [recentlyReadNovels, setRecentlyReadNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     novel_count: 0,
@@ -27,17 +27,17 @@ const Index = () => {
       try {
         setLoading(true);
 
-        const [chinese, korean, japanese, recentlyUpdated] = await Promise.all([
+        const [chinese, korean, japanese, recentlyRead] = await Promise.all([
           getNovelsByFilter('language', 'chinese', 1, 5),
           getNovelsByFilter('language', 'korean', 1, 5),
           getNovelsByFilter('language', 'japanese', 1, 5),
-          getNovelsByFilter('recently_updated', '5')
+          getNovelsByFilter('recently_read', '5')
         ]);
 
         setChineseNovels(chinese.novels);
         setKoreanNovels(korean.novels);
         setJapaneseNovels(japanese.novels);
-        setRecentlyUpdatedNovels(recentlyUpdated.novels);
+        setRecentlyReadNovels(recentlyRead.novels);
 
         // Calculate stats
         const stats = await getNovelsStats();
@@ -172,10 +172,10 @@ const Index = () => {
             />
           </div>
 
-          {/* Recently Updated Section */}
+          {/* Recently Read Section */}
           <div className="mb-12">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold gradient-text">Recently Updated</h2>
+              <h2 className="text-2xl font-bold gradient-text">Recently Read</h2>
               <Button asChild variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300">
                 <Link to="/library">
                   View All
@@ -184,12 +184,12 @@ const Index = () => {
               </Button>
             </div>
             <div className="glass-card rounded-lg p-6">
-              {recentlyUpdatedNovels.length > 0 ? (
-                <NovelGrid novels={recentlyUpdatedNovels} />
+              {recentlyReadNovels.length > 0 ? (
+                <NovelGrid novels={recentlyReadNovels} />
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No recently updated novels. <Link to="/add" className="text-indigo-600 hover:underline">Add some novels to get started!</Link></p>
+                  <p>No recently read novels. <Link to="/add" className="text-indigo-600 hover:underline">Add some novels to get started!</Link></p>
                 </div>
               )}
             </div>

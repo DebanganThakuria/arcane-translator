@@ -101,7 +101,7 @@ func (r *repo) GetAllNovels(offset, limit int) ([]*models.Novel, int, error) {
 	query := `
 		SELECT *
 		FROM novels
-		ORDER BY title
+		ORDER BY last_updated DESC
 		LIMIT ? OFFSET ?
 	`
 
@@ -155,7 +155,7 @@ func (r *repo) GetNovelsBySourceIDs(sources []string, offset, limit int) ([]*mod
 		SELECT *
 		FROM novels
 		WHERE source IN (%s)
-		ORDER BY last_read_timestamp, last_updated, date_added DESC
+		ORDER BY last_updated DESC
 		LIMIT ? OFFSET ?
 	`, strings.Join(placeholders, ","))
 
@@ -184,7 +184,7 @@ func (r *repo) GetNovelsByGenre(genre string, offset, limit int) ([]*models.Nove
 		SELECT *
 		FROM novels
 		WHERE genres LIKE ? COLLATE NOCASE
-		ORDER BY last_read_timestamp, last_updated, date_added DESC
+		ORDER BY last_updated DESC
 		LIMIT ? OFFSET ?
 	`
 
@@ -229,7 +229,7 @@ func (r *repo) GetNovelsByRecentlyRead(count int) ([]*models.Novel, error) {
 	query := `
 		SELECT *
 		FROM novels
-		ORDER BY last_read_timestamp, last_updated DESC
+		ORDER BY last_read_timestamp DESC, last_updated DESC
 		LIMIT ?
 	`
 
@@ -247,7 +247,7 @@ func (r *repo) SearchNovel(query string) ([]*models.Novel, error) {
 		SELECT *
 		FROM novels
 		WHERE title LIKE ? COLLATE NOCASE
-		ORDER BY last_read_timestamp, last_updated, date_added DESC
+		ORDER BY last_updated DESC
 		LIMIT 20
 	`
 
