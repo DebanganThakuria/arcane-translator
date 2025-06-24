@@ -13,7 +13,7 @@ import (
 
 const (
 	ResponseMimeType     = "application/json"
-	GenerateContentModel = "gemini-2.5-flash-preview-05-20"
+	GenerateContentModel = "gemini-2.5-flash"
 )
 
 type IClient interface {
