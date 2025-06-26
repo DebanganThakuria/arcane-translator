@@ -268,10 +268,8 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 	}
 
 	// Add the next chapter URL to the last chapter if there are new chapters
-	if novelDetails.NumberOfChapters > novel.ChaptersCount {
-		if err = s.addNextChapterUrlToLastChapter(novel.ID, novel.Source); err != nil {
-			log.Printf("Failed to add next chapter URL to last chapter: %v\n", err)
-		}
+	if err = s.addNextChapterUrlToLastChapter(novel.ID, novel.Source); err != nil {
+		log.Printf("Failed to add next chapter URL to last chapter: %v\n", err)
 	}
 
 	// Update the novel details in the database
