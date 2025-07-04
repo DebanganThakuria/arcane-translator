@@ -255,6 +255,8 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 		return nil, err
 	}
 
+	println(webpageContent)
+
 	// Cover image URL
 	coverUrl, err := sources.GetSource(novel.Source).GetNovelCoverImageUrl(webpageContent)
 	if err != nil {
