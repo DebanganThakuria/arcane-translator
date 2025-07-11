@@ -84,19 +84,20 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 
 	// Create a new novel entry in the database
 	newNovel := &models.Novel{
-		ID:            sources.GetSource(request.Source).GetNovelId(request.URL),
-		Title:         novelDetails.NovelTitleTranslated,
-		OriginalTitle: novelDetails.NovelTitleOriginal,
-		Cover:         coverUrl,
-		Source:        request.Source,
-		URL:           request.URL,
-		Summary:       novelDetails.NovelSummaryTranslated,
-		Author:        novelDetails.NovelAuthorNameTranslated,
-		Status:        novelDetails.Status,
-		Genres:        novelDetails.PossibleNovelGenres,
-		ChaptersCount: novelDetails.NumberOfChapters,
-		LastUpdated:   time.Now().Unix(),
-		DateAdded:     time.Now().Unix(),
+		ID:                sources.GetSource(request.Source).GetNovelId(request.URL),
+		Title:             novelDetails.NovelTitleTranslated,
+		OriginalTitle:     novelDetails.NovelTitleOriginal,
+		Cover:             coverUrl,
+		Source:            request.Source,
+		URL:               request.URL,
+		Summary:           novelDetails.NovelSummaryTranslated,
+		Author:            novelDetails.NovelAuthorNameTranslated,
+		Status:            novelDetails.Status,
+		Genres:            novelDetails.PossibleNovelGenres,
+		ChaptersCount:     novelDetails.NumberOfChapters,
+		LastReadTimestamp: time.Now().Unix(),
+		LastUpdated:       time.Now().Unix(),
+		DateAdded:         time.Now().Unix(),
 	}
 
 	return s.repo.CreateNovel(newNovel)
@@ -142,6 +143,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		return nil, err
 	}
 
+	novel.LastReadTimestamp = time.Now().Unix()
 	novel.Genres = append(novel.Genres, translatedContent.PossibleNewGenres...)
 	novel.Genres = utils.RemoveDuplicatesFromSlice(novel.Genres)
 	if err = s.repo.UpdateNovel(novel); err != nil {
@@ -209,6 +211,7 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, err
 	}
 
+	novel.LastReadTimestamp = time.Now().Unix()
 	novel.Genres = append(novel.Genres, translatedContent.PossibleNewGenres...)
 	novel.Genres = utils.RemoveDuplicatesFromSlice(novel.Genres)
 	if err = s.repo.UpdateNovel(novel); err != nil {
@@ -283,6 +286,7 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 	novel.Status = novelDetails.Status
 	novel.ChaptersCount = novelDetails.NumberOfChapters
 	novel.LastUpdated = time.Now().Unix()
+	novel.LastReadTimestamp = time.Now().Unix()
 
 	if err = s.repo.UpdateNovel(novel); err != nil {
 		return nil, err
