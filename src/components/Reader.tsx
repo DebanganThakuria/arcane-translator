@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { saveReadingProgress } from '../utils/readingProgress';
 
 interface ReaderProps {
   chapter: Chapter;
@@ -43,6 +44,7 @@ const Reader: React.FC<ReaderProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
+  const saveProgressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Scroll to top when chapter changes
@@ -66,14 +68,35 @@ const Reader: React.FC<ReaderProps> = ({
         const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
         const progress = Math.min((scrollTop / (scrollHeight - clientHeight)) * 100, 100);
         setReadingProgress(progress);
+
+        // Debounced save to localStorage to avoid excessive writes
+        if (saveProgressTimeoutRef.current) {
+          clearTimeout(saveProgressTimeoutRef.current);
+        }
+        
+        saveProgressTimeoutRef.current = setTimeout(() => {
+          saveReadingProgress(novel.id, chapter.number, progress, chapter.title);
+        }, 1000); 
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      if (saveProgressTimeoutRef.current) {
+        clearTimeout(saveProgressTimeoutRef.current);
+      }
     };
-  }, []);
+  }, [novel.id, chapter.number, chapter.title]);
+
+  useEffect(() => {
+    return () => {
+      // Save final progress when component unmounts
+      if (readingProgress > 0) {
+        saveReadingProgress(novel.id, chapter.number, readingProgress, chapter.title);
+      }
+    };
+  }, [novel.id, chapter.number, chapter.title, readingProgress]);
 
   const handleFontSizeChange = (value: number[]) => {
     const newSize = value[0];
