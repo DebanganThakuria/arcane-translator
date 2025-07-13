@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
 import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye } from 'lucide-react';
-import { translateChapter } from '../services/translationService';
+import { translateChapterWithFallback } from '../services/translationService';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
@@ -99,7 +99,7 @@ const Reader: React.FC<ReaderProps> = ({
   const handleTranslateNext = async () => {
     setIsTranslating(true);
     try {
-      await translateChapter(novel.id);
+      await translateChapterWithFallback(novel.id, chapter.next_chapter_url);
       toast({
         title: "Success",
         description: "Next chapter has been translated successfully!",

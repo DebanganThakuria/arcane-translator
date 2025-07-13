@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { sourceManager } from '../utils/sourceManager';
 import { SourceSite } from '../types/novel';
-import { extractNovelDetails } from '../services/translationService';
+import { extractNovelDetailsWithFallback } from '../services/translationService';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const AddNovelForm = () => {
@@ -64,7 +64,7 @@ const AddNovelForm = () => {
         description: "Extracting novel information...",
       });
 
-      const novel = await extractNovelDetails(url, source);
+      const novel = await extractNovelDetailsWithFallback(url, source);
       
       toast({
         title: "Extracting",
@@ -109,14 +109,6 @@ const AddNovelForm = () => {
     }
   };
 
-  const fallbackSites = [
-    { id: 'qidian', name: 'Qidian', url: 'https://www.qidian.com', language: 'Chinese' as const },
-    { id: 'naver', name: 'Naver Series', url: 'https://series.naver.com', language: 'Korean' as const },
-    { id: 'syosetu', name: 'Syosetu', url: 'https://syosetu.com', language: 'Japanese' as const }
-  ];
-
-  const sitesToShow = sites.length > 0 ? sites : fallbackSites;
-
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto">
@@ -141,7 +133,7 @@ const AddNovelForm = () => {
               <SelectValue placeholder={isLoadingSites ? "Loading sources..." : "Select source site"} />
             </SelectTrigger>
             <SelectContent>
-              {sitesToShow.map(site => (
+              {sites.map(site => (
                 <SelectItem key={site.id} value={site.id}>
                   {site.name} ({site.language})
                 </SelectItem>

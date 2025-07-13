@@ -11,8 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"backend/provider/webscraper"
-
 	"backend/handler"
 	_ "backend/provider/gemini"
 	_ "backend/provider/webscraper"
@@ -44,9 +42,6 @@ func main() {
 	// Create a deadline for the shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	// Close the web scraper service connections
-	webscraper.GetScraperService().ClosOpenCon()
 
 	// Attempt a graceful shutdown
 	if err := server.Shutdown(ctx); err != nil {

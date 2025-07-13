@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { setFirstChapterUrl } from '../services/translationService';
+import { setFirstChapterUrlWithFallback } from '../services/translationService';
 
 interface FirstChapterDialogProps {
   novelId: string;
@@ -46,7 +46,7 @@ const FirstChapterDialog = ({ novelId, isOpen, novelUrl, onOpenChange, onSuccess
         title: "Setting first chapter URL",
       }).id;
       
-      const firstChapter = await setFirstChapterUrl(novelId, url);
+      const firstChapter = await setFirstChapterUrlWithFallback(novelId, url);
       
       toast({
         title: "Success",

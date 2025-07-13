@@ -34,6 +34,7 @@ export interface Chapter {
   date_translated: number;
   word_count?: number;
   url?: string;              // URL of this chapter
+  next_chapter_url?: string; // URL of the next chapter
 }
 
 export interface SourceSite {

@@ -12,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Novel, Chapter } from '../types/novel';
 import { useToast } from '@/components/ui/use-toast';
 import { getReadingProgress, hasReadingProgress, getReadingProgressSummary } from '../utils/readingProgress';
+import { refreshNovelWithFallback } from '../services/translationService';
 
 const API_BASE_URL = 'http://localhost:8088';
 
@@ -67,13 +68,7 @@ const NovelDetail = () => {
     
     setRefreshing(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/novels/${id}/refresh`, {
-        method: 'POST'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to refresh novel');
-      }
+      await refreshNovelWithFallback(id, novel.url);
 
       toast({
         title: "Refresh Complete",

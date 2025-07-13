@@ -29,7 +29,7 @@ func RegisterHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("POST /novels/translate", extractNovelDetails)
 	mux.HandleFunc("POST /novels/translate/chapter", translateNovelChapter)
 	mux.HandleFunc("POST /novels/translate/first_chapter", translateFirstChapter)
-	mux.HandleFunc("POST /novels/{id}/refresh", refreshNovel)
+	mux.HandleFunc("POST /novels/refresh", refreshNovel)
 }
 
 // healthCheckHandler provides a simple health check endpoint

@@ -30,21 +30,24 @@ type TranslatedChapter struct {
 
 // NovelExtractionRequest represents a request to extract novel details from a URL
 type NovelExtractionRequest struct {
-	URL    string `json:"url"`
-	Source string `json:"source"`
+	URL         string  `json:"url"`
+	Source      string  `json:"source"`
+	HTMLContent *string `json:"html_content"`
 }
 
 // ChapterTranslationRequest represents a request to translate a chapter
 type ChapterTranslationRequest struct {
-	NovelID         string `json:"novel_id"`
-	ChapterNumber   int    `json:"chapter_number"`
-	ChapterURL      string `json:"chapter_url,omitempty"`
-	OriginalContent string `json:"original_content,omitempty"`
+	NovelID         string  `json:"novel_id"`
+	ChapterNumber   int     `json:"chapter_number"`
+	ChapterURL      string  `json:"chapter_url,omitempty"`
+	OriginalContent string  `json:"original_content,omitempty"`
+	HTMLContent     *string `json:"html_content"`
 }
 
 // NovelRefreshRequest represents a request to refresh a novel's details
 type NovelRefreshRequest struct {
-	NovelID string `json:"novel_id"`
+	NovelID     string  `json:"novel_id"`
+	HTMLContent *string `json:"html_content"`
 }
 
 // NovelRefreshResponse represents the response when refreshing a novel

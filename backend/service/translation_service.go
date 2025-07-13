@@ -20,7 +20,7 @@ type TranslationService interface {
 	ExtractNovelDetails(ctx context.Context, request *models.NovelExtractionRequest) (*models.Novel, error)
 	TranslateChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
 	TranslateFirstChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
-	RefreshNovel(ctx context.Context, novelId string) (*models.Novel, error)
+	RefreshNovel(ctx context.Context, request *models.NovelRefreshRequest) (*models.Novel, error)
 }
 
 type translationService struct {
@@ -65,13 +65,21 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 	}
 
 	// Scrape the webpage content
-	webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(request.URL)
-	if err != nil {
-		return nil, err
+	if request.HTMLContent == nil {
+		webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(request.URL)
+		if err != nil {
+			return nil, err
+		}
+		request.HTMLContent = &webpageContent
 	}
 
+	return s.processNovelDetails(ctx, request.URL, request.Source, *request.HTMLContent)
+}
+
+// processNovelDetails is a helper method that processes the scraped content
+func (s *translationService) processNovelDetails(ctx context.Context, url, source, webpageContent string) (*models.Novel, error) {
 	// Get cover image URL
-	coverUrl, err := sources.GetSource(request.Source).GetNovelCoverImageUrl(webpageContent)
+	coverUrl, err := sources.GetSource(source).GetNovelCoverImageUrl(webpageContent)
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +92,12 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 
 	// Create a new novel entry in the database
 	newNovel := &models.Novel{
-		ID:                sources.GetSource(request.Source).GetNovelId(request.URL),
+		ID:                sources.GetSource(source).GetNovelId(url),
 		Title:             novelDetails.NovelTitleTranslated,
 		OriginalTitle:     novelDetails.NovelTitleOriginal,
 		Cover:             coverUrl,
-		Source:            request.Source,
-		URL:               request.URL,
+		Source:            source,
+		URL:               url,
 		Summary:           novelDetails.NovelSummaryTranslated,
 		Author:            novelDetails.NovelAuthorNameTranslated,
 		Status:            novelDetails.Status,
@@ -126,20 +134,30 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	}
 
 	// Scrape the chapter content
-	chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(request.ChapterURL)
-	if err != nil {
-		return nil, err
+	if request.HTMLContent == nil {
+		chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(request.ChapterURL)
+		if err != nil {
+			return nil, err
+		}
+		request.HTMLContent = &chapterContent
 	}
 
+	return s.processFirstChapterTranslation(ctx, novel, request.ChapterURL, *request.HTMLContent)
+}
+
+// processFirstChapterTranslation is a helper method that processes the first chapter translation
+func (s *translationService) processFirstChapterTranslation(ctx context.Context, novel *models.Novel, chapterURL, chapterContent string) (*models.Chapter, error) {
 	// Get the next chapter URL
-	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent, request.ChapterURL)
+	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent, chapterURL)
 	if err != nil {
+		log.Printf("Failed to get next chapter url: %v", err)
 		return nil, err
 	}
 
 	// Translate the chapter content
 	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
 	if err != nil {
+		log.Printf("Failed to translate chapter: %v", err)
 		return nil, err
 	}
 
@@ -152,7 +170,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 
 	// Create a new chapter entry
 	chapter := &models.Chapter{
-		ID:             sources.GetSource(novel.Source).GetChapterId(request.ChapterURL),
+		ID:             sources.GetSource(novel.Source).GetChapterId(chapterURL),
 		NovelID:        novel.ID,
 		Number:         1,
 		Title:          translatedContent.TranslatedChapterTitle,
@@ -160,7 +178,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		Content:        translatedContent.TranslatedChapterContents,
 		DateTranslated: time.Now().Unix(),
 		WordCount:      utils.CountWords(translatedContent.TranslatedChapterContents),
-		URL:            request.ChapterURL,
+		URL:            chapterURL,
 		NextChapterURL: nextChapterURL,
 	}
 
@@ -194,13 +212,21 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, err
 	}
 
-	chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(lastChapter.NextChapterURL)
-	if err != nil {
-		return nil, err
+	if request.HTMLContent == nil {
+		chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(lastChapter.NextChapterURL)
+		if err != nil {
+			return nil, err
+		}
+		request.HTMLContent = &chapterContent
 	}
 
+	return s.processChapterTranslation(ctx, novel, lastChapter, lastChapter.NextChapterURL, *request.HTMLContent)
+}
+
+// processChapterTranslation is a helper method that processes regular chapter translation
+func (s *translationService) processChapterTranslation(ctx context.Context, novel *models.Novel, lastChapter *models.Chapter, chapterURL, chapterContent string) (*models.Chapter, error) {
 	// Get the next chapter URL
-	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent, lastChapter.NextChapterURL)
+	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(chapterContent, chapterURL)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +246,7 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 
 	// Create a new chapter entry
 	chapter := &models.Chapter{
-		ID:             sources.GetSource(novel.Source).GetChapterId(lastChapter.NextChapterURL),
+		ID:             sources.GetSource(novel.Source).GetChapterId(chapterURL),
 		NovelID:        novel.ID,
 		Number:         lastChapter.Number + 1,
 		Title:          translatedContent.TranslatedChapterTitle,
@@ -228,46 +254,47 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		Content:        translatedContent.TranslatedChapterContents,
 		DateTranslated: time.Now().Unix(),
 		WordCount:      utils.CountWords(translatedContent.TranslatedChapterContents),
-		URL:            lastChapter.NextChapterURL, // Last Chapter's next chapter URL is the current chapter's URL
+		URL:            chapterURL,
 		NextChapterURL: nextChapterUrl,
 	}
 
 	return s.repo.CreateChapter(chapter)
 }
 
-func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (*models.Novel, error) {
-	if novelId == "" {
+func (s *translationService) RefreshNovel(ctx context.Context, request *models.NovelRefreshRequest) (*models.Novel, error) {
+	if request.NovelID == "" {
 		return nil, errors.New("novel ID cannot be empty")
 	}
 
-	success := utils.Mutex.TryLock("refreshNovel"+novelId, time.Millisecond)
+	success := utils.Mutex.TryLock("refreshNovel"+request.NovelID, time.Millisecond)
 	if !success {
 		return nil, errors.New("another request is in progress")
 	}
-	defer utils.Mutex.Unlock("refreshNovel" + novelId)
+	defer utils.Mutex.Unlock("refreshNovel" + request.NovelID)
 
 	// Get the novel by ID to ensure it exists
-	novel, err := s.repo.GetNovelByID(novelId)
+	novel, err := s.repo.GetNovelByID(request.NovelID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Scrape the webpage content for the novel
-	webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(novel.URL)
-	if err != nil {
-		return nil, err
+	if request.HTMLContent == nil {
+		webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(novel.URL)
+		if err != nil {
+			return nil, err
+		}
+		request.HTMLContent = &webpageContent
 	}
 
-	println(webpageContent)
-
 	// Cover image URL
-	coverUrl, err := sources.GetSource(novel.Source).GetNovelCoverImageUrl(webpageContent)
+	coverUrl, err := sources.GetSource(novel.Source).GetNovelCoverImageUrl(*request.HTMLContent)
 	if err != nil {
 		return nil, err
 	}
 
 	// Translate the novel details
-	novelDetails, err := gemini.GetClient().TranslateNovelDetails(ctx, webpageContent)
+	novelDetails, err := gemini.GetClient().TranslateNovelDetails(ctx, *request.HTMLContent)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +319,7 @@ func (s *translationService) RefreshNovel(ctx context.Context, novelId string) (
 		return nil, err
 	}
 
-	return s.repo.GetNovelByID(novelId)
+	return s.repo.GetNovelByID(request.NovelID)
 }
 
 func (s *translationService) addNextChapterUrlToLastChapter(novelId, source string) error {

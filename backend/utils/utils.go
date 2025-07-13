@@ -4,13 +4,24 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"unicode"
 )
 
 // GetDBPath returns the path to the SQLite database file
 func GetDBPath() string {
-	// You can modify this to use environment variables or config files
-	dataDir := "data"
+	// Get the absolute path to the project root (arcane-translator)
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Printf("Warning: Failed to get current working directory: %v", err)
+		cwd = "."
+	}
+	// Find the index of "arcane-translator" in the path using strings.Index
+	projectRoot := cwd
+	if idx := strings.Index(cwd, "arcane-translator"); idx != -1 {
+		projectRoot = cwd[:idx+len("arcane-translator")]
+	}
+	dataDir := filepath.Join(projectRoot, "data")
 
 	// Create a data directory if it doesn't exist
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
