@@ -234,17 +234,10 @@ export const extractNovelDetailsBrowser = async (url: string, sourceSite: string
 // Browser-based first chapter translation
 export const setFirstChapterUrlBrowser = async (
   novelId: string, 
-  firstChapterUrl: string
+  firstChapterUrl: string,
+  htmlContent: string,
 ): Promise<Chapter> => {
   try {
-    // Validate URL format
-    if (!firstChapterUrl.startsWith('http://') && !firstChapterUrl.startsWith('https://')) {
-      throw new Error('Invalid URL format. URL must start with http:// or https://');
-    }
-
-    // Scrape the content using manual extraction
-    const htmlContent = await scrapeManually(firstChapterUrl);
-
     const response = await fetch(
       `${API_BASE_URL}/novels/translate/first_chapter`,
       {
@@ -549,40 +542,6 @@ export const setFirstChapterUrl = async (
     return await response.json();
   } catch (error) {
     console.error(`Error setting first chapter URL for novel ID ${novelId}:`, error);
-    throw error;
-  }
-};
-
-// Set first chapter URL with automatic fallback to browser-based scraping
-export const setFirstChapterUrlWithFallback = async (
-  novelId: string, 
-  firstChapterUrl: string
-): Promise<Chapter> => {
-  try {
-    // Try normal scraping first
-    return await setFirstChapterUrl(novelId, firstChapterUrl);
-  } catch (error) {
-    console.log('Normal chapter scraping failed, attempting manual extraction...');
-    try {
-      return await setFirstChapterUrlBrowser(novelId, firstChapterUrl);
-    } catch (manualError) {
-      console.error('Manual extraction also failed:', manualError);
-      throw new Error(`Normal scraping failed. Manual extraction error: ${manualError.message}`);
-    }
-  }
-};
-
-// Test function to demonstrate browser-based scraping
-export const testBrowserScraping = async (url: string): Promise<void> => {
-  console.log('🔍 Testing browser-based scraping...');
-
-  try {
-    const htmlContent = await scrapeManually(url);
-    console.log('✅ Successfully extracted content from:', url);
-    console.log('📄 Content length:', htmlContent.length);
-    console.log('🎯 Sample content:', htmlContent.substring(0, 200) + '...');
-  } catch (error) {
-    console.error('❌ Manual extraction failed:', error);
     throw error;
   }
 };

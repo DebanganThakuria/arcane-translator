@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { setFirstChapterUrlWithFallback } from '../services/translationService';
+import { setFirstChapterUrl, setFirstChapterUrlBrowser } from '../services/translationService';
 
 interface FirstChapterDialogProps {
   novelId: string;
@@ -24,12 +24,14 @@ interface FirstChapterDialogProps {
 
 const FirstChapterDialog = ({ novelId, isOpen, novelUrl, onOpenChange, onSuccess }: FirstChapterDialogProps) => {
   const [url, setUrl] = useState('');
+  const [htmlContent, setHtmlContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [wasWebScrapingSuccessful, setWasWebScrapingSuccessful] = useState(true);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!url.trim() || !url.includes(novelUrl.split('/')[2])) {
       toast({
         title: "Error",
@@ -38,24 +40,52 @@ const FirstChapterDialog = ({ novelId, isOpen, novelUrl, onOpenChange, onSuccess
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const toastId = toast({
         title: "Setting first chapter URL",
       }).id;
-      
-      const firstChapter = await setFirstChapterUrlWithFallback(novelId, url);
-      
-      toast({
-        title: "Success",
-        description: "First chapter URL set and chapter translated successfully. You can now start reading."
-      });
-      
-      setUrl('');
-      onOpenChange(false);
-      onSuccess();
+
+      if (!wasWebScrapingSuccessful) {
+        if (htmlContent == '') {
+          toast({
+            title: "Error",
+            description: "Please enter html content",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        await setFirstChapterUrlBrowser(novelId, url, htmlContent);
+        toast({
+          title: "Success",
+          description: "First chapter URL set and chapter translated successfully. You can now start reading."
+        });
+        setUrl('');
+        onOpenChange(false);
+        onSuccess();
+      } else {
+        try {
+          const firstChapter = await setFirstChapterUrl(novelId, url);
+          toast({
+            title: "Success",
+            description: "First chapter URL set and chapter translated successfully. You can now start reading."
+          });
+          setUrl('');
+          onOpenChange(false);
+          onSuccess();
+        } catch (error) {
+          toast({
+              title: "Web Scraping Failed",
+              description: "Failed to scrape the first chapter URL. Please enter the HTML content manually.",
+              variant: "destructive",
+            })
+          setWasWebScrapingSuccessful(false);
+          setIsSubmitting(false);
+          return;
+        }
+      }
     } catch (error) {
       console.error('Error setting first chapter URL:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -96,6 +126,22 @@ const FirstChapterDialog = ({ novelId, isOpen, novelUrl, onOpenChange, onSuccess
               The links of subsequent chapters will be parsed from here.
             </p>
           </div>
+            {!wasWebScrapingSuccessful && (
+                <div className="space-y-2">
+                <Label htmlFor="htmlContent">HTML Content</Label>
+                <Input
+                    id="htmlContent"
+                    placeholder="Paste the HTML content of the first chapter here"
+                    value={htmlContent}
+                    onChange={(e) => setHtmlContent(e.target.value)}
+                    required
+                    className="h-32 resize-y"
+                />
+                <p className="text-xs text-muted-foreground">
+                    If web scraping fails, you can paste the HTML content of the first chapter here.
+                </p>
+                </div>
+            )}
           
           <DialogFooter className="sm:justify-between">
             <DialogClose asChild>
