@@ -1,10 +1,9 @@
-package gemini
+package llm
 
 import (
 	"context"
 	"encoding/json"
 	"log"
-	"os"
 
 	"backend/models"
 
@@ -16,33 +15,8 @@ const (
 	GenerateContentModel = "gemini-2.5-flash"
 )
 
-type IClient interface {
-	TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error)
-	TranslateNovelChapter(ctx context.Context, novelGenres []string, webpageContent string) (*models.TranslatedChapter, error)
-}
-
-var geminiClient IClient
-
 type geminiClientImpl struct {
 	geminiClient *genai.Client
-}
-
-func init() {
-	genaiClient, err := genai.NewClient(context.Background(), &genai.ClientConfig{
-		APIKey:  os.Getenv("GEMINI_API_KEY"),
-		Backend: genai.BackendGeminiAPI,
-	})
-	if err != nil {
-		panic("Failed to create Gemini client: " + err.Error())
-	}
-
-	geminiClient = &geminiClientImpl{
-		geminiClient: genaiClient,
-	}
-}
-
-func GetClient() IClient {
-	return geminiClient
 }
 
 func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {
@@ -127,22 +101,28 @@ func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 
 func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres []string, webpageContent string) (*models.TranslatedChapter, error) {
 	prompt := `
-        You are the best webnovel translator and editor, capable of producing the highest quality work. Your task is translating and polishing the following Webnovel chapter into flawless English, ensuring perfect grammar and language. Translate all original language object names, including places, abilities, techniques, and other cultural references, into English. Provide necessary context and clarification for Western readers where needed.
-        Your goal is to craft an engaging, culturally sensitive English version while preserving the original storytelling style. The author of the original text may have limited writing skills, so take the liberty to polish the content in your translation. Pay special attention to the dialogues, ensuring they flow smoothly and sound lifelike. Think of yourself as the author.
-        You mustn't lose any plot points or system messages during the translation process. Correct any logical errors to ensure the story makes sense to the reader. I trust you to provide the best possible results.
+        You are the best webnovel translator and editor, capable of producing the highest quality work.
+		Your task is translating and polishing the following Webnovel chapter into flawless English, ensuring perfect grammar and language. Translate all original language object names, including places, abilities, techniques, and other cultural references, into English.
+		Your goal is to craft an engaging English version while preserving the original content. The author of the original text may have limited writing skills, so take the liberty to polish the content in your translation wherever you judge necessary. Pay special attention to the dialogues, ensuring they flow smoothly and sound lifelike. Do not add anything extra anywhere from your end.
+		Finally, you mustn't lose any content from the original during the translation process. 
+		I trust you to provide the best possible results. Please translate the full chapter as per these guidelines.
 
         Currently known novel genres: ` + models.GenresToString(novelGenres) + `
 		Chapter Content in the source language: ` + webpageContent + `
 
         Return ONLY a valid JSON object with this exact structure:
         {{
-            "translated_chapter_title": "The translated title of the chapter.",
+            "translated_chapter_title": "The translated title of the chapter. This is important. Never miss it.",
 			"original_chapter_title": "The original title in the source language.",
-            "translated_chapter_contents": "The translated content of the chapter in HTML format with paragraph tags. Please ensure that the chapter content has valid HTML tags for rendering on the frontend.",
+            "translated_chapter_contents": "The translated content of the full chapter in HTML format with paragraph tags. Please ensure that the chapter content has valid HTML tags for rendering on the frontend. And, most importantly, ensure that the full chapter content is included in the response.",
             "possible_new_genres": "Array of any genres you detect that aren't already known (leave empty if none). Response should be like this ["Genre1", "Genre2", ...]"
         }}
-
-		Please terminate the translation and return when the chapter ends. The contents of the translated chapter is important. Do not miss it. Finally, do not include any commentary, explanation, or preamble. Only return the JSON object.`
+	
+		Additional instructions. Please follow these instructions carefully:
+		- Please terminate the translation and return when the chapter ends.
+		- Do not miss any of the fields. This is very important. 
+		- Do not include any commentary, explanation, or preamble. Only return the JSON object.
+	`
 
 	response, err := g.geminiClient.Models.GenerateContent(ctx,
 		GenerateContentModel,

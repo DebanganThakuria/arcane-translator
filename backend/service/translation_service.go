@@ -9,7 +9,7 @@ import (
 	"backend/provider/webscraper"
 
 	"backend/models"
-	"backend/provider/gemini"
+	"backend/provider/llm"
 	"backend/provider/sources"
 	"backend/repo"
 	"backend/utils"
@@ -85,7 +85,7 @@ func (s *translationService) processNovelDetails(ctx context.Context, url, sourc
 	}
 
 	// Translate the novel details
-	novelDetails, err := gemini.GetClient().TranslateNovelDetails(ctx, webpageContent)
+	novelDetails, err := llm.GetClaude().TranslateNovelDetails(ctx, webpageContent)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (s *translationService) processFirstChapterTranslation(ctx context.Context,
 	}
 
 	// Translate the chapter content
-	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
+	translatedContent, err := llm.GetClaude().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
 	if err != nil {
 		log.Printf("Failed to translate chapter: %v", err)
 		return nil, err
@@ -232,7 +232,7 @@ func (s *translationService) processChapterTranslation(ctx context.Context, nove
 	}
 
 	// Translate the chapter content
-	translatedContent, err := gemini.GetClient().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
+	translatedContent, err := llm.GetClaude().TranslateNovelChapter(ctx, novel.Genres, chapterContent)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 	}
 
 	// Translate the novel details
-	novelDetails, err := gemini.GetClient().TranslateNovelDetails(ctx, *request.HTMLContent)
+	novelDetails, err := llm.GetClaude().TranslateNovelDetails(ctx, *request.HTMLContent)
 	if err != nil {
 		return nil, err
 	}
