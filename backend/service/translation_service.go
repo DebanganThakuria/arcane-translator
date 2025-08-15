@@ -56,12 +56,6 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		return nil, errors.New("source cannot be empty")
 	}
 
-	novelId := sources.GetSource(request.Source).GetNovelId(request.URL)
-	existingNovel, err := s.repo.GetNovelByID(novelId)
-	if existingNovel != nil && existingNovel.ID != "" {
-		return existingNovel, nil
-	}
-
 	success := utils.Mutex.TryLock("extractNovelDetails"+request.URL, 5*time.Millisecond)
 	if !success {
 		return nil, errors.New("another request is in progress")
@@ -69,6 +63,12 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 	defer func() {
 		utils.Mutex.Unlock("extractNovelDetails" + request.URL)
 	}()
+
+	novelId := sources.GetSource(request.Source).GetNovelId(request.URL)
+	existingNovel, err := s.repo.GetNovelByID(novelId)
+	if existingNovel != nil && existingNovel.ID != "" {
+		return existingNovel, nil
+	}
 
 	// Scrape the webpage content
 	if request.HTMLContent == nil {
@@ -119,10 +119,6 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	if request.NovelID == "" {
 		return nil, errors.New("novel ID cannot be empty")
 	}
-	existingChapters, err := s.repo.GetNovelChapters(request.NovelID)
-	if len(existingChapters) > 0 {
-		return existingChapters[0], nil
-	}
 
 	success := utils.Mutex.TryLock("translateChapter"+request.NovelID, 5*time.Millisecond)
 	if !success {
@@ -131,6 +127,11 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	defer func() {
 		utils.Mutex.Unlock("translateChapter" + request.NovelID)
 	}()
+
+	existingChapters, err := s.repo.GetNovelChapters(request.NovelID)
+	if len(existingChapters) > 0 {
+		return existingChapters[0], nil
+	}
 
 	// Get the novel by ID to ensure it exists
 	novel, err := s.repo.GetNovelByID(request.NovelID)
@@ -193,11 +194,6 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, errors.New("novel ID cannot be empty")
 	}
 
-	existingChapter, err := s.repo.GetChapterByURL(request.ChapterURL)
-	if existingChapter != nil && existingChapter.ID != "" {
-		return existingChapter, nil
-	}
-
 	success := utils.Mutex.TryLock("translateChapter"+request.NovelID, 5*time.Millisecond)
 	if !success {
 		return nil, errors.New("another request is in progress")
@@ -205,6 +201,11 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 	defer func() {
 		utils.Mutex.Unlock("translateChapter" + request.NovelID)
 	}()
+
+	existingChapter, err := s.repo.GetChapterByURL(request.ChapterURL)
+	if existingChapter != nil && existingChapter.ID != "" {
+		return existingChapter, nil
+	}
 
 	// Get the novel by ID to ensure it exists
 	novel, err := s.repo.GetNovelByID(request.NovelID)
@@ -266,12 +267,6 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 		return nil, errors.New("novel ID cannot be empty")
 	}
 
-	// Get the novel by ID to ensure it exists
-	novel, err := s.repo.GetNovelByID(request.NovelID)
-	if err != nil {
-		return nil, err
-	}
-
 	success := utils.Mutex.TryLock("refreshNovel"+request.NovelID, 5*time.Millisecond)
 	if !success {
 		return nil, errors.New("another request is in progress")
@@ -279,6 +274,12 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 	defer func() {
 		utils.Mutex.Unlock("refreshNovel" + request.NovelID)
 	}()
+
+	// Get the novel by ID to ensure it exists
+	novel, err := s.repo.GetNovelByID(request.NovelID)
+	if err != nil {
+		return nil, err
+	}
 
 	// Scrape the webpage content for the novel
 	if request.HTMLContent == nil {
