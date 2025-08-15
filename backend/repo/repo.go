@@ -39,6 +39,7 @@ type Repo interface {
 	GetLastChapter(novelID string) (*models.Chapter, error)
 	GetChapterByID(novelID string, chapterID string) (*models.Chapter, error)
 	GetChapterByNumber(novelID string, chapterNumber int) (*models.Chapter, error)
+	GetChapterByURL(url string) (*models.Chapter, error)
 	CreateChapter(chapter *models.Chapter) (*models.Chapter, error)
 	UpdateChapter(chapter *models.Chapter) error
 }
@@ -438,6 +439,17 @@ func (r *repo) GetChapterByNumber(novelID string, chapterNumber int) (*models.Ch
 	`
 
 	row := r.db.QueryRow(query, novelID, chapterNumber)
+	return models.ScanChapter(row)
+}
+
+func (r *repo) GetChapterByURL(url string) (*models.Chapter, error) {
+	query := `
+		SELECT *
+		FROM chapters
+		WHERE url = ?
+	`
+
+	row := r.db.QueryRow(query, url)
 	return models.ScanChapter(row)
 }
 

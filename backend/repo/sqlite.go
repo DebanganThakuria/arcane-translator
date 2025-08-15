@@ -130,6 +130,7 @@ func initSchema(db *sql.DB) error {
 	_, err = db.Exec(`
 		CREATE INDEX IF NOT EXISTS idx_chapters_novel_id ON chapters(novel_id);
 		CREATE INDEX IF NOT EXISTS idx_chapters_number ON chapters(novel_id, number);
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_chapters_url ON chapters(url);
 
 		CREATE INDEX IF NOT EXISTS idx_novels_source ON novels(source);
 		CREATE INDEX IF NOT EXISTS idx_novels_last_read_timestamp ON novels(last_read_timestamp);

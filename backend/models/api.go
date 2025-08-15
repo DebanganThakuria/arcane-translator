@@ -37,11 +37,10 @@ type NovelExtractionRequest struct {
 
 // ChapterTranslationRequest represents a request to translate a chapter
 type ChapterTranslationRequest struct {
-	NovelID         string  `json:"novel_id"`
-	ChapterNumber   int     `json:"chapter_number"`
-	ChapterURL      string  `json:"chapter_url,omitempty"`
-	OriginalContent string  `json:"original_content,omitempty"`
-	HTMLContent     *string `json:"html_content"`
+	NovelID       string  `json:"novel_id"`
+	ChapterNumber int     `json:"chapter_number"`
+	ChapterURL    string  `json:"chapter_url,omitempty"`
+	HTMLContent   *string `json:"html_content"`
 }
 
 // NovelRefreshRequest represents a request to refresh a novel's details
