@@ -102,6 +102,23 @@ func getNovelByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, novel, http.StatusOK)
 }
 
+// deleteNovel handles DELETE /novels/{id}
+func deleteNovel(w http.ResponseWriter, r *http.Request) {
+	// Extract ID from URL path
+	id := strings.TrimPrefix(r.URL.Path, "/novels/")
+	if idx := strings.Index(id, "/"); idx > -1 {
+		id = id[:idx]
+	}
+
+	err := service.GetNovelService().DeleteNovel(id)
+	if err != nil {
+		http.Error(w, "Failed to delete novel: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // getNovelChapters handles GET /novels/{id}/chapters
 func getNovelChapters(w http.ResponseWriter, r *http.Request) {
 	// Extract novel ID from URL path
@@ -153,6 +170,28 @@ func getNovelChapterByNumber(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, chapter, http.StatusOK)
+}
+
+// deleteChapter handles DELETE /novels/{novelId}/chapters/{chapterId}
+func deleteChapter(w http.ResponseWriter, r *http.Request) {
+	// Extract novel ID and chapter ID from URL path
+	path := strings.TrimPrefix(r.URL.Path, "/novels/")
+	pathParts := strings.Split(path, "/")
+	if len(pathParts) < 3 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	novelID := pathParts[0]
+	chapterID := pathParts[2]
+
+	err := service.GetNovelService().DeleteChapter(novelID, chapterID)
+	if err != nil {
+		http.Error(w, "Failed to delete chapter: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // getAllSources handles GET /sources

@@ -25,6 +25,7 @@ type NovelService interface {
 	GetChapterByNumber(novelID string, chapterNumber int) (*models.Chapter, error)
 	CreateChapter(chapter *models.Chapter) (*models.Chapter, error)
 	UpdateChapter(chapter *models.Chapter) error
+	DeleteChapter(novelID string, chapterID string) error
 
 	GetAllSources() ([]*models.SourceSite, error)
 }
@@ -339,6 +340,30 @@ func (s *novelService) UpdateChapter(chapter *models.Chapter) error {
 	}
 
 	return s.repo.UpdateChapter(chapter)
+}
+
+func (s *novelService) DeleteChapter(novelID string, chapterID string) error {
+	if novelID == "" {
+		return errors.New("novel ID cannot be empty")
+	}
+
+	if chapterID == "" {
+		return errors.New("chapter ID cannot be empty")
+	}
+
+	// Check if novel exists
+	_, err := s.repo.GetNovelByID(novelID)
+	if err != nil {
+		return err
+	}
+
+	// Check if chapter exists
+	_, err = s.repo.GetChapterByID(novelID, chapterID)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.DeleteChapter(novelID, chapterID)
 }
 
 func (s *novelService) UpdateLastReadChapter(novelID string, chapterNumber int) error {

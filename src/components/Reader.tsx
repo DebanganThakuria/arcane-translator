@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Chapter, Novel } from '../types/novel';
-import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Settings, BookOpen, Clock, Eye, Trash2 } from 'lucide-react';
 import { translateChapterWithFallback } from '../services/translationService';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { saveReadingProgress } from '../utils/readingProgress';
+import { deleteChapter } from '../database/db';
 
 interface ReaderProps {
   chapter: Chapter;
@@ -41,6 +42,7 @@ const Reader: React.FC<ReaderProps> = ({
   const [isTranslating, setIsTranslating] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -142,6 +144,31 @@ const Reader: React.FC<ReaderProps> = ({
     }
   };
 
+  const handleDeleteChapter = async () => {
+    if (!confirm(`Are you sure you want to delete "${chapter.title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteChapter(novel.id, chapter.id);
+      toast({
+        title: "Success",
+        description: "Chapter has been deleted successfully!",
+      });
+      navigate(`/novel/${novel.id}`);
+    } catch (error) {
+      console.error('Error deleting chapter:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete chapter",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const estimatedReadingTime = Math.ceil((chapter.word_count || 1000) / 200); // 200 WPM average
 
   // Format chapter content to add line breaks between paragraphs
@@ -193,6 +220,28 @@ const Reader: React.FC<ReaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Delete Chapter Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteChapter}
+                disabled={isDeleting}
+                className={`gap-2 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-400 ${
+                  theme === 'dark' 
+                    ? 'dark:border-red-600 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300'
+                    : ''
+                }`}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </span>
+              </Button>
+
               {/* Reader Settings */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

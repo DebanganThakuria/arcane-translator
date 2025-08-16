@@ -3,9 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ChapterList from '../components/ChapterList';
 import FirstChapterDialog from '../components/FirstChapterDialog';
-import { getNovelById, getChaptersForNovel } from '../database/db';
+import { getNovelById, getChaptersForNovel, deleteNovel } from '../database/db';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Link as LinkIcon, BookOpen, Play } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Link as LinkIcon, BookOpen, Play, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -85,6 +86,26 @@ const NovelDetail = () => {
       setRefreshing(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    
+    try {
+      await deleteNovel(id);
+      toast({
+        title: "Novel Deleted",
+        description: "The novel has been successfully deleted.",
+        variant: "default",
+      });
+      navigate('/library');
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete the novel. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   
   if (loading) {
     return (
@@ -161,15 +182,48 @@ const NovelDetail = () => {
             </Link>
           </Button>
           
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Checking...' : 'Check for Updates'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+
+
+              disabled={refreshing}
+              className="border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Checking...' : 'Check for Updates'}
+            </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Novel</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{novel?.title}"? This action cannot be undone and will permanently remove the novel and all its chapters.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDelete}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
         
         <div className="flex flex-col md:flex-row gap-8">

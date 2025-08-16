@@ -42,6 +42,7 @@ type Repo interface {
 	GetChapterByURL(url string) (*models.Chapter, error)
 	CreateChapter(chapter *models.Chapter) (*models.Chapter, error)
 	UpdateChapter(chapter *models.Chapter) error
+	DeleteChapter(novelID string, chapterID string) error
 }
 
 type repo struct {
@@ -506,6 +507,29 @@ func (r *repo) UpdateChapter(chapter *models.Chapter) error {
 		chapter.ID,
 		chapter.NovelID,
 	)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("chapter not found")
+	}
+
+	return nil
+}
+
+func (r *repo) DeleteChapter(novelID string, chapterID string) error {
+	query := `
+		DELETE FROM chapters
+		WHERE novel_id = ? AND id = ?
+	`
+
+	result, err := r.db.Exec(query, novelID, chapterID)
 	if err != nil {
 		return err
 	}

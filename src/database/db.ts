@@ -121,3 +121,29 @@ export const searchNovelsByQuery = async (query: string): Promise<Novel[]> => {
     return [];
   }
 };
+
+// Delete novel
+export const deleteNovel = async (id: string): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/novels/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete novel');
+  } catch (error) {
+    console.error('Error deleting novel:', error);
+    throw error;
+  }
+};
+
+// Delete chapter
+export const deleteChapter = async (novelId: string, chapterId: string): Promise<void> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/novels/${novelId}/chapters/${chapterId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete chapter');
+  } catch (error) {
+    console.error('Error deleting chapter:', error);
+    throw error;
+  }
+};

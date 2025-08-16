@@ -22,8 +22,10 @@ func RegisterHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("GET /novels", getNovelsUsingFilter)
 	mux.HandleFunc("GET /search/novels/{query}", searchNovel)
 	mux.HandleFunc("GET /novels/{id}", getNovelByID)
+	mux.HandleFunc("DELETE /novels/{id}", deleteNovel)
 	mux.HandleFunc("GET /novels/{id}/chapters", getNovelChapters)
 	mux.HandleFunc("GET /novels/{id}/chapters/num/{chapterNumber}", getNovelChapterByNumber)
+	mux.HandleFunc("DELETE /novels/{id}/chapters/{chapterId}", deleteChapter)
 
 	// Translation APIs
 	mux.HandleFunc("POST /novels/translate", extractNovelDetails)
