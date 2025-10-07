@@ -20,12 +20,11 @@ import (
 
 func main() {
 	// Create a new HTTP server
-	port := 8088
 	server := setupServer()
 
 	// Start the server in a goroutine
 	go func() {
-		log.Printf("🚀 Starting Arcane Translator server on port %d...", port)
+		log.Printf("🚀 Starting Arcane Translator server on port %d...", 8088)
 		log.Printf("📚 Server ready to handle novel translation requests")
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("❌ Failed to start server: %v", err)

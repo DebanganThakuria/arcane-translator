@@ -130,7 +130,7 @@ func (c claudeClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
             "translated_chapter_title": "The translated title of the chapter.",
 			"original_chapter_title": "The original title in the source language.",
             "translated_chapter_contents": "The translated content of the full chapter in HTML format with paragraph tags. Please ensure that the chapter content has valid HTML tags for rendering on the frontend. And, most importantly, ensure that the full chapter content is included in the response.",
-            "possible_new_genres": "Array of any genres you detect that aren't already known (leave empty if none). Response should be like this ["Genre1", "Genre2", ...]"
+            "possible_new_genres": "Array of any genres you detect that aren't already known (leave empty if none). Only check for standard genres. Otherwise, this list grows exponentially. Response should be like this ["Genre1", "Genre2", ...]"
         }}
 	
 		Additional instructions. Please follow these instructions carefully:

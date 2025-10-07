@@ -420,6 +420,7 @@ export const refreshNovelBrowser = async (
 // Translate a chapter
 export const translateChapter = async (
   novelId: string,
+  chapterUrl?: string
 ): Promise<Chapter> => {
   try {
     const response = await fetch(`${API_BASE_URL}/novels/translate/chapter`, {
@@ -427,7 +428,7 @@ export const translateChapter = async (
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ novel_id: novelId})
+      body: JSON.stringify({ novel_id: novelId, chapter_url: chapterUrl })
     });
     
     if (!response.ok) {
@@ -449,7 +450,7 @@ export const translateChapterWithFallback = async (
 ): Promise<Chapter> => {
   try {
     // Try normal scraping first
-    return await translateChapter(novelId);
+    return await translateChapter(novelId, chapterUrl);
   } catch (error) {
     console.log('Normal chapter scraping failed, attempting manual extraction...');
     
