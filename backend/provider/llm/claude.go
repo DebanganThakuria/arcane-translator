@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
+	"strings"
 
 	"backend/models"
 
@@ -47,6 +49,23 @@ type AnthropicResponse struct {
 		CacheReadInputTokens     int `json:"cache_read_input_tokens"`
 		OutputTokens             int `json:"output_tokens"`
 	} `json:"usage"`
+}
+
+// cleanClaudeJSON trims whitespace, removes markdown/code block markers, and attempts to extract the first JSON object from the string.
+func cleanClaudeJSON(s string) string {
+	s = strings.TrimSpace(s)
+	// Remove Markdown code block markers if present
+	s = strings.TrimPrefix(s, "```json")
+	s = strings.TrimPrefix(s, "```")
+	s = strings.TrimSuffix(s, "```")
+	s = strings.TrimSpace(s)
+	// Try to extract the first JSON object using regex
+	re := regexp.MustCompile(`(?s){.*}`)
+	match := re.FindString(s)
+	if match != "" {
+		return match
+	}
+	return s
 }
 
 func (c claudeClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {
@@ -107,8 +126,9 @@ func (c claudeClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 	}
 
 	var novelDetails models.NovelDetails
-	if err = json.Unmarshal([]byte(response.Content[0].Text), &novelDetails); err != nil {
-		log.Println(ctx, "Unmarshal err: %v", err)
+	jsonStr := cleanClaudeJSON(response.Content[0].Text)
+	if err = json.Unmarshal([]byte(jsonStr), &novelDetails); err != nil {
+		log.Println(ctx, "Unmarshal err: %v. Raw response: %s", err, response.Content[0].Text)
 		return nil, fmt.Errorf("failed to unmarshal novel details: %w", err)
 	}
 
@@ -175,8 +195,9 @@ func (c claudeClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 	}
 
 	var translatedChapter models.TranslatedChapter
-	if err = json.Unmarshal([]byte(response.Content[0].Text), &translatedChapter); err != nil {
-		log.Println(ctx, "Unmarshal err: %v", err)
+	jsonStr := cleanClaudeJSON(response.Content[0].Text)
+	if err = json.Unmarshal([]byte(jsonStr), &translatedChapter); err != nil {
+		log.Println(ctx, "Unmarshal err: %v. Raw response: %s", err, response.Content[0].Text)
 		return nil, err
 	}
 

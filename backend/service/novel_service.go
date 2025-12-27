@@ -388,6 +388,30 @@ var allSources = []*models.SourceSite{
 		Language: "chinese",
 	},
 	{
+		ID:       "69yue",
+		Name:     "69yue",
+		URL:      "https://www.69yue.top",
+		Language: "chinese",
+	},
+	{
+		ID:       "shuhaige",
+		Name:     "shuhaige",
+		URL:      "https://m.shuhaige.net",
+		Language: "chinese",
+	},
+	{
+		ID:       "twkan",
+		Name:     "twkan",
+		URL:      "https://twkan.com",
+		Language: "chinese",
+	},
+	{
+		ID:       "doupo",
+		Name:     "doupo",
+		URL:      "https://doupo.935666.xyz",
+		Language: "chinese",
+	},
+	{
 		ID:       "syosetu",
 		Name:     "syosetu",
 		URL:      "https://syosetu.com/",
