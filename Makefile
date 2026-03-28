@@ -33,6 +33,11 @@ start-frontend:
 	@echo "Starting React frontend..."
 	npm run dev &
 	@echo "Frontend started on http://localhost:5173"
+# Start frontend only  
+start-backend:
+	@echo "Starting Backend..."
+	cd backend && go run main.go &
+	@echo "Backend is running"
 
 # Stop all processes
 stop:
