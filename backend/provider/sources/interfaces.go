@@ -21,6 +21,10 @@ func GetSource(sourceType string) Source {
 		return NewDuopo()
 	case "syosetu":
 		return NewSyosetu()
+	case "ixdzs":
+		return NewIxdzs()
+	case "czbooks":
+		return NewCzbooks()
 	default:
 		return nil
 	}

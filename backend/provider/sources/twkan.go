@@ -42,7 +42,8 @@ func (s *twkan) GetChapterId(chapterUrl string) string {
 	}
 
 	lastPart := parts[len(parts)-1]
-	return lastPart // Return the last part as the chapter ID
+	secondLastPart := parts[len(parts)-2]
+	return lastPart + "_" + secondLastPart
 }
 
 // GetNextChapterUrl constructs the chapter URL based on the previous chapter URL
