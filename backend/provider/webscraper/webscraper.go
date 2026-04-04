@@ -21,7 +21,7 @@ type collyScraperService struct {
 }
 
 func init() {
-	c := colly.NewCollector(colly.AllowURLRevisit())
+	c := colly.NewCollector(colly.AllowURLRevisit(), colly.DetectCharset())
 	c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 	collyScraper = &collyScraperService{c}
 }

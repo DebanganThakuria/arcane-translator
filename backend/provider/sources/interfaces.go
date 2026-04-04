@@ -25,6 +25,10 @@ func GetSource(sourceType string) Source {
 		return NewIxdzs()
 	case "czbooks":
 		return NewCzbooks()
+	case "quanben":
+		return NewQuanben()
+	case "sjks88":
+		return NewSjks88()
 	default:
 		return nil
 	}

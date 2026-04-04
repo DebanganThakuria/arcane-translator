@@ -424,6 +424,18 @@ var allSources = []*models.SourceSite{
 		Language: "chinese",
 	},
 	{
+		ID:       "quanben",
+		Name:     "quanben",
+		URL:      "https://www.quanben.io",
+		Language: "chinese",
+	},
+	{
+		ID:       "sjks88",
+		Name:     "sjks88",
+		URL:      "https://www.sjks88.com",
+		Language: "chinese",
+	},
+	{
 		ID:       "syosetu",
 		Name:     "syosetu",
 		URL:      "https://syosetu.com/",
