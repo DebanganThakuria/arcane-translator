@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"slices"
 	"time"
 )
 
@@ -20,13 +21,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 			"http://localhost:8080",
 		}
 
-		isAllowed := false
-		for _, allowed := range allowedOrigins {
-			if origin == allowed {
-				isAllowed = true
-				break
-			}
-		}
+		isAllowed := slices.Contains(allowedOrigins, origin)
 
 		if isAllowed || origin == "*" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)

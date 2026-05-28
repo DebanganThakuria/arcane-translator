@@ -41,8 +41,8 @@ type AnthropicResponse struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	} `json:"content"`
-	StopReason   string      `json:"stop_reason"`
-	StopSequence interface{} `json:"stop_sequence"`
+	StopReason   string `json:"stop_reason"`
+	StopSequence any    `json:"stop_sequence"`
 	Usage        struct {
 		InputTokens              int `json:"input_tokens"`
 		CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
@@ -77,7 +77,7 @@ func fixUnescapedQuotesInJSON(s string) string {
 	stringStart := -1
 
 	runes := []rune(s)
-	for i := 0; i < len(runes); i++ {
+	for i := range runes {
 		c := runes[i]
 
 		if escaped {
@@ -267,6 +267,8 @@ func (c claudeClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 		Your goal is to craft an engaging English version while preserving the original content. The author of the original text may have limited writing skills, so take the liberty to polish the content in your translation to ensure that the sentences and paragraphs flow smoothly. Pay special attention to the dialogues, ensuring they flow smoothly and sound lifelike.
 		Finally, you mustn't lose any content from the original during the translation process. 
 		I trust you to provide the best possible results. Please translate the full chapter as per these guidelines.
+	
+		Note: If the source language is also English take your liberty to polish the source, including language, grammar, formatting and the overall prose style in general. It should be like top quality human translation of Chinese novels.
 
         Currently known novel genres: ` + models.GenresToString(novelGenres) + `
 

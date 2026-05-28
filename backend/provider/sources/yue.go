@@ -39,12 +39,12 @@ func (y yue) GetChapterId(chapterUrl string) string {
 }
 
 func (y yue) GetNextChapterUrl(chapterContent, currentChapterUrl string) (string, error) {
-	startIdx := strings.Index(chapterContent, `下一章`)
-	if startIdx == -1 {
+	before, _, ok := strings.Cut(chapterContent, `下一章`)
+	if !ok {
 		return "", nil
 	}
 
-	aTagStart := strings.LastIndex(chapterContent[:startIdx], `<a `)
+	aTagStart := strings.LastIndex(before, `<a `)
 	if aTagStart == -1 {
 		return "", nil
 	}

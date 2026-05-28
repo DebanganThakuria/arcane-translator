@@ -35,13 +35,13 @@ func (q *quanben) GetChapterId(chapterUrl string) string {
 func (q *quanben) GetNextChapterUrl(chapterContent, currentChapterUrl string) (string, error) {
 	// Next chapter link: <a href="/n/gaowu-wodetianfuwuxianshengji/2.html" itemprop="url" rel="next">下一页</a>
 	relNext := `rel="next"`
-	relIdx := strings.Index(chapterContent, relNext)
-	if relIdx == -1 {
+	before, _, ok := strings.Cut(chapterContent, relNext)
+	if !ok {
 		return "", nil
 	}
 
 	// Search backward from rel="next" to find href="
-	segment := chapterContent[:relIdx]
+	segment := before
 	hrefMarker := `href="`
 	hrefIdx := strings.LastIndex(segment, hrefMarker)
 	if hrefIdx == -1 {
@@ -64,13 +64,13 @@ func (q *quanben) GetNextChapterUrl(chapterContent, currentChapterUrl string) (s
 func (q *quanben) GetNovelCoverImageUrl(pageContent string) (string, error) {
 	// Cover image: <img src="https://img.c0m.io/quanben.io/..." alt="..." itemprop="image" />
 	marker := `itemprop="image"`
-	imgIdx := strings.Index(pageContent, marker)
-	if imgIdx == -1 {
+	before, _, ok := strings.Cut(pageContent, marker)
+	if !ok {
 		return "", nil
 	}
 
 	// Search backward from itemprop="image" to find src="
-	segment := pageContent[:imgIdx]
+	segment := before
 	srcMarker := `src="`
 	srcIdx := strings.LastIndex(segment, srcMarker)
 	if srcIdx == -1 {

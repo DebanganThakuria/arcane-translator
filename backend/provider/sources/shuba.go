@@ -65,14 +65,14 @@ func (s *shuba) GetNextChapterUrl(chapterContent, currentChapterUrl string) (str
 func findNextChapterLink(n *html.Node) (string, bool) {
 	if n.Type == html.ElementNode && n.Data == "a" {
 		// Check if the link's text content is "下一章"
-		var linkText string
+		var linkText strings.Builder
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			if c.Type == html.TextNode {
-				linkText += strings.TrimSpace(c.Data)
+				linkText.WriteString(strings.TrimSpace(c.Data))
 			}
 		}
 
-		if linkText == "下一章" {
+		if linkText.String() == "下一章" {
 			for _, attr := range n.Attr {
 				if attr.Key == "href" {
 					return attr.Val, true

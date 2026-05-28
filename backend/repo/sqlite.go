@@ -35,7 +35,7 @@ func NewSQLiteDB(dbPath string) (*SQLiteDB, error) {
 }
 
 // Exec executes a query without returning any rows
-func (s *SQLiteDB) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (s *SQLiteDB) Exec(query string, args ...any) (sql.Result, error) {
 	if s.closed {
 		return nil, sql.ErrConnDone
 	}
@@ -44,7 +44,7 @@ func (s *SQLiteDB) Exec(query string, args ...interface{}) (sql.Result, error) {
 }
 
 // Query executes a query that returns rows
-func (s *SQLiteDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (s *SQLiteDB) Query(query string, args ...any) (*sql.Rows, error) {
 	if s.closed {
 		return nil, sql.ErrConnDone
 	}
@@ -53,7 +53,7 @@ func (s *SQLiteDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 }
 
 // QueryRow executes a query that returns a single row
-func (s *SQLiteDB) QueryRow(query string, args ...interface{}) *sql.Row {
+func (s *SQLiteDB) QueryRow(query string, args ...any) *sql.Row {
 	if s.closed {
 		return nil
 	}

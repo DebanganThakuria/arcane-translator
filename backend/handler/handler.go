@@ -55,7 +55,7 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // writeJSON is a helper function to write JSON responses
-func writeJSON(w http.ResponseWriter, data interface{}, status int) {
+func writeJSON(w http.ResponseWriter, data any, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 

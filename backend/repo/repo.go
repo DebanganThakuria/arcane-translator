@@ -145,7 +145,7 @@ func (r *repo) GetNovelsBySourceIDs(sources []string, offset, limit int) ([]*mod
 
 	// Create placeholders for each source
 	placeholders := make([]string, len(sources))
-	args := make([]interface{}, len(sources))
+	args := make([]any, len(sources))
 	for i, source := range sources {
 		placeholders[i] = "?"
 		args[i] = source
