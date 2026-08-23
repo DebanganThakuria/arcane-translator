@@ -11,7 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"backend/config"
 	"backend/handler"
+
 	_ "backend/provider/llm"
 	_ "backend/provider/webscraper"
 	_ "backend/repo"
@@ -19,65 +21,67 @@ import (
 )
 
 func main() {
-	// Create a new HTTP server
-	server := setupServer()
+	cfg := config.Get()
 
-	// Start the server in a goroutine
+	// Fail here, with a message that says what to set, rather than panicking
+	// inside a package initialiser where nothing can report it usefully.
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Configuration error: %v\n\nSee .env.example for the settings this server expects.", err)
+	}
+
+	server := setupServer(cfg)
+
 	go func() {
-		log.Printf("🚀 Starting Arcane Translator server on port %d...", 8088)
-		log.Printf("📚 Server ready to handle novel translation requests")
+		log.Printf("Arcane Translator listening on port %d", cfg.Port)
+		log.Printf("Translating with the %s provider, database at %s", cfg.Provider, cfg.DBPath)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("❌ Failed to start server: %v", err)
+			log.Fatalf("Failed to start server: %v", err)
 		}
 	}()
 
-	// Wait for the interrupt signal to gracefully shut down the server
+	// Wait for an interrupt signal to gracefully shut down the server.
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("🛑 Shutting down server...")
+	log.Println("Shutting down...")
 
-	// Create a deadline for the shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Attempt a graceful shutdown
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("❌ Server shutdown failed: %v", err)
+		log.Fatalf("Server shutdown failed: %v", err)
 	}
 
-	log.Println("✅ Server gracefully stopped")
+	log.Println("Server stopped")
 }
 
-// setupServer configures and returns an HTTP server with enhanced middleware
-func setupServer() *http.Server {
-	// Create a new router
+// setupServer configures and returns an HTTP server with the middleware stack.
+func setupServer(cfg *config.Config) *http.Server {
 	mux := http.NewServeMux()
-
-	// Register API handlers
 	handler.RegisterHandlers(mux)
 
-	// Create middleware stack
-	var middlewareStack http.Handler = mux
-
-	// Apply middleware in reverse order (last applied = first executed)
-	middlewareStack = handler.CorsMiddleware(middlewareStack)
-	middlewareStack = handler.SecurityMiddleware(middlewareStack)
-	middlewareStack = handler.ErrorHandlingMiddleware(middlewareStack)
-	middlewareStack = handler.LoggingMiddleware(middlewareStack)
-
-	// Create and configure the server
-	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", 8088),
-		Handler:      middlewareStack,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  60 * time.Second,
-		// Enhanced server configuration
-		ReadHeaderTimeout: 10 * time.Second,
-		MaxHeaderBytes:    1 << 20, // 1 MB
+	if handler.RegisterStatic(mux, cfg.WebDir) {
+		log.Printf("Serving the frontend from %s", cfg.WebDir)
 	}
 
-	return server
+	// Applied in reverse order, so logging runs first and CORS runs last.
+	var stack http.Handler = mux
+	stack = handler.CorsMiddleware(stack)
+	stack = handler.SecurityMiddleware(stack)
+	stack = handler.ErrorHandlingMiddleware(stack)
+	stack = handler.LoggingMiddleware(stack)
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
+		Handler: stack,
+		// Translating a chapter is a slow LLM call, so the write timeout is
+		// generous while the header timeout stays short to shed slow-loris
+		// connections early.
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      180 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
 }

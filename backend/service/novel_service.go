@@ -13,6 +13,7 @@ import (
 
 // NovelService provides business logic for novel operations
 type NovelService interface {
+	QueryNovels(query models.NovelQuery, language string) (*models.NovelListResponse, error)
 	GetAllNovels(offset, limit int) (*models.NovelListResponse, error)
 	GetNovelByID(id string) (*models.Novel, error)
 	SearchNovel(query string) ([]*models.Novel, error)
@@ -20,6 +21,7 @@ type NovelService interface {
 	UpdateNovel(novel *models.Novel) error
 	DeleteNovel(id string) error
 
+	QueryChapters(novelID string, query models.ChapterQuery) (*models.ChapterListResponse, error)
 	GetNovelChapters(novelID string) ([]*models.Chapter, error)
 	GetChapterByID(novelID string, chapterID string) (*models.Chapter, error)
 	GetChapterByNumber(novelID string, chapterNumber int) (*models.Chapter, error)
@@ -30,8 +32,39 @@ type NovelService interface {
 	GetAllSources() ([]*models.SourceSite, error)
 }
 
+const (
+	defaultPageSize = 20
+	maxPageSize     = 100
+
+	// Chapter rows are small once content is excluded, so the page can be
+	// larger than the novel page without costing much.
+	defaultChapterPageSize = 50
+	maxChapterPageSize     = 200
+)
+
 type novelService struct {
 	repo repo.Repo
+}
+
+// page wraps a result set with the paging metadata the API returns.
+func page(novels []*models.Novel, totalCount, offset, limit int) *models.NovelListResponse {
+	if novels == nil {
+		novels = []*models.Novel{}
+	}
+	if limit <= 0 {
+		limit = defaultPageSize
+	}
+
+	return &models.NovelListResponse{
+		Novels:      novels,
+		TotalCount:  totalCount,
+		CurrentPage: offset/limit + 1,
+		TotalPages:  max(1, (totalCount+limit-1)/limit),
+	}
+}
+
+func emptyPage(limit int) *models.NovelListResponse {
+	return page(nil, 0, 0, limit)
 }
 
 var novelServiceInstance NovelService
@@ -54,27 +87,61 @@ func GetNovelService() NovelService {
 
 // Novel operations
 
-func (s *novelService) GetAllNovels(offset, limit int) (*models.NovelListResponse, error) {
-	if offset < 0 {
-		offset = 0
-	}
-	if limit <= 0 {
-		limit = 20 // Default limit
-	} else if limit > 100 {
-		limit = 100 // Max limit to prevent excessive data transfer
-	}
-
-	novels, totalCount, err := s.repo.GetAllNovels(offset, limit)
+// sourceIDsForLanguage resolves a language name onto the sources that serve it.
+// An unknown language yields no sources, which correctly produces no results
+// rather than silently listing everything.
+func (s *novelService) sourceIDsForLanguage(language string) ([]string, error) {
+	sources, err := s.GetAllSources()
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.NovelListResponse{
-		Novels:      novels,
-		TotalCount:  totalCount,
-		CurrentPage: offset/limit + 1,
-		TotalPages:  (totalCount + limit - 1) / limit,
-	}, nil
+	ids := make([]string, 0, len(sources))
+	for _, source := range sources {
+		if strings.EqualFold(source.Language, language) {
+			ids = append(ids, source.ID)
+		}
+	}
+	return ids, nil
+}
+
+// QueryNovels applies filters, sorting and paging in the database. `language`
+// is resolved to source ids here because the source list lives in this layer.
+func (s *novelService) QueryNovels(query models.NovelQuery, language string) (*models.NovelListResponse, error) {
+	if query.Offset < 0 {
+		query.Offset = 0
+	}
+	if query.Limit <= 0 {
+		query.Limit = defaultPageSize
+	} else if query.Limit > maxPageSize {
+		query.Limit = maxPageSize
+	}
+
+	if language != "" {
+		ids, err := s.sourceIDsForLanguage(language)
+		if err != nil {
+			return nil, err
+		}
+		if len(ids) == 0 {
+			return emptyPage(query.Limit), nil
+		}
+		query.SourceIDs = ids
+	}
+
+	novels, totalCount, err := s.repo.QueryNovels(query)
+	if err != nil {
+		return nil, err
+	}
+
+	return page(novels, totalCount, query.Offset, query.Limit), nil
+}
+
+func (s *novelService) GetAllNovels(offset, limit int) (*models.NovelListResponse, error) {
+	return s.QueryNovels(models.NovelQuery{
+		Sort:   models.SortLastRead,
+		Offset: offset,
+		Limit:  limit,
+	}, "")
 }
 
 func (s *novelService) GetNovelByID(id string) (*models.Novel, error) {
@@ -94,81 +161,52 @@ func (s *novelService) SearchNovel(query string) ([]*models.Novel, error) {
 	return s.repo.SearchNovel(query)
 }
 
+// GetNovelsByFilter is the older single-filter entry point, kept because the
+// home page still uses the recently_* shortcuts. Language and genre delegate to
+// QueryNovels so there is one query path.
 func (s *novelService) GetNovelsByFilter(filter, value string, offset, limit int) (*models.NovelListResponse, error) {
 	switch filter {
 	case "language":
-		sources, err := s.GetAllSources()
-		if err != nil {
-			return nil, err
-		}
-
-		var sourceIDs []string
-		for _, source := range sources {
-			if source.Language == value {
-				sourceIDs = append(sourceIDs, source.ID)
-			}
-		}
-
-		novels, totalCount, err := s.repo.GetNovelsBySourceIDs(sourceIDs, offset, limit)
-		if err != nil {
-		}
-
-		return &models.NovelListResponse{
-			Novels:      novels,
-			TotalCount:  totalCount,
-			CurrentPage: offset/limit + 1,
-			TotalPages:  (totalCount + limit - 1) / limit,
-		}, nil
+		return s.QueryNovels(models.NovelQuery{
+			Sort:   models.SortLastRead,
+			Offset: offset,
+			Limit:  limit,
+		}, value)
 	case "genre":
-		novels, totalCount, err := s.repo.GetNovelsByGenre(value, offset, limit)
-		if err != nil {
-			return nil, err
-		}
-
-		return &models.NovelListResponse{
-			Novels:      novels,
-			TotalCount:  totalCount,
-			CurrentPage: offset/limit + 1,
-			TotalPages:  (totalCount + limit - 1) / limit,
-		}, nil
+		return s.QueryNovels(models.NovelQuery{
+			Genre:  value,
+			Sort:   models.SortLastRead,
+			Offset: offset,
+			Limit:  limit,
+		}, "")
 	case "recently_updated":
 		count, err := strconv.Atoi(value)
 		if err != nil {
 			return nil, errors.New("invalid count")
 		}
-		if count > 100 {
-			return nil, errors.New("count cannot be greater than 100")
+		if count <= 0 || count > maxPageSize {
+			return nil, errors.New("count must be between 1 and 100")
 		}
 		novels, err := s.repo.GetNovelsByRecentlyUpdated(count)
 		if err != nil {
 			return nil, err
 		}
 
-		return &models.NovelListResponse{
-			Novels:      novels,
-			TotalCount:  len(novels),
-			CurrentPage: 1,
-			TotalPages:  1,
-		}, nil
+		return page(novels, len(novels), 0, count), nil
 	case "recently_read":
 		count, err := strconv.Atoi(value)
 		if err != nil {
 			return nil, errors.New("invalid count")
 		}
-		if count > 100 {
-			return nil, errors.New("count cannot be greater than 100")
+		if count <= 0 || count > maxPageSize {
+			return nil, errors.New("count must be between 1 and 100")
 		}
 		novels, err := s.repo.GetNovelsByRecentlyRead(count)
 		if err != nil {
 			return nil, err
 		}
 
-		return &models.NovelListResponse{
-			Novels:      novels,
-			TotalCount:  len(novels),
-			CurrentPage: 1,
-			TotalPages:  1,
-		}, nil
+		return page(novels, len(novels), 0, count), nil
 	default:
 		return nil, errors.New("invalid filter")
 	}
@@ -202,6 +240,46 @@ func (s *novelService) DeleteNovel(id string) error {
 }
 
 // Chapter operations
+
+// QueryChapters returns one page of a novel's chapters. The novel is not
+// re-fetched first: the query is already scoped by novel_id, so a missing novel
+// simply yields an empty page instead of costing an extra round trip.
+func (s *novelService) QueryChapters(novelID string, query models.ChapterQuery) (*models.ChapterListResponse, error) {
+	if novelID == "" {
+		return nil, errors.New("novel ID cannot be empty")
+	}
+
+	if query.Offset < 0 {
+		query.Offset = 0
+	}
+	if query.Limit <= 0 {
+		query.Limit = defaultChapterPageSize
+	} else if query.Limit > maxChapterPageSize {
+		query.Limit = maxChapterPageSize
+	}
+
+	chapters, totalCount, err := s.repo.QueryChapters(novelID, query)
+	if err != nil {
+		return nil, err
+	}
+	if chapters == nil {
+		chapters = []*models.Chapter{}
+	}
+
+	first, last, err := s.repo.ChapterNumberBounds(novelID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.ChapterListResponse{
+		Chapters:    chapters,
+		TotalCount:  totalCount,
+		CurrentPage: query.Offset/query.Limit + 1,
+		TotalPages:  max(1, (totalCount+query.Limit-1)/query.Limit),
+		FirstNumber: first,
+		LastNumber:  last,
+	}, nil
+}
 
 func (s *novelService) GetNovelChapters(novelID string) ([]*models.Chapter, error) {
 	if novelID == "" {
@@ -433,6 +511,24 @@ var allSources = []*models.SourceSite{
 		ID:       "sjks88",
 		Name:     "sjks88",
 		URL:      "https://www.sjks88.com",
+		Language: "chinese",
+	},
+	{
+		ID:       "huabenge",
+		Name:     "huabenge",
+		URL:      "https://www.huabenge.com",
+		Language: "chinese",
+	},
+	{
+		ID:       "ilwxs",
+		Name:     "ilwxs",
+		URL:      "https://m.ilwxs.com",
+		Language: "chinese",
+	},
+	{
+		ID:       "ffxs8",
+		Name:     "ffxs8",
+		URL:      "https://ffxs8.com",
 		Language: "chinese",
 	},
 	{

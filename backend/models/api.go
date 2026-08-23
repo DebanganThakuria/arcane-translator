@@ -9,6 +9,31 @@ type NovelListResponse struct {
 	TotalPages  int      `json:"total_pages"`
 }
 
+// ChapterListResponse is a page of a novel's chapters.
+//
+// FirstNumber and LastNumber describe the whole novel rather than the page, so
+// a client can offer "start from the beginning" or "jump to latest" without
+// fetching every chapter.
+type ChapterListResponse struct {
+	Chapters    []*Chapter `json:"chapters"`
+	TotalCount  int        `json:"total_count"`
+	CurrentPage int        `json:"current_page"`
+	TotalPages  int        `json:"total_pages"`
+	FirstNumber int        `json:"first_number"`
+	LastNumber  int        `json:"last_number"`
+}
+
+// ChapterQuery describes a filtered, paginated chapter lookup within one novel.
+type ChapterQuery struct {
+	// Search matches the translated and original chapter titles.
+	Search string
+	// Ascending orders by chapter number ascending; the default is descending.
+	Ascending bool
+
+	Offset int
+	Limit  int
+}
+
 // NovelDetails represents details about a novel extracted and translated from a source
 type NovelDetails struct {
 	NovelTitleOriginal        string   `json:"novel_title_original"`

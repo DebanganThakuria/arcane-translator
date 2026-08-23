@@ -83,7 +83,7 @@ func ScanNovel(row *sql.Row) (*Novel, error) {
 	}
 
 	novel.LastUpdated = lastUpdatedUnix
-	novel.DateAdded = lastUpdatedUnix
+	novel.DateAdded = dateAddedUnix
 
 	return &novel, nil
 }
@@ -127,7 +127,7 @@ func ScanNovels(rows *sql.Rows) ([]*Novel, error) {
 		}
 
 		novel.LastUpdated = lastUpdatedUnix
-		novel.DateAdded = lastUpdatedUnix
+		novel.DateAdded = dateAddedUnix
 
 		novels = append(novels, &novel)
 	}

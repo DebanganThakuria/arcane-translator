@@ -27,7 +27,7 @@ func (s *sjks88) GetChapterId(chapterUrl string) string {
 		return ""
 	}
 	novelId := parts[4]
-	chapterNum := strings.Split(parts[5], ".")[0]
+	chapterNum, _, _ := strings.Cut(parts[5], ".")
 	return novelId + "_" + chapterNum
 }
 

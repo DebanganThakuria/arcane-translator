@@ -86,7 +86,12 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 	}
 
 	// Translate the novel details
-	novelDetails, err := llm.GetClaude().TranslateNovelDetails(ctx, *request.HTMLContent)
+	translator, err := llm.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	novelDetails, err := translator.TranslateNovelDetails(ctx, *request.HTMLContent)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +161,12 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	}
 
 	// Translate the chapter content
-	translatedContent, err := llm.GetClaude().TranslateNovelChapter(ctx, novel.Genres, *request.HTMLContent)
+	translator, err := llm.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	translatedContent, err := translator.TranslateNovelChapter(ctx, novel.Genres, *request.HTMLContent)
 	if err != nil {
 		log.Printf("Failed to translate chapter: %v", err)
 		return nil, err
@@ -233,7 +243,12 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 	}
 
 	// Translate the chapter content
-	translatedContent, err := llm.GetClaude().TranslateNovelChapter(ctx, novel.Genres, *request.HTMLContent)
+	translator, err := llm.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	translatedContent, err := translator.TranslateNovelChapter(ctx, novel.Genres, *request.HTMLContent)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +312,12 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 	}
 
 	// Translate the novel details
-	novelDetails, err := llm.GetClaude().TranslateNovelDetails(ctx, *request.HTMLContent)
+	translator, err := llm.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	novelDetails, err := translator.TranslateNovelDetails(ctx, *request.HTMLContent)
 	if err != nil {
 		return nil, err
 	}

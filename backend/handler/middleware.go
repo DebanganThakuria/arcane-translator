@@ -2,31 +2,38 @@ package handler
 
 import (
 	"log"
+	"net"
 	"net/http"
-	"slices"
+	"net/url"
 	"time"
 )
+
+// isAllowedOrigin permits requests from localhost and private-network hosts,
+// so the app can be opened from other devices on the same LAN.
+func isAllowedOrigin(origin string) bool {
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	host := u.Hostname()
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && (ip.IsLoopback() || ip.IsPrivate())
+}
 
 // CorsMiddleware applies CORS headers to allow cross-origin requests
 func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers - more permissive for development
 		origin := r.Header.Get("Origin")
-		if origin == "" {
-			origin = "*"
-		}
 
-		// Allow common development origins
-		allowedOrigins := []string{
-			"http://localhost:8080",
-		}
-
-		isAllowed := slices.Contains(allowedOrigins, origin)
-
-		if isAllowed || origin == "*" {
+		if origin != "" && isAllowedOrigin(origin) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		}
 
+		w.Header().Add("Vary", "Origin")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

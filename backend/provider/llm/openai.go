@@ -13,6 +13,7 @@ import (
 
 type openaiClientImpl struct {
 	openaiClient *openai.Client
+	model        string
 }
 
 func (c openaiClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {
@@ -37,7 +38,7 @@ func (c openaiClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 	resp, err := c.openaiClient.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: "gpt-5",
+			Model: c.model,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -89,7 +90,7 @@ func (c openaiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 	resp, err := c.openaiClient.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: "gpt-5",
+			Model: c.model,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleUser,

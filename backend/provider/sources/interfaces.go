@@ -33,6 +33,12 @@ func GetSource(sourceType string) Source {
 		return NewScribbleHub()
 	case "royalroad":
 		return NewRoyalroad()
+	case "huabenge":
+		return NewHuaBenGe()
+	case "ilwxs":
+		return NewIlwxs()
+	case "ffxs8":
+		return NewFfxs8()
 	default:
 		return nil
 	}

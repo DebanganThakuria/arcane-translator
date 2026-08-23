@@ -1,14 +1,15 @@
 package repo
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
+	"backend/config"
 	"backend/models"
-	"backend/utils"
 
 	"github.com/google/uuid"
 )
@@ -22,10 +23,8 @@ type Repo interface {
 	GetStats() (int, int, error) // Returns (novelCount, chapterCount, error)
 
 	// Novel methods
-	GetAllNovels(offset, limit int) ([]*models.Novel, int, error)
+	QueryNovels(query models.NovelQuery) ([]*models.Novel, int, error)
 	GetNovelByID(id string) (*models.Novel, error)
-	GetNovelsBySourceIDs(source []string, offset, limit int) ([]*models.Novel, int, error)
-	GetNovelsByGenre(genre string, offset, limit int) ([]*models.Novel, int, error)
 	GetNovelsByRecentlyUpdated(count int) ([]*models.Novel, error)
 	GetNovelsByRecentlyRead(count int) ([]*models.Novel, error)
 	CreateNovel(novel *models.Novel) (*models.Novel, error)
@@ -35,6 +34,8 @@ type Repo interface {
 	UpdateLastReadChapter(novelID string, chapterNumber int) error
 
 	// Chapter methods
+	QueryChapters(novelID string, query models.ChapterQuery) ([]*models.Chapter, int, error)
+	ChapterNumberBounds(novelID string) (first, last int, err error)
 	GetNovelChapters(novelID string) ([]*models.Chapter, error)
 	GetLastChapter(novelID string) (*models.Chapter, error)
 	GetChapterByID(novelID string, chapterID string) (*models.Chapter, error)
@@ -51,7 +52,7 @@ type repo struct {
 
 func init() {
 	// Set up the database file path
-	dbPath := utils.GetDBPath()
+	dbPath := config.Get().DBPath
 
 	// Initialize SQLite database
 	db, err := NewSQLiteDB(dbPath)
@@ -99,27 +100,72 @@ func (r *repo) GetStats() (int, int, error) {
 
 // Novel CRUD Operations
 
-func (r *repo) GetAllNovels(offset, limit int) ([]*models.Novel, int, error) {
-	query := `
-		SELECT *
-		FROM novels
-		ORDER BY last_read_timestamp DESC
-		LIMIT ? OFFSET ?
-	`
+// QueryNovels is the single filtered/sorted/paginated novel lookup. Filters
+// compose with AND, so language, genre, status and a search term can be applied
+// together, and the count reflects the same filters as the page.
+//
+// The ORDER BY fragment comes from models.NovelSort, never from raw input.
+func (r *repo) QueryNovels(query models.NovelQuery) ([]*models.Novel, int, error) {
+	var conditions []string
+	var args []any
 
-	rows, err := r.db.Query(query, limit, offset)
+	if len(query.SourceIDs) > 0 {
+		placeholders := make([]string, len(query.SourceIDs))
+		for i, source := range query.SourceIDs {
+			placeholders[i] = "?"
+			args = append(args, source)
+		}
+		conditions = append(conditions, "source IN ("+strings.Join(placeholders, ",")+")")
+	}
+
+	if query.Genre != "" {
+		conditions = append(conditions, "genres LIKE ? COLLATE NOCASE")
+		args = append(args, "%"+query.Genre+"%")
+	}
+
+	if query.Status != "" {
+		conditions = append(conditions, "status = ? COLLATE NOCASE")
+		args = append(args, query.Status)
+	}
+
+	if query.Search != "" {
+		conditions = append(conditions, `(
+			title LIKE ? COLLATE NOCASE
+			OR original_title LIKE ? COLLATE NOCASE
+			OR author LIKE ? COLLATE NOCASE
+			OR genres LIKE ? COLLATE NOCASE
+		)`)
+		term := "%" + query.Search + "%"
+		args = append(args, term, term, term, term)
+	}
+
+	where := ""
+	if len(conditions) > 0 {
+		where = " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	var count int
+	if err := r.db.QueryRow("SELECT COUNT(*) FROM novels"+where, args...).Scan(&count); err != nil {
+		return nil, 0, err
+	}
+
+	direction := "DESC"
+	if query.Ascending {
+		direction = "ASC"
+	}
+
+	listSQL := fmt.Sprintf(
+		"SELECT * FROM novels%s ORDER BY %s %s LIMIT ? OFFSET ?",
+		where, query.Sort.Expression(), direction,
+	)
+
+	rows, err := r.db.Query(listSQL, append(append([]any{}, args...), query.Limit, query.Offset)...)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
 
 	novels, err := models.ScanNovels(rows)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	var count int
-	err = r.db.QueryRow("SELECT COUNT(*) FROM novels").Scan(&count)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -136,78 +182,6 @@ func (r *repo) GetNovelByID(id string) (*models.Novel, error) {
 
 	row := r.db.QueryRow(query, id)
 	return models.ScanNovel(row)
-}
-
-func (r *repo) GetNovelsBySourceIDs(sources []string, offset, limit int) ([]*models.Novel, int, error) {
-	if len(sources) == 0 {
-		return []*models.Novel{}, 0, nil
-	}
-
-	// Create placeholders for each source
-	placeholders := make([]string, len(sources))
-	args := make([]any, len(sources))
-	for i, source := range sources {
-		placeholders[i] = "?"
-		args[i] = source
-	}
-	args = append(args, limit)
-	args = append(args, offset)
-
-	query := fmt.Sprintf(`
-		SELECT *
-		FROM novels
-		WHERE source IN (%s)
-		ORDER BY last_read_timestamp DESC
-		LIMIT ? OFFSET ?
-	`, strings.Join(placeholders, ","))
-
-	rows, err := r.db.Query(query, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	novels, err := models.ScanNovels(rows)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	var count int
-	err = r.db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM novels WHERE source IN (%s)", strings.Join(placeholders, ",")), args...).Scan(&count)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return novels, count, nil
-}
-
-func (r *repo) GetNovelsByGenre(genre string, offset, limit int) ([]*models.Novel, int, error) {
-	query := `
-		SELECT *
-		FROM novels
-		WHERE genres LIKE ? COLLATE NOCASE
-		ORDER BY last_read_timestamp DESC
-		LIMIT ? OFFSET ?
-	`
-
-	rows, err := r.db.Query(query, "%"+genre+"%", limit, offset)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	novels, err := models.ScanNovels(rows)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	var count int
-	err = r.db.QueryRow("SELECT COUNT(*) FROM novels WHERE genres LIKE ? COLLATE NOCASE", "%"+genre+"%").Scan(&count)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return novels, count, nil
 }
 
 func (r *repo) GetNovelsByRecentlyUpdated(count int) ([]*models.Novel, error) {
@@ -390,10 +364,75 @@ func (r *repo) UpdateLastReadChapter(novelID string, chapterNumber int) error {
 
 // Chapter CRUD Operations
 
+// chapterListColumns omits `content`, which is by far the largest column and is
+// only ever needed when reading one chapter.
+const chapterListColumns = `id, novel_id, number, title, original_title,
+	date_translated, word_count, url, next_chapter_url`
+
+// QueryChapters returns one page of a novel's chapters plus the total matching
+// the same filter. Novels here reach several hundred chapters, so the list is
+// paged in SQL rather than loaded whole and sliced in the client.
+func (r *repo) QueryChapters(novelID string, query models.ChapterQuery) ([]*models.Chapter, int, error) {
+	conditions := []string{"novel_id = ?"}
+	args := []any{novelID}
+
+	if query.Search != "" {
+		conditions = append(conditions,
+			"(title LIKE ? COLLATE NOCASE OR original_title LIKE ? COLLATE NOCASE)")
+		term := "%" + query.Search + "%"
+		args = append(args, term, term)
+	}
+
+	where := " WHERE " + strings.Join(conditions, " AND ")
+
+	var count int
+	if err := r.db.QueryRow("SELECT COUNT(*) FROM chapters"+where, args...).Scan(&count); err != nil {
+		return nil, 0, err
+	}
+
+	direction := "DESC"
+	if query.Ascending {
+		direction = "ASC"
+	}
+
+	listSQL := fmt.Sprintf(
+		"SELECT %s FROM chapters%s ORDER BY number %s LIMIT ? OFFSET ?",
+		chapterListColumns, where, direction,
+	)
+
+	rows, err := r.db.Query(listSQL, append(append([]any{}, args...), query.Limit, query.Offset)...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	chapters, err := models.ScanChapters(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return chapters, count, nil
+}
+
+// ChapterNumberBounds returns the lowest and highest chapter numbers a novel
+// has, or zeroes when it has none.
+func (r *repo) ChapterNumberBounds(novelID string) (int, int, error) {
+	var first, last sql.NullInt64
+
+	err := r.db.
+		QueryRow("SELECT MIN(number), MAX(number) FROM chapters WHERE novel_id = ?", novelID).
+		Scan(&first, &last)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return int(first.Int64), int(last.Int64), nil
+}
+
 func (r *repo) GetNovelChapters(novelID string) ([]*models.Chapter, error) {
 	// We are not loading the content of the chapters to decrease the memory usage
 	query := `
-		SELECT id, novel_id, number, title, original_title, date_translated, word_count, url, next_chapter_url
+		SELECT ` + chapterListColumns + `
 		FROM chapters
 		WHERE novel_id = ?
 		ORDER BY number

@@ -10,13 +10,11 @@ import (
 	"google.golang.org/genai"
 )
 
-const (
-	ResponseMimeType     = "application/json"
-	GenerateContentModel = "gemini-2.5-flash"
-)
+const ResponseMimeType = "application/json"
 
 type geminiClientImpl struct {
 	geminiClient *genai.Client
+	model        string
 }
 
 func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {
@@ -39,7 +37,7 @@ func (g geminiClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 	Do not include any commentary, explanation, or preamble. Only return the JSON object.`
 
 	response, err := g.geminiClient.Models.GenerateContent(ctx,
-		GenerateContentModel,
+		g.model,
 		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleUser)},
 		&genai.GenerateContentConfig{
 			Temperature:      new(float32(0.3)),
@@ -125,7 +123,7 @@ func (g geminiClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 	`
 
 	response, err := g.geminiClient.Models.GenerateContent(ctx,
-		GenerateContentModel,
+		g.model,
 		[]*genai.Content{genai.NewContentFromText(prompt, genai.RoleUser)},
 		&genai.GenerateContentConfig{
 			Temperature:      new(float32(0.3)),

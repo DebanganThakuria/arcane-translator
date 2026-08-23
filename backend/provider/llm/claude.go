@@ -16,6 +16,10 @@ import (
 
 type claudeClientImpl struct {
 	claudeClient *bedrockruntime.Client
+	// modelID is a Bedrock model id or an application-inference-profile ARN.
+	// It is configuration, never a compiled-in constant: the ARN embeds an AWS
+	// account id.
+	modelID string
 }
 
 type AnthropicMessage struct {
@@ -211,7 +215,7 @@ func (c claudeClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 	Do not include any commentary, explanation, or preamble. Only return the valid JSON object. It should be correctly and directly marshallable into a go struct.
 	Do NOT wrap the JSON object in any Markdown code block. Return only the raw JSON object, with no extra formatting.`
 
-	modelOrProfile := "arn:aws:bedrock:us-east-1:101860328116:application-inference-profile/5o3okv42vqwm"
+	modelOrProfile := c.modelID
 
 	req := AnthropicMessagesRequest{
 		AnthropicVersion: "bedrock-2023-05-31",
@@ -286,7 +290,7 @@ func (c claudeClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres
 		- Do not include any commentary, explanation, or preamble. Only return the JSON object. It should be correctly and directly marshallable into a go struct.
 	    - Do NOT wrap the JSON object in any Markdown code block. Return only the raw JSON object, with no extra formatting.
 	`
-	modelOrProfile := "arn:aws:bedrock:us-east-1:101860328116:application-inference-profile/5o3okv42vqwm"
+	modelOrProfile := c.modelID
 
 	req := AnthropicMessagesRequest{
 		AnthropicVersion: "bedrock-2023-05-31",

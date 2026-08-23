@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -9,93 +12,100 @@ import (
 	"backend/service"
 )
 
-// getNovelsUsingFilter handles GET /novels?filter={filter}&value={value}&page={page}&limit={limit}
-func getNovelsUsingFilter(w http.ResponseWriter, r *http.Request) {
-	filter, value, page, limit := getAllRequestParams(r)
+// respondError maps a service error onto a status code. A missing row is a 404
+// rather than the 500 every lookup used to return.
+func respondError(w http.ResponseWriter, message string, err error) {
+	status := http.StatusInternalServerError
+	if errors.Is(err, sql.ErrNoRows) {
+		status = http.StatusNotFound
+	}
+	http.Error(w, message+": "+err.Error(), status)
+}
 
+// paginationParams reads page and limit, clamping limit to maxLimit.
+func paginationParams(query url.Values, defaultLimit, maxLimit int) (page, limit int) {
+	page = 1
+	if parsed, err := strconv.Atoi(query.Get("page")); err == nil && parsed > 0 {
+		page = parsed
+	}
+
+	limit = defaultLimit
+	if parsed, err := strconv.Atoi(query.Get("limit")); err == nil && parsed > 0 {
+		limit = min(parsed, maxLimit)
+	}
+
+	return page, limit
+}
+
+// getNovelsUsingFilter handles GET /novels.
+//
+// Two shapes are supported:
+//
+//	?filter=recently_read&value=5              legacy single-filter shortcuts
+//	?q=&language=&genre=&status=&sort=&dir=    composable filters
+//
+// Both accept page and limit. Filtering, sorting and paging all happen in the
+// database, so total_count reflects the filters rather than the whole table.
+func getNovelsUsingFilter(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	page, limit := paginationParams(query, 20, 100)
 	offset := (page - 1) * limit
 
-	var err error
-	var response *models.NovelListResponse
+	var (
+		response *models.NovelListResponse
+		err      error
+	)
 
-	if filter != "" {
-		response, err = service.GetNovelService().GetNovelsByFilter(filter, value, offset, limit)
+	if filter := query.Get("filter"); filter != "" {
+		response, err = service.GetNovelService().GetNovelsByFilter(
+			filter, query.Get("value"), offset, limit,
+		)
 	} else {
-		response, err = service.GetNovelService().GetAllNovels(offset, limit)
+		response, err = service.GetNovelService().QueryNovels(models.NovelQuery{
+			Search:    strings.TrimSpace(query.Get("q")),
+			Genre:     strings.TrimSpace(query.Get("genre")),
+			Status:    strings.TrimSpace(query.Get("status")),
+			Sort:      models.ParseNovelSort(query.Get("sort")),
+			Ascending: strings.EqualFold(query.Get("dir"), "asc"),
+			Offset:    offset,
+			Limit:     limit,
+		}, strings.TrimSpace(query.Get("language")))
 	}
 
 	if err != nil {
-		http.Error(w, "Failed to retrieve novels: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to retrieve novels: "+err.Error(), http.StatusBadRequest)
 		return
-	}
-
-	if response.Novels == nil {
-		response.Novels = []*models.Novel{}
 	}
 
 	writeJSON(w, response, http.StatusOK)
 }
 
-func getAllRequestParams(r *http.Request) (filter, value string, page, limit int) {
-	query := r.URL.Query()
-
-	filter = query.Get("filter")
-
-	value = query.Get("value")
-
-	page = 1
-	if p := query.Get("page"); p != "" {
-		if pInt, err := strconv.Atoi(p); err == nil && pInt > 0 {
-			page = pInt
-		}
-	}
-
-	limit = 20
-	if l := query.Get("limit"); l != "" {
-		if lInt, err := strconv.Atoi(l); err == nil && lInt > 0 {
-			if lInt > 100 {
-				lInt = 100
-			}
-			limit = lInt
-		}
-	}
-
-	return
-}
-
 // searchNovel handles GET /search/novels/{query}
 func searchNovel(w http.ResponseWriter, r *http.Request) {
-	// Extract query from URL path
-	query := strings.TrimPrefix(r.URL.Path, "/search/novels/")
-	if idx := strings.Index(query, "/"); idx > -1 {
-		query = query[:idx]
-	}
-
-	// Search novel
-	foundNovels, err := service.GetNovelService().SearchNovel(query)
+	query, err := url.PathUnescape(r.PathValue("query"))
 	if err != nil {
-		http.Error(w, "Failed to create novel: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Invalid search query", http.StatusBadRequest)
 		return
 	}
 
-	if len(foundNovels) == 0 {
+	foundNovels, err := service.GetNovelService().SearchNovel(query)
+	if err != nil {
+		http.Error(w, "Failed to search novels: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if foundNovels == nil {
 		foundNovels = []*models.Novel{}
 	}
 
-	writeJSON(w, foundNovels, http.StatusCreated)
+	writeJSON(w, foundNovels, http.StatusOK)
 }
 
 // getNovelByID handles GET /novels/{id}
 func getNovelByID(w http.ResponseWriter, r *http.Request) {
-	// Extract ID from URL path
-	id := strings.TrimPrefix(r.URL.Path, "/novels/")
-	if idx := strings.Index(id, "/"); idx > -1 {
-		id = id[:idx]
-	}
-
-	novel, err := service.GetNovelService().GetNovelByID(id)
+	novel, err := service.GetNovelService().GetNovelByID(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "Failed to retrieve novel: "+err.Error(), http.StatusInternalServerError)
+		respondError(w, "Failed to retrieve novel", err)
 		return
 	}
 
@@ -104,90 +114,76 @@ func getNovelByID(w http.ResponseWriter, r *http.Request) {
 
 // deleteNovel handles DELETE /novels/{id}
 func deleteNovel(w http.ResponseWriter, r *http.Request) {
-	// Extract ID from URL path
-	id := strings.TrimPrefix(r.URL.Path, "/novels/")
-	if idx := strings.Index(id, "/"); idx > -1 {
-		id = id[:idx]
-	}
-
-	err := service.GetNovelService().DeleteNovel(id)
-	if err != nil {
-		http.Error(w, "Failed to delete novel: "+err.Error(), http.StatusInternalServerError)
+	if err := service.GetNovelService().DeleteNovel(r.PathValue("id")); err != nil {
+		respondError(w, "Failed to delete novel", err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// getNovelChapters handles GET /novels/{id}/chapters
+// getNovelChapters handles GET /novels/{id}/chapters.
+//
+// Without paging parameters it returns the full array, which is what the older
+// clients expect. Pass page or limit to get a ChapterListResponse envelope
+// instead; novels here run to several hundred chapters, so the paged form is
+// the one worth using.
 func getNovelChapters(w http.ResponseWriter, r *http.Request) {
-	// Extract novel ID from URL path
-	path := strings.TrimPrefix(r.URL.Path, "/novels/")
-	pathParts := strings.Split(path, "/")
-	if len(pathParts) < 2 {
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
+	novelID := r.PathValue("id")
+	query := r.URL.Query()
+
+	paged := query.Has("page") || query.Has("limit") || query.Has("q") || query.Has("dir")
+	if !paged {
+		chapters, err := service.GetNovelService().GetNovelChapters(novelID)
+		if err != nil {
+			respondError(w, "Failed to retrieve chapters", err)
+			return
+		}
+		if chapters == nil {
+			chapters = []*models.Chapter{}
+		}
+		writeJSON(w, chapters, http.StatusOK)
 		return
 	}
 
-	novelID := pathParts[0]
+	page, limit := paginationParams(query, 50, 200)
 
-	chapters, err := service.GetNovelService().GetNovelChapters(novelID)
+	response, err := service.GetNovelService().QueryChapters(novelID, models.ChapterQuery{
+		Search:    strings.TrimSpace(query.Get("q")),
+		Ascending: !strings.EqualFold(query.Get("dir"), "desc"),
+		Offset:    (page - 1) * limit,
+		Limit:     limit,
+	})
 	if err != nil {
-		http.Error(w, "Failed to retrieve chapters: "+err.Error(), http.StatusInternalServerError)
+		respondError(w, "Failed to retrieve chapters", err)
 		return
 	}
 
-	// If no chapters found, return an empty array
-	if len(chapters) == 0 {
-		writeJSON(w, []models.Chapter{}, http.StatusOK)
-		return
-	}
-
-	writeJSON(w, chapters, http.StatusOK)
+	writeJSON(w, response, http.StatusOK)
 }
 
 // getNovelChapterByNumber handles GET /novels/{id}/chapters/num/{chapterNumber}
 func getNovelChapterByNumber(w http.ResponseWriter, r *http.Request) {
-	// Extract novel ID and chapter number from URL path
-	path := strings.TrimPrefix(r.URL.Path, "/novels/")
-	pathParts := strings.Split(path, "/")
-	if len(pathParts) < 4 {
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	novelID := pathParts[0]
-	chapterNumber, err := strconv.Atoi(pathParts[3])
+	chapterNumber, err := strconv.Atoi(r.PathValue("chapterNumber"))
 	if err != nil {
 		http.Error(w, "Invalid chapter number", http.StatusBadRequest)
 		return
 	}
 
-	chapter, err := service.GetNovelService().GetChapterByNumber(novelID, chapterNumber)
+	chapter, err := service.GetNovelService().GetChapterByNumber(r.PathValue("id"), chapterNumber)
 	if err != nil {
-		http.Error(w, "Failed to retrieve chapter: "+err.Error(), http.StatusInternalServerError)
+		respondError(w, "Failed to retrieve chapter", err)
 		return
 	}
 
 	writeJSON(w, chapter, http.StatusOK)
 }
 
-// deleteChapter handles DELETE /novels/{novelId}/chapters/{chapterId}
+// deleteChapter handles DELETE /novels/{id}/chapters/{chapterId}
 func deleteChapter(w http.ResponseWriter, r *http.Request) {
-	// Extract novel ID and chapter ID from URL path
-	path := strings.TrimPrefix(r.URL.Path, "/novels/")
-	pathParts := strings.Split(path, "/")
-	if len(pathParts) < 3 {
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	novelID := pathParts[0]
-	chapterID := pathParts[2]
-
-	err := service.GetNovelService().DeleteChapter(novelID, chapterID)
+	err := service.GetNovelService().DeleteChapter(r.PathValue("id"), r.PathValue("chapterId"))
 	if err != nil {
-		http.Error(w, "Failed to delete chapter: "+err.Error(), http.StatusInternalServerError)
+		respondError(w, "Failed to delete chapter", err)
 		return
 	}
 
@@ -198,7 +194,7 @@ func deleteChapter(w http.ResponseWriter, r *http.Request) {
 func getAllSources(w http.ResponseWriter, r *http.Request) {
 	sources, err := service.GetNovelService().GetAllSources()
 	if err != nil {
-		http.Error(w, "Failed to retrieve sources: "+err.Error(), http.StatusInternalServerError)
+		respondError(w, "Failed to retrieve sources", err)
 		return
 	}
 

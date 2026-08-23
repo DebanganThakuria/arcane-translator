@@ -8,7 +8,6 @@ import (
 	"unicode"
 )
 
-// GetDBPath returns the path to the SQLite database file
 func GetDBPath() string {
 	// Get the absolute path to the project root (arcane-translator)
 	cwd, err := os.Getwd()
