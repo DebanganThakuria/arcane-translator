@@ -1,0 +1,46 @@
+name: Bug report
+description: Something behaves differently from what you expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please scrub API keys, ARNs and account identifiers from anything you paste.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Source site
+      description: If it involves a specific novel source, which one.
+      placeholder: 69shuba
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Translation provider
+      options:
+        - claude (AWS Bedrock)
+        - gemini
+        - openai
+        - Not relevant
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server output
+      description: Relevant lines from the Go server.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v1.0.0, or the commit SHA

@@ -1,0 +1,185 @@
+/*
+ * Arcane Translator design tokens.
+ *
+ * Palette rationale: dreamy xianxia. Light mode is a cloud sea at dawn, all
+ * pale mist and ink wash. Dark mode is moonlit peaks, an indigo night with a
+ * teal cast. The single accent is jade, the stone every cultivation story is
+ * built on. No second accent exists anywhere in the app.
+ *
+ * Shape rule, applied everywhere without exception:
+ *   --r-1 (3px)  controls, inputs, badges, chips, small tiles
+ *   --r-2 (8px)  panels, cards, covers, dialogs, media
+ */
+
+:root {
+	/* ---- Type ------------------------------------------------------------ */
+	--font-display: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
+	--font-ui:
+		'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+	/* Reading faces offered in the reader. Verdana leads because it is the most
+	   legible widely-installed screen face at long line lengths. */
+	--font-read-verdana: Verdana, Geneva, 'DejaVu Sans', sans-serif;
+	--font-read-georgia: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+	--font-read-system: var(--font-ui);
+	--font-read-mono: var(--font-mono);
+
+	--step--1: 0.8125rem; /* 13px  meta, captions */
+	--step-0: 1rem; /* 16px  body UI */
+	--step-1: 1.125rem; /* 18px  emphasis */
+	--step-2: 1.375rem; /* 22px  section heads */
+	--step-3: 1.875rem; /* 30px  page titles */
+	--step-4: 2.75rem; /* 44px  display */
+
+	/* ---- Shape ----------------------------------------------------------- */
+	--r-1: 3px;
+	--r-2: 8px;
+
+	/* Every control on a row shares one height, so buttons, inputs, selects
+	   and icon buttons always line up. Never set a control height locally. */
+	--control-h: 2.5rem;
+	--control-h-sm: 2rem;
+
+	/* ---- Space ----------------------------------------------------------- */
+	--sp-1: 0.25rem;
+	--sp-2: 0.5rem;
+	--sp-3: 0.75rem;
+	--sp-4: 1rem;
+	--sp-5: 1.5rem;
+	--sp-6: 2rem;
+	--sp-7: 3rem;
+	--sp-8: 4.5rem;
+
+	--measure: 68ch;
+	--page: 1180px;
+
+	/* ---- Motion ---------------------------------------------------------- */
+	--ease: cubic-bezier(0.16, 1, 0.3, 1);
+	--dur-1: 120ms;
+	--dur-2: 220ms;
+
+	/* ---- Backdrop -------------------------------------------------------- */
+	/*
+	 * A xianxia painting behind the app chrome.
+	 *
+	 * One image serves both themes because it is blended rather than faded.
+	 * Light mode multiplies, so the painting's dark forms tint the pale ground
+	 * and its bright mist disappears. Dark mode screens, so the bright mist
+	 * glows against the night and the dark forms disappear. Neither mode can
+	 * shift the ground's black or white point, which plain opacity would.
+	 *
+	 * Swap the file at web/static/backdrop.webp to change the painting; set
+	 * --backdrop to none to turn it off.
+	 */
+	--backdrop: url('/backdrop.webp');
+	--backdrop-opacity: 0.2;
+	--backdrop-blend: normal;
+	--backdrop-blur: 0px;
+
+	/* ---- Layers ---------------------------------------------------------- */
+	--z-sticky: 10;
+	--z-overlay: 40;
+	--z-dialog: 50;
+	--z-toast: 60;
+	--z-grain: 70;
+}
+
+/* ---- Light: vellum ------------------------------------------------------ */
+:root,
+:root[data-theme='light'] {
+	/* Cloud sea at dawn: pale mist with a green whisper, never grey. */
+	--ground: #eef1ef;
+	--surface: #f7f9f8;
+	--surface-2: #fdfefd;
+	--surface-sunk: #e2e7e4;
+
+	--ink: #1c2422;
+	--ink-2: #4e5c58;
+	--ink-3: #5c6a65;
+
+	--line: #dde3e0;
+	--line-strong: #c2ccc7;
+
+	--accent: #276f5f;
+	--accent-hover: #1b5949;
+	--accent-ink: #f7f9f8;
+	--accent-wash: #276f5f1a;
+
+	--positive: #2f6b46;
+	--danger: #9c3a2c;
+
+	--shadow-overlay: 0 1px 2px #1c24220f, 0 12px 40px -8px #1c242230;
+	/* Barely there in light mode: multiplied grain over a pale ground reads as
+	   grubby rather than as paper. */
+	--grain-opacity: 0.012;
+	--grain-blend: multiply;
+	/* Multiply: only the painting's darks register on a pale ground. */
+	--backdrop-opacity: 0.18;
+	--backdrop-blend: multiply;
+}
+
+/* ---- Dark: night library ------------------------------------------------ */
+:root[data-theme='dark'] {
+	/* Moonlit peaks: indigo night, teal cast, jade catching the moon. */
+	--ground: #0d1419;
+	--surface: #141d23;
+	--surface-2: #1c272e;
+	--surface-sunk: #080e12;
+
+	--ink: #e3eae7;
+	--ink-2: #9fb2ac;
+	--ink-3: #7e918b;
+
+	--line: #24313a;
+	--line-strong: #35454f;
+
+	--accent: #6fd0b5;
+	--accent-hover: #8ae0c8;
+	--accent-ink: #0b1512;
+	--accent-wash: #6fd0b51f;
+
+	--positive: #6fd0b5;
+	--danger: #e8806c;
+
+	--shadow-overlay: 0 1px 2px #00000059, 0 16px 48px -8px #00000080;
+	--grain-opacity: 0.05;
+	--grain-blend: overlay;
+	/* Screen: only the painting's mist registers, and the night stays black. */
+	--backdrop-opacity: 0.28;
+	--backdrop-blend: screen;
+}
+
+/* ---- Reader surfaces ----------------------------------------------------
+ * The reader is a deliberate full-surface theme switch, chosen by the reader
+ * and persisted. Sepia is the default.
+ */
+[data-reader='sepia'] {
+	/* Plain pale yellow, the ground this app has always used. A deeper amber
+	   was tried and is too harsh over a long session. Do not darken it. */
+	--read-bg: #fef7cd;
+	--read-bg-2: #f8efbe;
+	--read-ink: #33302a;
+	--read-ink-2: #6b6553;
+	--read-line: #e0d49a;
+	--read-accent: #1f6355;
+}
+
+[data-reader='light'] {
+	--read-bg: #f7f9f8;
+	--read-bg-2: #eef1ef;
+	--read-ink: #1c2422;
+	--read-ink-2: #4e5c58;
+	--read-line: #dde3e0;
+	--read-accent: #276f5f;
+}
+
+[data-reader='dark'] {
+	--read-bg: #0f171c;
+	--read-bg-2: #151f25;
+	--read-ink: #dde5e2;
+	--read-ink-2: #94a5a0;
+	--read-line: #232f37;
+	--read-accent: #6fd0b5;
+}

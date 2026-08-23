@@ -1,0 +1,463 @@
+@import './tokens.css';
+
+/* ---- Reset -------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	scrollbar-color: var(--line-strong) transparent;
+	/* Without this, body's background propagates to the viewport canvas and the
+	   backdrop has nothing to blend against. */
+	background: var(--ground);
+}
+
+body {
+	min-height: 100dvh;
+	/* isolate keeps the backdrop's stacking context local to the page. */
+	isolation: isolate;
+	background: var(--ground);
+	color: var(--ink);
+	font-family: var(--font-ui);
+	font-size: var(--step-0);
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+img,
+picture,
+svg,
+video {
+	display: block;
+	max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+/* Removes the 300ms tap delay without disabling pinch zoom. */
+button,
+a,
+select,
+summary,
+[role='tab'] {
+	touch-action: manipulation;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+ul,
+ol {
+	list-style: none;
+	padding: 0;
+}
+
+/*
+ * The backdrop painting. Fixed and non-interactive, so it never repaints on
+ * scroll, and applied to a pseudo-element rather than the body so its opacity
+ * cannot bleed into text. Absent the image file the rule is simply inert.
+ */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background-image: var(--backdrop);
+	background-size: cover;
+	background-position: center 20%;
+	background-repeat: no-repeat;
+	opacity: var(--backdrop-opacity);
+	mix-blend-mode: var(--backdrop-blend);
+	filter: blur(var(--backdrop-blur)) saturate(0.85);
+	/*
+	 * Full strength across the masthead and page heading, then down to a
+	 * whisper before the first small text.
+	 *
+	 * This is not a taste call. Measured against the painting's darkest rock
+	 * and brightest mist, any blend strong enough to see drags secondary text
+	 * below 4.5:1 in both themes: the AA ceiling is 0.05 light and 0.08 dark,
+	 * which is invisible. Concentrating the image where only large,
+	 * high-contrast type sits is what makes it usable at all.
+	 */
+	mask-image: linear-gradient(
+		to bottom,
+		#000 0,
+		#000 130px,
+		#00000040 430px,
+		#00000040 100%
+	);
+}
+
+/* The reader is a full-surface theme of its own; the painting stops at its
+   edge so long-form text always sits on a flat, quiet ground. */
+body:has(.reader)::before {
+	display: none;
+}
+
+/* Paper grain. Fixed and non-interactive so it never repaints on scroll. */
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: var(--z-grain);
+	pointer-events: none;
+	opacity: var(--grain-opacity);
+	mix-blend-mode: var(--grain-blend);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-transparency: reduce) {
+	body::after {
+		display: none;
+	}
+}
+
+/* ---- Focus -------------------------------------------------------------- */
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+	border-radius: var(--r-1);
+}
+
+::selection {
+	background: var(--accent-wash);
+	color: var(--ink);
+}
+
+/* ---- Type primitives ---------------------------------------------------- */
+.display {
+	font-family: var(--font-display);
+	font-weight: 600;
+	/* Cormorant's descenders clip below about 1.12 on multi-line headings. */
+	line-height: 1.14;
+	letter-spacing: -0.005em;
+	font-variant-ligatures: common-ligatures;
+	text-wrap: balance;
+}
+
+h1.display {
+	font-size: var(--step-3);
+}
+h2.display {
+	font-size: var(--step-2);
+}
+
+.meta {
+	font-size: var(--step--1);
+	color: var(--ink-2);
+}
+
+.numeral {
+	font-family: var(--font-mono);
+	font-size: 0.9em;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.02em;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ---- Layout ------------------------------------------------------------- */
+.page {
+	width: 100%;
+	max-width: var(--page);
+	margin-inline: auto;
+	padding-inline: var(--sp-5);
+}
+
+@media (max-width: 640px) {
+	.page {
+		padding-inline: var(--sp-4);
+	}
+}
+
+.rule {
+	height: 1px;
+	background: var(--line);
+	border: 0;
+}
+
+.panel {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--r-2);
+}
+
+/* ---- Buttons ------------------------------------------------------------
+ * One family, three intents. Every variant is checked for AA contrast against
+ * the surface it sits on.
+ */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-2);
+	white-space: nowrap;
+	padding: 0 0.875rem;
+	height: var(--control-h);
+	/* line-height 1 keeps the label from pushing past the shared height. */
+	line-height: 1;
+	border: 1px solid var(--line-strong);
+	border-radius: var(--r-1);
+	background: var(--surface-2);
+	color: var(--ink);
+	font-size: var(--step-0);
+	font-weight: 500;
+	cursor: pointer;
+	transition:
+		background var(--dur-1) var(--ease),
+		border-color var(--dur-1) var(--ease),
+		transform var(--dur-1) var(--ease);
+}
+
+.btn:hover:not(:disabled) {
+	background: var(--surface);
+	border-color: var(--ink-3);
+}
+
+.btn:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.btn--primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--accent-ink);
+}
+
+.btn--primary:hover:not(:disabled) {
+	background: var(--accent-hover);
+	border-color: var(--accent-hover);
+}
+
+.btn--ghost {
+	background: transparent;
+	border-color: transparent;
+	color: var(--ink-2);
+}
+
+.btn--ghost:hover:not(:disabled) {
+	background: var(--accent-wash);
+	border-color: transparent;
+	color: var(--ink);
+}
+
+.btn--danger {
+	color: var(--danger);
+	border-color: var(--line-strong);
+	background: transparent;
+}
+
+.btn--danger:hover:not(:disabled) {
+	background: var(--danger);
+	border-color: var(--danger);
+	color: var(--accent-ink);
+}
+
+.btn--sm {
+	height: var(--control-h-sm);
+	padding: 0 0.625rem;
+	font-size: var(--step--1);
+}
+
+.btn--icon {
+	padding: 0;
+	width: var(--control-h);
+	flex-shrink: 0;
+}
+
+.btn--sm.btn--icon {
+	width: var(--control-h-sm);
+}
+
+.btn--block {
+	width: 100%;
+}
+
+/* ---- Form controls ------------------------------------------------------ */
+.field {
+	display: grid;
+	gap: var(--sp-2);
+}
+
+.field > label {
+	font-size: var(--step--1);
+	font-weight: 600;
+	color: var(--ink);
+	letter-spacing: 0.01em;
+}
+
+.field > .hint {
+	font-size: var(--step--1);
+	color: var(--ink-2);
+}
+
+.field > .error {
+	font-size: var(--step--1);
+	color: var(--danger);
+	font-weight: 500;
+}
+
+.input,
+.select,
+.textarea {
+	width: 100%;
+	padding: 0 0.75rem;
+	height: var(--control-h);
+	line-height: 1.2;
+	background: var(--surface-2);
+	border: 1px solid var(--line-strong);
+	border-radius: var(--r-1);
+	color: var(--ink);
+	transition:
+		border-color var(--dur-1) var(--ease),
+		box-shadow var(--dur-1) var(--ease);
+}
+
+.textarea {
+	height: auto;
+	min-height: 9rem;
+	padding-block: 0.5rem;
+	resize: vertical;
+	font-family: var(--font-mono);
+	font-size: var(--step--1);
+	line-height: 1.5;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+	color: var(--ink-3);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+	outline: none;
+	border-color: var(--accent);
+	box-shadow: 0 0 0 3px var(--accent-wash);
+}
+
+.select {
+	appearance: none;
+	padding-right: 2rem;
+	cursor: pointer;
+	background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+		linear-gradient(135deg, currentColor 50%, transparent 50%);
+	background-position:
+		calc(100% - 15px) calc(50% + 2px),
+		calc(100% - 10px) calc(50% + 2px);
+	background-size:
+		5px 5px,
+		5px 5px;
+	background-repeat: no-repeat;
+}
+
+/* ---- Chips -------------------------------------------------------------- */
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-1);
+	padding: 0.125rem 0.5rem;
+	border: 1px solid var(--line);
+	border-radius: var(--r-1);
+	background: var(--surface-2);
+	font-size: var(--step--1);
+	color: var(--ink-2);
+	white-space: nowrap;
+}
+
+a.chip:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+/* ---- Skeletons ---------------------------------------------------------- */
+.skeleton {
+	background: var(--surface-sunk);
+	border-radius: var(--r-1);
+	position: relative;
+	overflow: hidden;
+}
+
+.skeleton::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent, var(--surface-2), transparent);
+	opacity: 0.55;
+	animation: sweep 1.4s infinite;
+}
+
+@keyframes sweep {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(100%);
+	}
+}
+
+/* ---- Prose (translated chapter + novel summary bodies) ------------------ */
+.prose > * + * {
+	margin-top: 1em;
+}
+
+.prose p {
+	text-wrap: pretty;
+}
+
+.prose a {
+	color: var(--accent);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.prose em {
+	font-style: italic;
+}
+
+.prose strong {
+	font-weight: 600;
+}
+
+/* ---- Reduced motion ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

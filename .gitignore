@@ -1,0 +1,46 @@
+# --- Secrets -----------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+
+# --- Reader data -------------------------------------------------------------
+# The SQLite library is personal data, not source. It is created on first run.
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# --- Build output ------------------------------------------------------------
+bin/
+dist/
+web/build/
+web/.svelte-kit/
+web/.vercel/
+backend/backend
+backend/arcane-translator
+
+# --- Dependencies ------------------------------------------------------------
+node_modules/
+
+# --- Logs and scratch --------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+tmp/
+*.tmp
+
+# --- Editors and OS ----------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.swp
+*.swo
+
+# --- Tooling -----------------------------------------------------------------
+.claude/
+.vite/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*

@@ -1,0 +1,35 @@
+name: Broken source site
+description: A source site stopped working, or you want a new one added.
+labels: [source]
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Site
+      placeholder: https://example.com
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is this
+      options:
+        - An existing source stopped working
+        - A request for a new source
+    validations:
+      required: true
+
+  - type: input
+    id: novel-url
+    attributes:
+      label: Example novel URL
+      description: A novel index page on that site, so the parser can be tested.
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: What breaks
+      description: Which step fails, and any error the server printed.
