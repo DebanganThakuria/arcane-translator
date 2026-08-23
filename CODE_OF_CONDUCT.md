@@ -20,7 +20,7 @@ discussions. Publishing someone's private information without permission.
 ## Reporting
 
 Report problems to the maintainer through
-[private vulnerability reporting](https://github.com/debanganthakuria/arcane-translator/security/advisories/new)
+[private vulnerability reporting](https://github.com/DebanganThakuria/arcane-translator/security/advisories/new)
 or by email. Reports are handled privately.
 
 Maintainers may edit, hide or delete contributions that break these rules, and

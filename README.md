@@ -23,13 +23,13 @@ filtering, and per-source shelves.
 With Homebrew:
 
 ```bash
-brew install debanganthakuria/tap/arcane-translator
+brew install DebanganThakuria/tap/arcane-translator
 ```
 
 From source:
 
 ```bash
-git clone https://github.com/debanganthakuria/arcane-translator.git
+git clone https://github.com/DebanganThakuria/arcane-translator.git
 cd arcane-translator
 make install
 ```

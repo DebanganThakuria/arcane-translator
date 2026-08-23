@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report security issues privately through GitHub's
-[private vulnerability reporting](https://github.com/debanganthakuria/arcane-translator/security/advisories/new),
+[private vulnerability reporting](https://github.com/DebanganThakuria/arcane-translator/security/advisories/new),
 rather than opening a public issue.
 
 Include what you found, how to reproduce it, and what an attacker could do with
