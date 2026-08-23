@@ -13,7 +13,7 @@ class ArcaneTranslator < Formula
   desc "Read Chinese, Korean and Japanese webnovels translated into English"
   homepage "https://github.com/DebanganThakuria/arcane-translator"
   url "https://github.com/DebanganThakuria/arcane-translator/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "985969c8a6a55c1a995c392aeb43100da1950380f8e3decbca0508a5fe8add63"
+  sha256 "cabc3451561af03da92b223483d3642ed884191a21f30bb18214d518c8cd7c26"
   license "Apache-2.0"
   head "https://github.com/DebanganThakuria/arcane-translator.git", branch: "master"
 
