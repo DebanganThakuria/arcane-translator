@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Formatting
+        run: |
+          unformatted=$(go run mvdan.cc/gofumpt@v0.9.1 -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::These files need gofumpt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+  package:
+    name: Packaged build
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # Proves the shape a Homebrew install produces: one binary that serves
+      # both the API and the built frontend.
+      - name: Build frontend
+        run: npm ci && npm run build
+        working-directory: web
+
+      - name: Build binary
+        run: go build -o ../bin/arcane-translator .
+        working-directory: backend
+
+      - name: Server refuses to start unconfigured
+        run: |
+          set +e
+          output=$(./bin/arcane-translator 2>&1)
+          status=$?
+          set -e
+          echo "$output"
+          if [ $status -eq 0 ]; then
+            echo "::error::Server started without a provider configured."
+            exit 1
+          fi
+          echo "$output" | grep -q "Configuration error" || {
+            echo "::error::Expected a configuration error, got the above."
+            exit 1
+          }
+
+      - name: Server boots and serves API and frontend
+        env:
+          ARCANE_LLM_PROVIDER: claude
+          ARCANE_BEDROCK_MODEL_ID: ci-placeholder-model
+          ARCANE_DB_PATH: ${{ runner.temp }}/ci.db
+          ARCANE_WEB_DIR: web/build
+        run: |
+          ./bin/arcane-translator &
+          pid=$!
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:8088/health >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://localhost:8088/health | grep -q '"ok"'
+          curl -fsS http://localhost:8088/novels?limit=1 >/dev/null
+          # Deep client-side route must fall back to the SPA shell.
+          curl -fsS http://localhost:8088/novel/1/chapter/1 | grep -qi '<!doctype html'
+          kill $pid
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Backstop for the identifiers this project must never ship.
+      - name: Check for committed credentials
+        run: |
+          if grep -rInE 'arn:aws:[a-z0-9-]+:[a-z0-9-]*:[0-9]{12}:|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{32,}|AIza[0-9A-Za-z_-]{35}' \
+               --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build \
+               --exclude=.env --exclude=.env.example --exclude=CHANGELOG.md . ; then
+            echo "::error::A credential or account identifier is present in the tree."
+            exit 1
+          fi
+          echo "No credentials found."

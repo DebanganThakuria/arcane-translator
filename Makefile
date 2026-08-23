@@ -1,56 +1,68 @@
-# Novel Translation App Makefile
+# Arcane Translator
+#
+# backend/  Go API and SQLite store
+# web/      SvelteKit frontend (TypeScript)
 
-.PHONY: help install start-frontend dev stop clean build-backend
+.PHONY: help install dev backend frontend check fmt build build-backend build-frontend run stop clean
 
-# Default target
 help:
-	@echo "Available commands:"
-	@echo "  make install       - Install all dependencies"
-	@echo "  make dev           - Start both in development mode"
-	@echo "  make start-frontend- Start only the frontend"
-	@echo "  make build-backend - Build the Go backend"
-	@echo "  make stop          - Stop all running processes"
-	@echo "  make clean         - Clean all dependencies and build files"
+	@echo "Arcane Translator"
+	@echo
+	@echo "  make install   Install backend and frontend dependencies"
+	@echo "  make dev       Run the API and the frontend dev server together"
+	@echo "  make backend   Run only the Go API on :8088"
+	@echo "  make frontend  Run only the frontend dev server on :8080"
+	@echo "  make check     Vet the backend and typecheck the frontend"
+	@echo "  make fmt       Format the backend with gofumpt and goimports"
+	@echo "  make build     Build the binary and the frontend bundle"
+	@echo "  make run       Build, then serve everything from the binary on :8088"
+	@echo "  make stop      Stop running dev processes"
+	@echo "  make clean     Remove dependencies and build output"
 
-# Install dependencies
 install:
-	@echo "Installing frontend dependencies..."
-	npm install
-	@echo "Installing backend dependencies..."
-	cd backend && go mod tidy
-	@echo "All dependencies installed!"
+	cd web && npm install
+	cd backend && go mod download
+	@echo "Dependencies installed. Copy .env.example to .env and set a provider."
 
-# Development mode (same as start for now)
-dev: start
+# Backend first so the frontend has an API to talk to on first paint.
+dev:
+	@$(MAKE) backend
+	@sleep 1
+	cd web && npm run dev
 
-# Build backend
+backend:
+	@cd backend && go run . &
+	@echo "API on http://localhost:8088"
+
+frontend:
+	cd web && npm run dev
+
+check:
+	cd backend && go vet ./...
+	cd web && npm run check
+
+fmt:
+	cd backend && go run mvdan.cc/gofumpt@latest -w . \
+		&& go run golang.org/x/tools/cmd/goimports@latest -w -local backend .
+
+build: build-backend build-frontend
+
 build-backend:
-	@echo "Building Go backend..."
-	cd backend && go build -o ../bin/server main.go
+	cd backend && go build -ldflags "-s -w" -o ../bin/arcane-translator .
 
-# Start frontend only  
-start-frontend:
-	@echo "Starting React frontend..."
-	npm run dev &
-	@echo "Frontend started on http://localhost:5173"
-# Start frontend only  
-start-backend:
-	@echo "Starting Backend..."
-	cd backend && go run main.go &
-	@echo "Backend is running"
+build-frontend:
+	cd web && npm run build
 
-# Stop all processes
+# One process serving the API and the built frontend, as a packaged install does.
+run: build
+	ARCANE_WEB_DIR=$(CURDIR)/web/build ./bin/arcane-translator
+
 stop:
-	@echo "Stopping all processes..."
-	pkill -f "npm run dev" || true
-	pkill -f "vite" || true
-	@echo "All processes stopped!"
+	@pkill -f "vite dev" || true
+	@pkill -f "go run \." || true
+	@pkill -f "arcane-translator" || true
+	@echo "Stopped."
 
-# Clean everything
 clean:
-	@echo "Cleaning frontend..."
-	rm -rf node_modules
-	rm -rf dist
-	@echo "Cleaning backend..."
-	rm -rf bin
-	@echo "Cleanup complete!"
+	rm -rf bin web/build web/.svelte-kit web/node_modules
+	@echo "Clean. Your library in data/ was left alone."
