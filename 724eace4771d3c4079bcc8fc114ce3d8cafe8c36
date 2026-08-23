@@ -1,0 +1,4 @@
+web/src/styles/tokens.css
+  266baf67-34cb-4401-b618-de5a954548b0:2026-08-23T10:35:08.861Z 64-72,78,120,149-151,156,159-160
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"266baf67-34cb-4401-b618-de5a954548b0:2026-08-23T10:35:08.861Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "debangan.thakuria@razorpay.com", "accepted_lines": 19, "overriden_lines": 0}}}
