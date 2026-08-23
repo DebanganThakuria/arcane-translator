@@ -1,0 +1,160 @@
+/*
+ * Arcane Translator design tokens.
+ *
+ * Palette rationale: the app translates Chinese, Korean and Japanese webnovels,
+ * so the language is manuscript rather than dashboard. Ground colours are aged
+ * paper (light) and night-library ink (dark). The single accent is cinnabar,
+ * the vermilion of seal paste and woodblock colophons. No second accent exists
+ * anywhere in the app.
+ *
+ * Shape rule, applied everywhere without exception:
+ *   --r-1 (3px)  controls, inputs, badges, chips, small tiles
+ *   --r-2 (8px)  panels, cards, covers, dialogs, media
+ */
+
+:root {
+	/* ---- Type ------------------------------------------------------------ */
+	--font-display: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
+	--font-ui:
+		'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+	/* Reading faces offered in the reader. Verdana leads because it is the most
+	   legible widely-installed screen face at long line lengths. */
+	--font-read-verdana: Verdana, Geneva, 'DejaVu Sans', sans-serif;
+	--font-read-georgia: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+	--font-read-system: var(--font-ui);
+	--font-read-mono: var(--font-mono);
+
+	--step--1: 0.8125rem; /* 13px  meta, captions */
+	--step-0: 1rem; /* 16px  body UI */
+	--step-1: 1.125rem; /* 18px  emphasis */
+	--step-2: 1.375rem; /* 22px  section heads */
+	--step-3: 1.875rem; /* 30px  page titles */
+	--step-4: 2.75rem; /* 44px  display */
+
+	/* ---- Shape ----------------------------------------------------------- */
+	--r-1: 3px;
+	--r-2: 8px;
+
+	/* Every control on a row shares one height, so buttons, inputs, selects
+	   and icon buttons always line up. Never set a control height locally. */
+	--control-h: 2.5rem;
+	--control-h-sm: 2rem;
+
+	/* ---- Space ----------------------------------------------------------- */
+	--sp-1: 0.25rem;
+	--sp-2: 0.5rem;
+	--sp-3: 0.75rem;
+	--sp-4: 1rem;
+	--sp-5: 1.5rem;
+	--sp-6: 2rem;
+	--sp-7: 3rem;
+	--sp-8: 4.5rem;
+
+	--measure: 68ch;
+	--page: 1180px;
+
+	/* ---- Motion ---------------------------------------------------------- */
+	--ease: cubic-bezier(0.16, 1, 0.3, 1);
+	--dur-1: 120ms;
+	--dur-2: 220ms;
+
+	/* ---- Layers ---------------------------------------------------------- */
+	--z-sticky: 10;
+	--z-overlay: 40;
+	--z-dialog: 50;
+	--z-toast: 60;
+	--z-grain: 70;
+}
+
+/* ---- Light: vellum ------------------------------------------------------ */
+:root,
+:root[data-theme='light'] {
+	/* Warm paper, kept light. Earlier values sat around 91% lightness with
+	   enough grey in them to read as dingy rather than as paper. */
+	--ground: #f4f2ed;
+	--surface: #fbfaf8;
+	--surface-2: #fefdfc;
+	--surface-sunk: #eae7e0;
+
+	--ink: #1b1f1d;
+	--ink-2: #575d58;
+	--ink-3: #676d64;
+
+	--line: #e4e0d8;
+	--line-strong: #cbc5b9;
+
+	--accent: #ac3826;
+	--accent-hover: #8d2c1c;
+	--accent-ink: #fbfaf6;
+	--accent-wash: #ac38261a;
+
+	--positive: #2f6b46;
+	--danger: #a3301f;
+
+	--shadow-overlay: 0 1px 2px #2f2a1f0f, 0 12px 40px -8px #2f2a1f30;
+	/* Barely there in light mode: multiplied grain over a pale ground is what
+	   made it look grubby. Dark mode can carry far more. */
+	--grain-opacity: 0.012;
+	--grain-blend: multiply;
+}
+
+/* ---- Dark: night library ------------------------------------------------ */
+:root[data-theme='dark'] {
+	--ground: #0f1113;
+	--surface: #161a1c;
+	--surface-2: #1e2326;
+	--surface-sunk: #0a0c0d;
+
+	--ink: #e6e3da;
+	--ink-2: #a0a6a2;
+	--ink-3: #7f8681;
+
+	--line: #272d30;
+	--line-strong: #38403f;
+
+	--accent: #e0614b;
+	--accent-hover: #ee7660;
+	--accent-ink: #17100e;
+	--accent-wash: #e0614b1f;
+
+	--positive: #6bbd8d;
+	--danger: #e0614b;
+
+	--shadow-overlay: 0 1px 2px #00000059, 0 16px 48px -8px #00000080;
+	--grain-opacity: 0.05;
+	--grain-blend: overlay;
+}
+
+/* ---- Reader surfaces ----------------------------------------------------
+ * The reader is a deliberate full-surface theme switch, chosen by the reader
+ * and persisted. Sepia is the default and its ground is fixed at #FEF7CD.
+ */
+[data-reader='sepia'] {
+	--read-bg: #fef7cd;
+	--read-bg-2: #f8efbe;
+	--read-ink: #33302a;
+	--read-ink-2: #6b6553;
+	--read-line: #e0d49a;
+	--read-accent: #9c3417;
+}
+
+[data-reader='light'] {
+	--read-bg: #fbfaf8;
+	--read-bg-2: #f4f2ed;
+	--read-ink: #1b1f1d;
+	--read-ink-2: #575d58;
+	--read-line: #e4e0d8;
+	--read-accent: #ac3826;
+}
+
+[data-reader='dark'] {
+	--read-bg: #101315;
+	--read-bg-2: #171b1d;
+	--read-ink: #ddd9d0;
+	--read-ink-2: #949a96;
+	--read-line: #262c2e;
+	--read-accent: #e0614b;
+}
