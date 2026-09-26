@@ -10,8 +10,9 @@ function assertHttpUrl(url: string) {
 
 /**
  * Every translation endpoint has the same shape: try server-side scraping
- * first, and if the source site blocks us, ask the reader to paste the page
- * source and retry with `html_content`.
+ * first, and if the source site blocks us (or the backend refuses a source it
+ * cannot scrape reliably), ask the reader to paste the page source and retry
+ * with `html_content`.
  */
 async function withManualFallback<T>(
 	scrapeUrl: string,

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -45,6 +46,23 @@ func GetTranslationService() TranslationService {
 	return translationServiceInstance
 }
 
+// ErrManualHTMLRequired means the request needs the page's HTML pasted in by the
+// reader because the server is not allowed to scrape that source. The client
+// treats any failure as a cue to open the page and ask for its source.
+var ErrManualHTMLRequired = errors.New("the server cannot read this source reliably; paste the page source instead")
+
+// pageHTML returns the HTML the reader pasted if there is any, and otherwise
+// scrapes pageURL, unless the source is one the server must not scrape.
+func pageHTML(source, pageURL string, pasted *string) (string, error) {
+	if pasted != nil {
+		return *pasted, nil
+	}
+	if sources.RequiresManualHTML(source) {
+		return "", fmt.Errorf("%s: %w", source, ErrManualHTMLRequired)
+	}
+	return webscraper.GetScraperService().ScrapeWebPage(pageURL)
+}
+
 func (s *translationService) ExtractNovelDetails(ctx context.Context, request *models.NovelExtractionRequest) (*models.Novel, error) {
 	if request == nil {
 		return nil, errors.New("request cannot be nil")
@@ -70,14 +88,11 @@ func (s *translationService) ExtractNovelDetails(ctx context.Context, request *m
 		return existingNovel, nil
 	}
 
-	// Scrape the webpage content
-	if request.HTMLContent == nil {
-		webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(request.URL)
-		if err != nil {
-			return nil, err
-		}
-		request.HTMLContent = &webpageContent
+	webpageContent, err := pageHTML(request.Source, request.URL, request.HTMLContent)
+	if err != nil {
+		return nil, err
 	}
+	request.HTMLContent = &webpageContent
 
 	// Get cover image URL
 	coverUrl, err := sources.GetSource(request.Source).GetNovelCoverImageUrl(*request.HTMLContent)
@@ -144,14 +159,11 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		return nil, err
 	}
 
-	// Scrape the chapter content
-	if request.HTMLContent == nil {
-		chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(request.ChapterURL)
-		if err != nil {
-			return nil, err
-		}
-		request.HTMLContent = &chapterContent
+	chapterContent, err := pageHTML(novel.Source, request.ChapterURL, request.HTMLContent)
+	if err != nil {
+		return nil, err
 	}
+	request.HTMLContent = &chapterContent
 
 	// Get the next chapter URL
 	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(*request.HTMLContent, request.ChapterURL)
@@ -228,13 +240,11 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, err
 	}
 
-	if request.HTMLContent == nil {
-		chapterContent, err := webscraper.GetScraperService().ScrapeWebPage(lastChapter.NextChapterURL)
-		if err != nil {
-			return nil, err
-		}
-		request.HTMLContent = &chapterContent
+	chapterContent, err := pageHTML(novel.Source, lastChapter.NextChapterURL, request.HTMLContent)
+	if err != nil {
+		return nil, err
 	}
+	request.HTMLContent = &chapterContent
 
 	// Get the next chapter URL
 	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(*request.HTMLContent, request.ChapterURL)
@@ -296,14 +306,11 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 		return nil, err
 	}
 
-	// Scrape the webpage content for the novel
-	if request.HTMLContent == nil {
-		webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(novel.URL)
-		if err != nil {
-			return nil, err
-		}
-		request.HTMLContent = &webpageContent
+	webpageContent, err := pageHTML(novel.Source, novel.URL, request.HTMLContent)
+	if err != nil {
+		return nil, err
 	}
+	request.HTMLContent = &webpageContent
 
 	// Cover image URL
 	coverUrl, err := sources.GetSource(novel.Source).GetNovelCoverImageUrl(*request.HTMLContent)
@@ -346,6 +353,12 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 }
 
 func (s *translationService) addNextChapterUrlToLastChapter(novelId, source string) error {
+	// The server cannot read these pages, so the next URL recorded when the
+	// last chapter was translated from pasted HTML stands.
+	if sources.RequiresManualHTML(source) {
+		return nil
+	}
+
 	lastChapter, err := s.repo.GetLastChapter(novelId)
 	if err != nil {
 		return err

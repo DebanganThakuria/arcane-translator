@@ -7,6 +7,20 @@ type Source interface {
 	GetNovelCoverImageUrl(pageContent string) (string, error)
 }
 
+// manualHTMLSources are sources the server must never scrape. Their pages come
+// back with a normal 200 but carry the wrong details, so the scrape "succeeds"
+// and nothing downstream notices. The reader supplies the HTML from their own
+// browser instead.
+var manualHTMLSources = map[string]bool{
+	"ixdzs": true,
+}
+
+// RequiresManualHTML reports whether pages from sourceType must be pasted in by
+// the reader rather than scraped by the server.
+func RequiresManualHTML(sourceType string) bool {
+	return manualHTMLSources[sourceType]
+}
+
 func GetSource(sourceType string) Source {
 	switch sourceType {
 	case "69shuba":

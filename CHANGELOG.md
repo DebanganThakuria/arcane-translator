@@ -23,6 +23,10 @@ Notable changes to Arcane Translator. Format follows
 
 ### Fixed
 
+- ixdzs pages fetched by the server came back with the wrong details while
+  still looking like a normal page, so nothing flagged them. The server no
+  longer scrapes ixdzs; the reader is always asked to paste the page source.
+- A failed novel extraction appended a stray `null` to its error message.
 - The scraper registered a new response callback on a shared collector for every
   request. Handlers accumulated for the lifetime of the process, which leaked
   memory, made each request slower than the last, and let a later response

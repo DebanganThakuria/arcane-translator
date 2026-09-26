@@ -22,7 +22,7 @@
 	open={Boolean(pending)}
 	wide
 	title="Paste the page source"
-	description="This source blocked the server, so the page was opened in a new tab. Copy its source and paste it below."
+	description="The server could not read this page reliably, so it was opened in a new tab. Copy its source and paste it below."
 	onclose={() => manualExtract.cancel()}
 >
 	<ol class="steps">

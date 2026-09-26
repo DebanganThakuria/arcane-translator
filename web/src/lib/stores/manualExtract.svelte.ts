@@ -1,7 +1,8 @@
 /**
- * Some source sites block server-side scraping. When that happens the backend
- * accepts an `html_content` field instead, and we ask the reader to fetch the
- * page themselves and paste the source in.
+ * Some source sites block server-side scraping, and the backend refuses to
+ * scrape others whose pages come back with the wrong content. Either way the
+ * backend accepts an `html_content` field instead, and we ask the reader to
+ * fetch the page themselves and paste the source in.
  *
  * This store holds the single in-flight request; `ManualExtractDialog` renders
  * it. Callers just await a promise and never touch the DOM.
