@@ -20,6 +20,8 @@ Notable changes to Arcane Translator. Format follows
 - Configuration through the environment, covering AWS Bedrock, Gemini and
   OpenAI-compatible providers.
 - The binary serves the built frontend, so a packaged install is one process.
+- novel543 (novel543.com) as a Chinese source. The site splits each chapter
+  across pages, and each page is stored as its own chapter.
 
 ### Fixed
 

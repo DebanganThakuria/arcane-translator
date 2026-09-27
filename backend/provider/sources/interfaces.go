@@ -53,6 +53,8 @@ func GetSource(sourceType string) Source {
 		return NewIlwxs()
 	case "ffxs8":
 		return NewFfxs8()
+	case "novel543":
+		return NewNovel543()
 	default:
 		return nil
 	}
