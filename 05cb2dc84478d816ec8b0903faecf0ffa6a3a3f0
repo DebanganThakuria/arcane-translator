@@ -1,0 +1,4 @@
+backend/provider/sources/novel543.go
+  a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:35:55.676Z 41-46,50-51
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:35:55.676Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "debangan.thakuria@razorpay.com", "accepted_lines": 8, "overriden_lines": 0}}}
