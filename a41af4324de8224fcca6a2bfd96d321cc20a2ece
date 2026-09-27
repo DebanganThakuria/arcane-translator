@@ -1,0 +1,13 @@
+CHANGELOG.md
+  a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:20:07.342Z 23
+backend/provider/sources/multipage.go
+  a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:24:08.293Z 1,3-7,9-11,13-23,25-33,35-38,40-45,47-51,53-58,60-64
+backend/provider/sources/multipage_test.go
+  a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:24:47.608Z 1,3-7,9-13,16-19,21-34,36-39,41-51,54-57,59-61,63-70,72-74,76-79,81-83,85-92,94-96,98-116
+backend/provider/sources/novel543.go
+  a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:19:25.625Z 1,3-4,6,9,11,13-19,23,25,27-29,31-36,38-39,42-43,45,51,56-59,62-65,68-69,72,75-78,81
+  a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:24:08.293Z 8,21-22,46-49,53,84-92,94-95,97-101,103-105,107-112,114-122,125-134,136-137,139-145,147-148,150-156,158-159,161-169,171-172,174-175,179,181-182,184-195,197-198
+backend/provider/sources/novel543_test.go
+  a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:19:25.625Z 1,3,5-6,8-13,15-24,26-28,30-56,58-67
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:20:07.342Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "debangan.thakuria@razorpay.com", "accepted_lines": 1, "overriden_lines": 0}, "a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:24:08.293Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "debangan.thakuria@razorpay.com", "accepted_lines": 55, "overriden_lines": 0}, "a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:24:47.608Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "debangan.thakuria@razorpay.com", "accepted_lines": 100, "overriden_lines": 0}, "a3597af2-48cf-4a9e-a0fe-4e1b7525a8bd:2026-09-27T11:19:25.625Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "debangan.thakuria@razorpay.com", "accepted_lines": 159, "overriden_lines": 0}}}
