@@ -30,6 +30,10 @@ var (
 	claudeVal  IClient
 	claudeErr  error
 
+	bedrockOnce sync.Once
+	bedrockVal  IClient
+	bedrockErr  error
+
 	geminiOnce sync.Once
 	geminiVal  IClient
 	geminiErr  error
@@ -44,6 +48,8 @@ func Get(ctx context.Context) (IClient, error) {
 	switch cfg := config.Get(); cfg.Provider {
 	case config.ProviderClaude:
 		return GetClaude(ctx)
+	case config.ProviderBedrock:
+		return GetBedrock(ctx)
 	case config.ProviderGemini:
 		return GetGemini(ctx)
 	case config.ProviderOpenAI:
@@ -71,6 +77,26 @@ func GetClaude(ctx context.Context) (IClient, error) {
 	})
 
 	return claudeVal, claudeErr
+}
+
+// GetBedrock returns the client for any Bedrock model, through the Converse API.
+func GetBedrock(ctx context.Context) (IClient, error) {
+	bedrockOnce.Do(func() {
+		cfg := config.Get()
+
+		awsCfg, err := awsConfig.LoadDefaultConfig(ctx, awsConfig.WithRegion(cfg.AWSRegion))
+		if err != nil {
+			bedrockErr = fmt.Errorf("load AWS config: %w", err)
+			return
+		}
+
+		bedrockVal = &bedrockClientImpl{
+			client:  bedrockruntime.NewFromConfig(awsCfg),
+			modelID: cfg.BedrockModelID,
+		}
+	})
+
+	return bedrockVal, bedrockErr
 }
 
 // GetGemini returns the Google AI client.

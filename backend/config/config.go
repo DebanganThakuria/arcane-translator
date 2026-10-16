@@ -20,8 +20,10 @@ type Provider string
 
 const (
 	ProviderClaude Provider = "claude"
-	ProviderGemini Provider = "gemini"
-	ProviderOpenAI Provider = "openai"
+	// ProviderBedrock reaches any Bedrock model through the Converse API.
+	ProviderBedrock Provider = "bedrock"
+	ProviderGemini  Provider = "gemini"
+	ProviderOpenAI  Provider = "openai"
 )
 
 // Config is the resolved runtime configuration.
@@ -217,11 +219,11 @@ func resolveWebDir() string {
 // instead of panicking deep inside a package initialiser.
 func (c *Config) Validate() error {
 	switch c.Provider {
-	case ProviderClaude:
+	case ProviderClaude, ProviderBedrock:
 		if c.BedrockModelID == "" {
 			return fmt.Errorf(
-				"ARCANE_BEDROCK_MODEL_ID is required for the claude provider " +
-					"(a Bedrock model id or an application-inference-profile ARN)")
+				"ARCANE_BEDROCK_MODEL_ID is required for the %s provider "+
+					"(a Bedrock model id or an inference profile id or ARN)", c.Provider)
 		}
 	case ProviderGemini:
 		if c.GeminiAPIKey == "" {
@@ -233,7 +235,7 @@ func (c *Config) Validate() error {
 		}
 	default:
 		return fmt.Errorf(
-			"unknown ARCANE_LLM_PROVIDER %q, expected claude, gemini or openai", c.Provider)
+			"unknown ARCANE_LLM_PROVIDER %q, expected claude, bedrock, gemini or openai", c.Provider)
 	}
 
 	return nil

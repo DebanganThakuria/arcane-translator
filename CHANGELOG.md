@@ -5,6 +5,21 @@ Notable changes to Arcane Translator. Format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-16
+
+### Added
+
+- A `bedrock` provider that reaches any chat model on AWS Bedrock through the
+  Converse API, using the same translation prompts as the `claude` provider.
+  Set `ARCANE_LLM_PROVIDER=bedrock` and a model id such as `zai.glm-4.7`.
+
+### Changed
+
+- `.env.example` and the README default to the `bedrock` provider. The
+  `claude` provider is unchanged.
+
+## [1.0.0]
+
 ### Added
 
 - SvelteKit frontend replacing the previous React app. Ships under 25 KB of

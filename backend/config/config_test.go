@@ -14,6 +14,8 @@ func TestValidateRequiresProviderSettings(t *testing.T) {
 	}{
 		{"claude with a model", Config{Provider: ProviderClaude, BedrockModelID: "model"}, false},
 		{"claude without a model", Config{Provider: ProviderClaude}, true},
+		{"bedrock with a model", Config{Provider: ProviderBedrock, BedrockModelID: "zai.glm-4.7"}, false},
+		{"bedrock without a model", Config{Provider: ProviderBedrock}, true},
 		{"gemini with a key", Config{Provider: ProviderGemini, GeminiAPIKey: "key"}, false},
 		{"gemini without a key", Config{Provider: ProviderGemini}, true},
 		{"openai with a key", Config{Provider: ProviderOpenAI, OpenAIAPIKey: "key"}, false},

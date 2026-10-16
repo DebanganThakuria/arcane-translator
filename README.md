@@ -49,13 +49,18 @@ cp .env.example .env
 ```
 
 The minimum for AWS Bedrock, which reads credentials from the standard AWS
-chain (environment, `~/.aws/credentials`, or an instance role):
+chain (environment, a named profile, or an instance role):
 
 ```bash
-ARCANE_LLM_PROVIDER=claude
+ARCANE_LLM_PROVIDER=bedrock
 AWS_REGION=us-east-1
-ARCANE_BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-20250514-v1:0
+ARCANE_BEDROCK_MODEL_ID=zai.glm-4.7
 ```
+
+The `bedrock` provider calls any Bedrock chat model through the Converse API,
+so switching models is a change to `ARCANE_BEDROCK_MODEL_ID` alone. The older
+`claude` provider sends Anthropic's native request and works only with
+Anthropic models.
 
 For Gemini or an OpenAI-compatible endpoint, set `ARCANE_LLM_PROVIDER=gemini`
 or `openai` and the matching API key. Every option is documented in

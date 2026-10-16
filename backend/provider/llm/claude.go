@@ -197,8 +197,9 @@ func tryParseJSON[T any](jsonStr string, target *T) error {
 	return fmt.Errorf("failed to parse JSON (original error: %v, fixed attempt error: %v)", err, err2)
 }
 
-func (c claudeClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {
-	prompt := `
+// novelDetailsPrompt is the system prompt for extracting novel details. The
+// Bedrock providers share it so every model on Bedrock gets the same wording.
+const novelDetailsPrompt = `
 	You are a professional translator for webnovels.
 	Please extract and translate information from this novel page content.
 
@@ -214,6 +215,39 @@ func (c claudeClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 
 	Do not include any commentary, explanation, or preamble. Only return the valid JSON object. It should be correctly and directly marshallable into a go struct.
 	Do NOT wrap the JSON object in any Markdown code block. Return only the raw JSON object, with no extra formatting.`
+
+// chapterPrompt is the system prompt for translating a chapter, given the
+// genres already known for the novel.
+func chapterPrompt(genres []string) string {
+	return `
+        You are the best webnovel translator and editor, capable of producing the highest quality work.
+		Your task is translating and polishing the following Webnovel chapter into flawless English, ensuring perfect grammar and language. Translate all original language object names, including places, abilities, techniques, and other cultural references, into English.
+		Your goal is to craft an engaging English version while preserving the original content. The author of the original text may have limited writing skills, so take the liberty to polish the content in your translation to ensure that the sentences and paragraphs flow smoothly. Pay special attention to the dialogues, ensuring they flow smoothly and sound lifelike.
+		Finally, you mustn't lose any content from the original during the translation process. 
+		I trust you to provide the best possible results. Please translate the full chapter as per these guidelines.
+	
+		Note: If the source language is also English take your liberty to polish the source, including language, grammar, formatting and the overall prose style in general. It should be like top quality human translation of Chinese novels.
+
+        Currently known novel genres: ` + models.GenresToString(genres) + `
+
+        Return ONLY a valid JSON object with this exact structure:
+        {{
+            "translated_chapter_title": "The translated title of the chapter.",
+			"original_chapter_title": "The original title in the source language.",
+            "translated_chapter_contents": "The translated content of the full chapter in HTML format with paragraph tags. Please ensure that the chapter content has valid HTML tags for rendering on the frontend. And, most importantly, ensure that the full chapter content is included in the response.",
+            "possible_new_genres": "Array of any genres you detect that aren't already known (leave empty if none). Only check for standard genres. Otherwise, this list grows exponentially. Response should be like this ["Genre1", "Genre2", ...]"
+        }}
+	
+		Additional instructions. Please follow these instructions carefully:
+		- Please terminate the translation and return when the chapter ends.
+		- Do not miss any of the fields. This is very important. 
+		- Do not include any commentary, explanation, or preamble. Only return the JSON object. It should be correctly and directly marshallable into a go struct.
+	    - Do NOT wrap the JSON object in any Markdown code block. Return only the raw JSON object, with no extra formatting.
+	`
+}
+
+func (c claudeClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {
+	prompt := novelDetailsPrompt
 
 	modelOrProfile := c.modelID
 
@@ -265,31 +299,7 @@ func (c claudeClientImpl) TranslateNovelDetails(ctx context.Context, webpageCont
 }
 
 func (c claudeClientImpl) TranslateNovelChapter(ctx context.Context, novelGenres []string, webpageContent string) (*models.TranslatedChapter, error) {
-	prompt := `
-        You are the best webnovel translator and editor, capable of producing the highest quality work.
-		Your task is translating and polishing the following Webnovel chapter into flawless English, ensuring perfect grammar and language. Translate all original language object names, including places, abilities, techniques, and other cultural references, into English.
-		Your goal is to craft an engaging English version while preserving the original content. The author of the original text may have limited writing skills, so take the liberty to polish the content in your translation to ensure that the sentences and paragraphs flow smoothly. Pay special attention to the dialogues, ensuring they flow smoothly and sound lifelike.
-		Finally, you mustn't lose any content from the original during the translation process. 
-		I trust you to provide the best possible results. Please translate the full chapter as per these guidelines.
-	
-		Note: If the source language is also English take your liberty to polish the source, including language, grammar, formatting and the overall prose style in general. It should be like top quality human translation of Chinese novels.
-
-        Currently known novel genres: ` + models.GenresToString(novelGenres) + `
-
-        Return ONLY a valid JSON object with this exact structure:
-        {{
-            "translated_chapter_title": "The translated title of the chapter.",
-			"original_chapter_title": "The original title in the source language.",
-            "translated_chapter_contents": "The translated content of the full chapter in HTML format with paragraph tags. Please ensure that the chapter content has valid HTML tags for rendering on the frontend. And, most importantly, ensure that the full chapter content is included in the response.",
-            "possible_new_genres": "Array of any genres you detect that aren't already known (leave empty if none). Only check for standard genres. Otherwise, this list grows exponentially. Response should be like this ["Genre1", "Genre2", ...]"
-        }}
-	
-		Additional instructions. Please follow these instructions carefully:
-		- Please terminate the translation and return when the chapter ends.
-		- Do not miss any of the fields. This is very important. 
-		- Do not include any commentary, explanation, or preamble. Only return the JSON object. It should be correctly and directly marshallable into a go struct.
-	    - Do NOT wrap the JSON object in any Markdown code block. Return only the raw JSON object, with no extra formatting.
-	`
+	prompt := chapterPrompt(novelGenres)
 	modelOrProfile := c.modelID
 
 	req := AnthropicMessagesRequest{

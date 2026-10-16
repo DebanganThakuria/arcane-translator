@@ -57,9 +57,9 @@ class ArcaneTranslator < Formula
 
       Create #{Dir.home}/.arcane-translator/.env with at least:
 
-        ARCANE_LLM_PROVIDER=claude
+        ARCANE_LLM_PROVIDER=bedrock
         AWS_REGION=us-east-1
-        ARCANE_BEDROCK_MODEL_ID=<model id or inference profile ARN>
+        ARCANE_BEDROCK_MODEL_ID=<Bedrock model id, e.g. zai.glm-4.7>
 
       AWS credentials are read from the standard AWS chain. For Gemini or an
       OpenAI-compatible endpoint see:
