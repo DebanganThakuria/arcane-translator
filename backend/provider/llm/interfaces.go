@@ -91,8 +91,9 @@ func GetBedrock(ctx context.Context) (IClient, error) {
 		}
 
 		bedrockVal = &bedrockClientImpl{
-			client:  bedrockruntime.NewFromConfig(awsCfg),
-			modelID: cfg.BedrockModelID,
+			client:      bedrockruntime.NewFromConfig(awsCfg),
+			modelID:     cfg.BedrockModelID,
+			temperature: float32(cfg.TranslationTemp),
 		}
 	})
 

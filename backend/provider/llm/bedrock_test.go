@@ -42,7 +42,7 @@ func TestBedrockTranslateNovelChapter(t *testing.T) {
 		}},
 		&types.ContentBlockMemberText{Value: "```json\n" + chapterJSON + "\n```"},
 	)}
-	client := bedrockClientImpl{client: fake, modelID: "zai.glm-4.7"}
+	client := bedrockClientImpl{client: fake, modelID: "zai.glm-4.7", temperature: 0.2}
 
 	got, err := client.TranslateNovelChapter(context.Background(), []string{"Fantasy"}, "<html>page</html>")
 	if err != nil {
@@ -54,6 +54,9 @@ func TestBedrockTranslateNovelChapter(t *testing.T) {
 
 	if id := aws.ToString(fake.got.ModelId); id != "zai.glm-4.7" {
 		t.Errorf("ModelId = %q, want zai.glm-4.7", id)
+	}
+	if temp := aws.ToFloat32(fake.got.InferenceConfig.Temperature); temp != 0.2 {
+		t.Errorf("Temperature = %v, want 0.2", temp)
 	}
 	system := fake.got.System[0].(*types.SystemContentBlockMemberText).Value
 	if system != chapterPrompt([]string{"Fantasy"}) {

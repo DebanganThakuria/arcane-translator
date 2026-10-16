@@ -33,6 +33,9 @@ type bedrockClientImpl struct {
 	// application-inference-profile ARN. It is configuration, never a
 	// compiled-in constant: an ARN embeds an AWS account id.
 	modelID string
+	// temperature is the sampling temperature. Left at a model's default,
+	// GLM sometimes drops single Chinese or Arabic words into the English.
+	temperature float32
 }
 
 func (c bedrockClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {
@@ -76,7 +79,10 @@ func (c bedrockClientImpl) converse(ctx context.Context, system, user string) (s
 			Role:    types.ConversationRoleUser,
 			Content: []types.ContentBlock{&types.ContentBlockMemberText{Value: user}},
 		}},
-		InferenceConfig: &types.InferenceConfiguration{MaxTokens: aws.Int32(bedrockMaxTokens)},
+		InferenceConfig: &types.InferenceConfiguration{
+			MaxTokens:   aws.Int32(bedrockMaxTokens),
+			Temperature: aws.Float32(c.temperature),
+		},
 	})
 	if err != nil {
 		log.Printf("bedrock %s: converse: %v", c.modelID, err)
