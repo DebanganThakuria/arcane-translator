@@ -27,9 +27,9 @@ body:
     attributes:
       label: Translation provider
       options:
+        - bedrock (AWS Bedrock)
         - claude (AWS Bedrock)
-        - gemini
-        - openai
+        - litellm
         - Not relevant
 
   - type: textarea

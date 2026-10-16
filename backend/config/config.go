@@ -22,8 +22,9 @@ const (
 	ProviderClaude Provider = "claude"
 	// ProviderBedrock reaches any Bedrock model through the Converse API.
 	ProviderBedrock Provider = "bedrock"
-	ProviderGemini  Provider = "gemini"
-	ProviderOpenAI  Provider = "openai"
+	// ProviderLiteLLM reaches any model behind a LiteLLM gateway through its
+	// OpenAI-compatible API.
+	ProviderLiteLLM Provider = "litellm"
 )
 
 // Config is the resolved runtime configuration.
@@ -38,11 +39,9 @@ type Config struct {
 
 	AWSRegion       string
 	BedrockModelID  string
-	GeminiAPIKey    string
-	GeminiModel     string
-	OpenAIAPIKey    string
-	OpenAIBaseURL   string
-	OpenAIModel     string
+	LiteLLMAPIKey   string
+	LiteLLMBaseURL  string
+	LiteLLMModel    string
 	TranslationTemp float64
 }
 
@@ -120,11 +119,9 @@ func fromEnv() *Config {
 
 		AWSRegion:       envString("AWS_REGION", "us-east-1"),
 		BedrockModelID:  os.Getenv("ARCANE_BEDROCK_MODEL_ID"),
-		GeminiAPIKey:    os.Getenv("GEMINI_API_KEY"),
-		GeminiModel:     envString("ARCANE_GEMINI_MODEL", "gemini-2.5-flash"),
-		OpenAIAPIKey:    os.Getenv("OPENAI_API_KEY"),
-		OpenAIBaseURL:   os.Getenv("OPENAI_API_BASE_URL"),
-		OpenAIModel:     envString("ARCANE_OPENAI_MODEL", "gpt-5"),
+		LiteLLMAPIKey:   os.Getenv("LITELLM_API_KEY"),
+		LiteLLMBaseURL:  os.Getenv("ARCANE_LITELLM_BASE_URL"),
+		LiteLLMModel:    envString("ARCANE_LITELLM_MODEL", "claude-sonnet-5-5"),
 		TranslationTemp: envFloat("ARCANE_TRANSLATION_TEMPERATURE", 0.2),
 	}
 }
@@ -225,17 +222,17 @@ func (c *Config) Validate() error {
 				"ARCANE_BEDROCK_MODEL_ID is required for the %s provider "+
 					"(a Bedrock model id or an inference profile id or ARN)", c.Provider)
 		}
-	case ProviderGemini:
-		if c.GeminiAPIKey == "" {
-			return fmt.Errorf("GEMINI_API_KEY is required for the gemini provider")
+	case ProviderLiteLLM:
+		if c.LiteLLMAPIKey == "" {
+			return fmt.Errorf("LITELLM_API_KEY is required for the litellm provider")
 		}
-	case ProviderOpenAI:
-		if c.OpenAIAPIKey == "" {
-			return fmt.Errorf("OPENAI_API_KEY is required for the openai provider")
+		if c.LiteLLMBaseURL == "" {
+			return fmt.Errorf("ARCANE_LITELLM_BASE_URL is required for the litellm provider " +
+				"(the gateway's OpenAI-compatible base URL, for example https://litellm.example.com/v1)")
 		}
 	default:
 		return fmt.Errorf(
-			"unknown ARCANE_LLM_PROVIDER %q, expected claude, bedrock, gemini or openai", c.Provider)
+			"unknown ARCANE_LLM_PROVIDER %q, expected bedrock, claude or litellm", c.Provider)
 	}
 
 	return nil

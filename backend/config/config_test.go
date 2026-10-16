@@ -16,10 +16,11 @@ func TestValidateRequiresProviderSettings(t *testing.T) {
 		{"claude without a model", Config{Provider: ProviderClaude}, true},
 		{"bedrock with a model", Config{Provider: ProviderBedrock, BedrockModelID: "zai.glm-4.7"}, false},
 		{"bedrock without a model", Config{Provider: ProviderBedrock}, true},
-		{"gemini with a key", Config{Provider: ProviderGemini, GeminiAPIKey: "key"}, false},
-		{"gemini without a key", Config{Provider: ProviderGemini}, true},
-		{"openai with a key", Config{Provider: ProviderOpenAI, OpenAIAPIKey: "key"}, false},
-		{"openai without a key", Config{Provider: ProviderOpenAI}, true},
+		{"litellm with a key and url", Config{Provider: ProviderLiteLLM, LiteLLMAPIKey: "key", LiteLLMBaseURL: "https://gw/v1"}, false},
+		{"litellm without a key", Config{Provider: ProviderLiteLLM, LiteLLMBaseURL: "https://gw/v1"}, true},
+		{"litellm without a url", Config{Provider: ProviderLiteLLM, LiteLLMAPIKey: "key"}, true},
+		{"removed gemini provider", Config{Provider: "gemini"}, true},
+		{"removed openai provider", Config{Provider: "openai"}, true},
 		{"unknown provider", Config{Provider: "llama"}, true},
 		{"empty provider", Config{}, true},
 	}
@@ -38,18 +39,18 @@ func TestValidateRequiresProviderSettings(t *testing.T) {
 }
 
 func TestFromEnvReadsProviderSettings(t *testing.T) {
-	t.Setenv("ARCANE_LLM_PROVIDER", "GEMINI")
-	t.Setenv("GEMINI_API_KEY", "abc123")
+	t.Setenv("ARCANE_LLM_PROVIDER", "LITELLM")
+	t.Setenv("LITELLM_API_KEY", "abc123")
 	t.Setenv("ARCANE_PORT", "9999")
 	t.Setenv("ARCANE_DB_PATH", "/tmp/test.db")
 
 	cfg := fromEnv()
 
-	if cfg.Provider != ProviderGemini {
-		t.Errorf("provider = %q, want gemini (case-insensitive)", cfg.Provider)
+	if cfg.Provider != ProviderLiteLLM {
+		t.Errorf("provider = %q, want litellm (case-insensitive)", cfg.Provider)
 	}
-	if cfg.GeminiAPIKey != "abc123" {
-		t.Errorf("GeminiAPIKey = %q", cfg.GeminiAPIKey)
+	if cfg.LiteLLMAPIKey != "abc123" {
+		t.Errorf("LiteLLMAPIKey = %q", cfg.LiteLLMAPIKey)
 	}
 	if cfg.Port != 9999 {
 		t.Errorf("Port = %d, want 9999", cfg.Port)
@@ -61,7 +62,7 @@ func TestFromEnvReadsProviderSettings(t *testing.T) {
 
 func TestFromEnvDefaults(t *testing.T) {
 	for _, key := range []string{
-		"ARCANE_LLM_PROVIDER", "ARCANE_PORT", "AWS_REGION", "ARCANE_GEMINI_MODEL",
+		"ARCANE_LLM_PROVIDER", "ARCANE_PORT", "AWS_REGION", "ARCANE_LITELLM_MODEL",
 	} {
 		t.Setenv(key, "")
 	}
@@ -78,8 +79,8 @@ func TestFromEnvDefaults(t *testing.T) {
 	if cfg.AWSRegion != "us-east-1" {
 		t.Errorf("default region = %q", cfg.AWSRegion)
 	}
-	if cfg.GeminiModel == "" {
-		t.Error("gemini model default is empty")
+	if cfg.LiteLLMModel != "claude-sonnet-5-5" {
+		t.Errorf("default litellm model = %q, want claude-sonnet-5-5", cfg.LiteLLMModel)
 	}
 }
 

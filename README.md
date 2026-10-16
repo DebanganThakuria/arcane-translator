@@ -16,7 +16,7 @@ filtering, and per-source shelves.
 
 - Go 1.26+
 - Node 20+
-- An LLM provider: AWS Bedrock, Google Gemini, or any OpenAI-compatible endpoint
+- An LLM provider: AWS Bedrock, or a LiteLLM gateway
 
 ## Install
 
@@ -62,9 +62,9 @@ so switching models is a change to `ARCANE_BEDROCK_MODEL_ID` alone. The older
 `claude` provider sends Anthropic's native request and works only with
 Anthropic models.
 
-For Gemini or an OpenAI-compatible endpoint, set `ARCANE_LLM_PROVIDER=gemini`
-or `openai` and the matching API key. Every option is documented in
-[.env.example](.env.example).
+For a LiteLLM gateway, set `ARCANE_LLM_PROVIDER=litellm`, `LITELLM_API_KEY` and
+`ARCANE_LITELLM_BASE_URL`, and optionally `ARCANE_LITELLM_MODEL` (default
+`claude-sonnet-5-5`). Every option is documented in [.env.example](.env.example).
 
 No keys or model identifiers are compiled into the binary.
 

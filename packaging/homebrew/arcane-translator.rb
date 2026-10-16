@@ -61,8 +61,8 @@ class ArcaneTranslator < Formula
         AWS_REGION=us-east-1
         ARCANE_BEDROCK_MODEL_ID=<Bedrock model id, e.g. zai.glm-4.7>
 
-      AWS credentials are read from the standard AWS chain. For Gemini or an
-      OpenAI-compatible endpoint see:
+      AWS credentials are read from the standard AWS chain. For a LiteLLM
+      gateway see:
         #{opt_pkgshare}/.env.example
 
       Then run it in the foreground:

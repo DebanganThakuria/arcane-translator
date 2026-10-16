@@ -5,6 +5,28 @@ Notable changes to Arcane Translator. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- A `litellm` provider for any model behind a LiteLLM gateway. Set
+  `ARCANE_LLM_PROVIDER=litellm`, `LITELLM_API_KEY` and `ARCANE_LITELLM_BASE_URL`;
+  `ARCANE_LITELLM_MODEL` defaults to `claude-sonnet-5-5`.
+
+### Changed
+
+- Every provider now uses the same chapter and novel-details prompts. The
+  novel-details prompt follows the chapter prompt's naming rules: only
+  character names stay in pinyin, and titles, places, sects and other terms are
+  translated into English.
+- `ARCANE_TRANSLATION_TEMPERATURE` also applies to the `litellm` provider. A
+  model that accepts only its default temperature, such as gpt-5, is retried
+  without one. The `claude` provider still sends none, since current Claude
+  models reject it.
+
+### Removed
+
+- The `gemini` and `openai` providers. Use `litellm` for models outside AWS
+  Bedrock.
+
 ## [1.1.0] - 2026-10-16
 
 ### Added

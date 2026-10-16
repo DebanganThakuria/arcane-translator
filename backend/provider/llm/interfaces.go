@@ -11,7 +11,6 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	openai "github.com/sashabaranov/go-openai"
-	"google.golang.org/genai"
 )
 
 type IClient interface {
@@ -21,10 +20,10 @@ type IClient interface {
 
 // Clients are built on first use rather than in an initialiser.
 //
-// Constructing all three eagerly meant the server could not start without a
-// Gemini key even when every translation went to Bedrock, and a missing key
-// panicked the process during package initialisation where no caller could
-// handle it.
+// Constructing them eagerly meant the server could not start without every
+// provider's key even when every translation went to Bedrock, and a missing
+// key panicked the process during package initialisation where no caller
+// could handle it.
 var (
 	claudeOnce sync.Once
 	claudeVal  IClient
@@ -34,13 +33,9 @@ var (
 	bedrockVal  IClient
 	bedrockErr  error
 
-	geminiOnce sync.Once
-	geminiVal  IClient
-	geminiErr  error
-
-	openaiOnce sync.Once
-	openaiVal  IClient
-	openaiErr  error
+	litellmOnce sync.Once
+	litellmVal  IClient
+	litellmErr  error
 )
 
 // Get returns the client for the configured provider.
@@ -50,10 +45,8 @@ func Get(ctx context.Context) (IClient, error) {
 		return GetClaude(ctx)
 	case config.ProviderBedrock:
 		return GetBedrock(ctx)
-	case config.ProviderGemini:
-		return GetGemini(ctx)
-	case config.ProviderOpenAI:
-		return GetOpenAI(ctx)
+	case config.ProviderLiteLLM:
+		return GetLiteLLM(ctx)
 	default:
 		return nil, fmt.Errorf("unknown llm provider %q", cfg.Provider)
 	}
@@ -100,41 +93,20 @@ func GetBedrock(ctx context.Context) (IClient, error) {
 	return bedrockVal, bedrockErr
 }
 
-// GetGemini returns the Google AI client.
-func GetGemini(ctx context.Context) (IClient, error) {
-	geminiOnce.Do(func() {
+// GetLiteLLM returns the client for a LiteLLM gateway.
+func GetLiteLLM(context.Context) (IClient, error) {
+	litellmOnce.Do(func() {
 		cfg := config.Get()
 
-		client, err := genai.NewClient(ctx, &genai.ClientConfig{
-			APIKey:  cfg.GeminiAPIKey,
-			Backend: genai.BackendGeminiAPI,
-		})
-		if err != nil {
-			geminiErr = fmt.Errorf("create Gemini client: %w", err)
-			return
-		}
+		clientConfig := openai.DefaultConfig(cfg.LiteLLMAPIKey)
+		clientConfig.BaseURL = cfg.LiteLLMBaseURL
 
-		geminiVal = &geminiClientImpl{geminiClient: client, model: cfg.GeminiModel}
-	})
-
-	return geminiVal, geminiErr
-}
-
-// GetOpenAI returns the OpenAI-compatible client.
-func GetOpenAI(context.Context) (IClient, error) {
-	openaiOnce.Do(func() {
-		cfg := config.Get()
-
-		clientConfig := openai.DefaultConfig(cfg.OpenAIAPIKey)
-		if cfg.OpenAIBaseURL != "" {
-			clientConfig.BaseURL = cfg.OpenAIBaseURL
-		}
-
-		openaiVal = &openaiClientImpl{
-			openaiClient: openai.NewClientWithConfig(clientConfig),
-			model:        cfg.OpenAIModel,
+		litellmVal = &litellmClientImpl{
+			client:      openai.NewClientWithConfig(clientConfig),
+			model:       cfg.LiteLLMModel,
+			temperature: float32(cfg.TranslationTemp),
 		}
 	})
 
-	return openaiVal, openaiErr
+	return litellmVal, litellmErr
 }
