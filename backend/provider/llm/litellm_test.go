@@ -18,6 +18,7 @@ type litellmServer struct {
 	bodies []map[string]any
 	reject func(body map[string]any) (int, string)
 	reply  string
+	finish openai.FinishReason
 }
 
 func (s *litellmServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,7 @@ func (s *litellmServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	_ = json.NewEncoder(w).Encode(openai.ChatCompletionResponse{
-		Choices: []openai.ChatCompletionChoice{{Message: openai.ChatCompletionMessage{Role: "assistant", Content: s.reply}}},
+		Choices: []openai.ChatCompletionChoice{{Message: openai.ChatCompletionMessage{Role: "assistant", Content: s.reply}, FinishReason: s.finish}},
 	})
 }
 
@@ -105,6 +106,9 @@ func TestLiteLLMTranslateNovelChapter(t *testing.T) {
 	body := s.bodies[0]
 	if temp, _ := body["temperature"].(float64); temp < 0.19 || temp > 0.21 {
 		t.Errorf("temperature = %v, want 0.2", body["temperature"])
+	}
+	if got, _ := body["max_completion_tokens"].(float64); got != litellmMaxTokens {
+		t.Errorf("max_completion_tokens = %v, want %d", body["max_completion_tokens"], litellmMaxTokens)
 	}
 	messages, _ := body["messages"].([]any)
 	if len(messages) != 1 {
@@ -192,5 +196,17 @@ func TestLiteLLMDoesNotRetryOtherErrors(t *testing.T) {
 	}
 	if len(s.bodies) != 1 {
 		t.Errorf("got %d requests, want 1", len(s.bodies))
+	}
+}
+
+// A reply cut off at the token limit ends mid-JSON; say so rather than
+// reporting a parse error.
+func TestLiteLLMTruncatedReply(t *testing.T) {
+	s := &litellmServer{reply: `{"translated_chapter_title":"Chapter 93","translated_chapter_contents":"<p>Half`, finish: openai.FinishReasonLength}
+	client := newLiteLLMTestClient(t, s)
+
+	_, err := client.TranslateNovelChapter(context.Background(), nil, "page")
+	if err == nil || !strings.Contains(err.Error(), "cut off") {
+		t.Errorf("TranslateNovelChapter() error = %v, want one saying the reply was cut off", err)
 	}
 }

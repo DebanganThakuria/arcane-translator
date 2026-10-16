@@ -16,6 +16,11 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+// litellmMaxTokens caps the reply length. The gateway's own default is 4,096
+// output tokens, which a long chapter overruns, especially when the model also
+// thinks; the reply then ends mid-JSON. A long chapter needs about 4,000.
+const litellmMaxTokens = 16000
+
 // litellmClientImpl translates through a LiteLLM gateway, which serves many
 // model families (Anthropic, OpenAI, Z.ai, Moonshot and others) behind one
 // OpenAI-compatible chat completions API.
@@ -137,7 +142,8 @@ func (c litellmClientImpl) complete(ctx context.Context, prompt string) (string,
 				Content: prompt,
 			},
 		},
-		Temperature: c.temperature,
+		Temperature:         c.temperature,
+		MaxCompletionTokens: litellmMaxTokens,
 	}
 
 	resp, err := c.client.CreateChatCompletion(ctx, req)
@@ -151,6 +157,9 @@ func (c litellmClientImpl) complete(ctx context.Context, prompt string) (string,
 	}
 	if len(resp.Choices) == 0 {
 		return "", fmt.Errorf("litellm %s: reply has no choices", c.model)
+	}
+	if resp.Choices[0].FinishReason == openai.FinishReasonLength {
+		return "", fmt.Errorf("litellm %s: reply cut off at %d tokens", c.model, litellmMaxTokens)
 	}
 
 	log.Println(resp.Choices[0].Message.Content)
