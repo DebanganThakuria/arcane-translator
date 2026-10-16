@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -39,12 +40,54 @@ func (s *litellmServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func newLiteLLMTestClient(t *testing.T, s *litellmServer) litellmClientImpl {
 	t.Helper()
+	return newLiteLLMTestClientFor(t, s, "glm-5")
+}
+
+func newLiteLLMTestClientFor(t *testing.T, s *litellmServer, model string) litellmClientImpl {
+	t.Helper()
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
 
 	cfg := openai.DefaultConfig("test-key")
 	cfg.BaseURL = srv.URL
-	return litellmClientImpl{client: openai.NewClientWithConfig(cfg), model: "glm-5", temperature: 0.2}
+	return *newLiteLLMClient(cfg, model, 0.2)
+}
+
+func TestLiteLLMCheapMode(t *testing.T) {
+	off := map[string]any{"type": "between_tools"}
+	medium := map[string]any{"effort": "medium"}
+	tests := []struct {
+		model              string
+		thinking, settings any
+	}{
+		{"claude-sonnet-5-5", off, medium},
+		{"anthropic/claude-sonnet-5.5", off, medium},
+		// Every other model rejects between_tools.
+		{"claude-sonnet-5", nil, nil},
+		{"claude-opus-5-5", nil, nil},
+		{"glm-5", nil, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.model, func(t *testing.T) {
+			s := &litellmServer{reply: chapterJSON}
+			client := newLiteLLMTestClientFor(t, s, tt.model)
+
+			if _, err := client.TranslateNovelChapter(context.Background(), []string{"Fantasy"}, "page"); err != nil {
+				t.Fatalf("TranslateNovelChapter() error = %v", err)
+			}
+			body := s.bodies[0]
+			if got := body["thinking"]; !reflect.DeepEqual(got, tt.thinking) {
+				t.Errorf("thinking = %v, want %v", got, tt.thinking)
+			}
+			if got := body["output_config"]; !reflect.DeepEqual(got, tt.settings) {
+				t.Errorf("output_config = %v, want %v", got, tt.settings)
+			}
+			if body["model"] != tt.model || body["temperature"] == nil || len(body["messages"].([]any)) != 1 {
+				t.Errorf("the rest of the request changed: %v", body)
+			}
+		})
+	}
 }
 
 func TestLiteLLMTranslateNovelChapter(t *testing.T) {

@@ -1,11 +1,15 @@
 package llm
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"backend/models"
 
@@ -21,6 +25,76 @@ type litellmClientImpl struct {
 	// temperature is the sampling temperature. Reasoning models such as gpt-5
 	// accept only their default, so complete retries without it.
 	temperature float32
+}
+
+// newLiteLLMClient builds the client for model. For models that think by
+// default but can be told not to, every request turns thinking off: a
+// translation does not need it, and on Claude Sonnet 5.5 it added about 500
+// output tokens (16%) to a chapter with no change in quality.
+func newLiteLLMClient(cfg openai.ClientConfig, model string, temperature float32) *litellmClientImpl {
+	if fields := cheapModeFields(model); fields != nil {
+		cfg.HTTPClient = extraFieldsDoer{next: cfg.HTTPClient, fields: fields}
+	}
+
+	return &litellmClientImpl{
+		client:      openai.NewClientWithConfig(cfg),
+		model:       model,
+		temperature: temperature,
+	}
+}
+
+// cheapModeFields returns the request fields that turn thinking off and lower
+// effort for model, or nil when there are none.
+//
+// Claude Sonnet 5.5 rejects thinking "disabled" and takes "between_tools"
+// instead; every other model rejects "between_tools", so it must never be sent
+// to them. Claude Opus 5.5 cannot turn thinking off. With thinking off, medium
+// effort translated a chapter exactly as fully as the default high, with
+// slightly fewer tokens; low wrote noticeably tighter prose for little saving.
+func cheapModeFields(model string) map[string]any {
+	if strings.Contains(strings.ReplaceAll(model, ".", "-"), "sonnet-5-5") {
+		return map[string]any{
+			"thinking":      map[string]any{"type": "between_tools"},
+			"output_config": map[string]any{"effort": "medium"},
+		}
+	}
+	return nil
+}
+
+// extraFieldsDoer adds fields to every chat completion request body.
+// go-openai has no field for provider-specific parameters such as Anthropic's
+// thinking setting, which the LiteLLM gateway passes through to the model.
+type extraFieldsDoer struct {
+	next   openai.HTTPDoer
+	fields map[string]any
+}
+
+func (d extraFieldsDoer) Do(req *http.Request) (*http.Response, error) {
+	if req.Body == nil || !strings.HasSuffix(req.URL.Path, "/chat/completions") {
+		return d.next.Do(req)
+	}
+
+	var body map[string]any
+	dec := json.NewDecoder(req.Body)
+	dec.UseNumber()
+	err := dec.Decode(&body)
+	req.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("read chat completion request: %w", err)
+	}
+
+	for k, v := range d.fields {
+		body[k] = v
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("write chat completion request: %w", err)
+	}
+
+	req.Body = io.NopCloser(bytes.NewReader(raw))
+	req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(raw)), nil }
+	req.ContentLength = int64(len(raw))
+	return d.next.Do(req)
 }
 
 func (c litellmClientImpl) TranslateNovelDetails(ctx context.Context, webpageContent string) (*models.NovelDetails, error) {

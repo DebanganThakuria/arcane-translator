@@ -101,11 +101,7 @@ func GetLiteLLM(context.Context) (IClient, error) {
 		clientConfig := openai.DefaultConfig(cfg.LiteLLMAPIKey)
 		clientConfig.BaseURL = cfg.LiteLLMBaseURL
 
-		litellmVal = &litellmClientImpl{
-			client:      openai.NewClientWithConfig(clientConfig),
-			model:       cfg.LiteLLMModel,
-			temperature: float32(cfg.TranslationTemp),
-		}
+		litellmVal = newLiteLLMClient(clientConfig, cfg.LiteLLMModel, float32(cfg.TranslationTemp))
 	})
 
 	return litellmVal, litellmErr
