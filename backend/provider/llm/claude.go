@@ -302,6 +302,15 @@ Right:
 
 Do not put the original or the pinyin next to the English as a gloss, in italics, in brackets, or in quotation marks. Translate each term the same way every time it appears in the chapter.
 
+# System messages
+
+Many of these novels have a system, panel, status screen or game interface that speaks to the protagonist. Its messages are part of the story, and readers follow the plot through them, so they are body text, never site chrome. Translate every one of them in full, every time it appears, even when it repeats an earlier message or the narration already describes what it says. This covers:
+- notifications and announcements: 【叮！签到成功，获得灵石×10】 becomes [Ding! Check-in successful. Obtained Spirit Stone ×10];
+- status panels and attribute screens, skill and technique lists, quest logs, rewards, penalties, progress, costs and timers;
+- any line in brackets, such as 【】, 〖〗, 『』 or [], and any text the narration introduces with words like "the panel showed:" or "a line of text appeared:".
+
+Keep every line, entry and number exactly. Never shorten a panel, merge its entries or summarise it, and write "..." only where the source itself has an ellipsis. Keep each line of a panel or list on its own line, in the original order, separated with <br /> inside one <p> or as separate <p> elements. Write system brackets as square brackets: 【】, 〖〗 and 『』 all become [ ]. The naming rules above apply inside system messages too.
+
 # Style
 
 Produce an engaging English version that keeps all of the original content. The author may write poorly, so polish freely: make sentences and paragraphs flow, and make dialogue sound natural and lifelike. Never drop, summarise or skip content, and never add content that is not in the original. Translate the whole chapter and stop where the chapter ends.
@@ -327,7 +336,8 @@ Return the raw JSON object only: no Markdown code fence, no commentary, no pream
 Read your translated title and contents once more and fix any of these:
 1. a character that is not Latin script: Chinese, Japanese, Korean, Arabic, Persian, Cyrillic or any other;
 2. a pinyin word that is not a character's name;
-3. a term translated two different ways.
+3. a term translated two different ways;
+4. a system message, panel line or list entry from the source that is missing or shortened.
 `
 }
 
