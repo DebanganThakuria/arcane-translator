@@ -1,0 +1,4 @@
+backend/provider/llm/claude.go
+  0c4f0088-71c2-4987-b4bc-d4e09038bf48:2026-10-17T18:27:06.203Z 305,307-310,312,339-340
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"0c4f0088-71c2-4987-b4bc-d4e09038bf48:2026-10-17T18:27:06.203Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "debangan.thakuria@razorpay.com", "accepted_lines": 8, "overriden_lines": 0}}}
