@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"backend/models"
@@ -31,6 +32,7 @@ func extractNovelDetails(w http.ResponseWriter, r *http.Request) {
 
 	createdNovel, err := service.GetTranslationService().ExtractNovelDetails(r.Context(), &request)
 	if err != nil {
+		log.Printf("Failed to extract novel details: %v", err)
 		http.Error(w, "Failed to extract novel details: "+err.Error(), translationStatus(err))
 		return
 	}
@@ -51,6 +53,7 @@ func translateNovelChapter(w http.ResponseWriter, r *http.Request) {
 	// Call the translation service to translate the chapter
 	translatedChapter, err := service.GetTranslationService().TranslateChapter(r.Context(), &request)
 	if err != nil {
+		log.Printf("Failed to translate chapter: %v", err)
 		http.Error(w, "Failed to translate chapter: "+err.Error(), translationStatus(err))
 		return
 	}
@@ -71,6 +74,7 @@ func translateFirstChapter(w http.ResponseWriter, r *http.Request) {
 	// Call the translation service to translate the first chapter
 	response, err := service.GetTranslationService().TranslateFirstChapter(r.Context(), &request)
 	if err != nil {
+		log.Printf("Failed to translate first chapter: %v", err)
 		http.Error(w, "Failed to translate first chapter: "+err.Error(), translationStatus(err))
 		return
 	}
@@ -89,6 +93,7 @@ func refreshNovel(w http.ResponseWriter, r *http.Request) {
 
 	response, err := service.GetTranslationService().RefreshNovel(r.Context(), &novelRefreshRequest)
 	if err != nil {
+		log.Printf("Failed to refresh novel: %v", err)
 		http.Error(w, "Failed to refresh novel: "+err.Error(), translationStatus(err))
 		return
 	}

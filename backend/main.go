@@ -78,8 +78,9 @@ func setupServer(cfg *config.Config) *http.Server {
 		// Translating a chapter is a slow LLM call, so the write timeout is
 		// generous while the header timeout stays short to shed slow-loris
 		// connections early.
+		// A 32,000-token reply takes over three minutes to generate.
 		ReadTimeout:       60 * time.Second,
-		WriteTimeout:      180 * time.Second,
+		WriteTimeout:      6 * time.Minute,
 		IdleTimeout:       120 * time.Second,
 		ReadHeaderTimeout: 10 * time.Second,
 		MaxHeaderBytes:    1 << 20,

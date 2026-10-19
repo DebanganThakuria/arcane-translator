@@ -17,9 +17,11 @@ import (
 )
 
 // litellmMaxTokens caps the reply length. The gateway's own default is 4,096
-// output tokens, which a long chapter overruns, especially when the model also
-// thinks; the reply then ends mid-JSON. A long chapter needs about 4,000.
-const litellmMaxTokens = 16000
+// output tokens, which ends a long chapter mid-JSON. A normal chapter needs
+// about 5,000; a "ten thousand words" chapter of 8,700 Chinese characters
+// needed about 17,000, so this leaves room for one twice that long. Bedrock
+// models take the same cap.
+const litellmMaxTokens = 32000
 
 // litellmClientImpl translates through a LiteLLM gateway, which serves many
 // model families (Anthropic, OpenAI, Z.ai, Moonshot and others) behind one
@@ -159,6 +161,7 @@ func (c litellmClientImpl) complete(ctx context.Context, prompt string) (string,
 		return "", fmt.Errorf("litellm %s: reply has no choices", c.model)
 	}
 	if resp.Choices[0].FinishReason == openai.FinishReasonLength {
+		log.Printf("litellm %s: reply cut off at %d tokens", c.model, litellmMaxTokens)
 		return "", fmt.Errorf("litellm %s: reply cut off at %d tokens", c.model, litellmMaxTokens)
 	}
 
