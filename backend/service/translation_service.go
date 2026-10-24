@@ -178,7 +178,12 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		return nil, err
 	}
 
-	translatedContent, err := translator.TranslateNovelChapter(ctx, novel.Genres, *request.HTMLContent)
+	chapterPage, err := sources.PrepareChapter(novel.Source, *request.HTMLContent, request.ChapterURL)
+	if err != nil {
+		return nil, err
+	}
+
+	translatedContent, err := translator.TranslateNovelChapter(ctx, novel.Genres, chapterPage)
 	if err != nil {
 		log.Printf("Failed to translate chapter: %v", err)
 		return nil, err
@@ -258,7 +263,12 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, err
 	}
 
-	translatedContent, err := translator.TranslateNovelChapter(ctx, novel.Genres, *request.HTMLContent)
+	chapterPage, err := sources.PrepareChapter(novel.Source, *request.HTMLContent, request.ChapterURL)
+	if err != nil {
+		return nil, err
+	}
+
+	translatedContent, err := translator.TranslateNovelChapter(ctx, novel.Genres, chapterPage)
 	if err != nil {
 		return nil, err
 	}

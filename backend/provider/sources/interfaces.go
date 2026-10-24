@@ -7,6 +7,21 @@ type Source interface {
 	GetNovelCoverImageUrl(pageContent string) (string, error)
 }
 
+// ChapterPreparer is implemented by a source whose chapter pages need fixing
+// before translation, such as one that shuffles its paragraphs.
+type ChapterPreparer interface {
+	PrepareChapter(chapterContent, chapterURL string) (string, error)
+}
+
+// PrepareChapter returns the chapter page at chapterURL as the translator
+// should read it.
+func PrepareChapter(sourceType, chapterContent, chapterURL string) (string, error) {
+	if preparer, ok := GetSource(sourceType).(ChapterPreparer); ok {
+		return preparer.PrepareChapter(chapterContent, chapterURL)
+	}
+	return chapterContent, nil
+}
+
 // manualHTMLSources are sources the server must never scrape. Their pages come
 // back with a normal 200 but carry the wrong details, so the scrape "succeeds"
 // and nothing downstream notices. The reader supplies the HTML from their own
@@ -55,6 +70,8 @@ func GetSource(sourceType string) Source {
 		return NewFfxs8()
 	case "novel543":
 		return NewNovel543()
+	case "85novel":
+		return NewNovel85()
 	default:
 		return nil
 	}

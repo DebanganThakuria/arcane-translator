@@ -10,6 +10,10 @@ Notable changes to Arcane Translator. Format follows
 - A `litellm` provider for any model behind a LiteLLM gateway. Set
   `ARCANE_LLM_PROVIDER=litellm`, `LITELLM_API_KEY` and `ARCANE_LITELLM_BASE_URL`;
   `ARCANE_LITELLM_MODEL` defaults to `claude-sonnet-5-5`.
+- 85novel (85novel.com) as a Chinese source. Its chapter pages shuffle their
+  paragraphs and leave the title and next-chapter link to the site's script;
+  the app restores the order and asks the site for the title and next link,
+  as the page itself does.
 
 ### Changed
 
