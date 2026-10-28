@@ -14,6 +14,7 @@ Notable changes to Arcane Translator. Format follows
   paragraphs and leave the title and next-chapter link to the site's script;
   the app restores the order and asks the site for the title and next link,
   as the page itself does.
+- xsw (m.xsw.tw, 台灣小說網) as a Chinese source.
 
 ### Changed
 

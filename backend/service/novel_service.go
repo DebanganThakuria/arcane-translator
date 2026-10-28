@@ -544,6 +544,12 @@ var allSources = []*models.SourceSite{
 		Language: "chinese",
 	},
 	{
+		ID:       "xsw",
+		Name:     "xsw",
+		URL:      "https://m.xsw.tw",
+		Language: "chinese",
+	},
+	{
 		ID:       "syosetu",
 		Name:     "syosetu",
 		URL:      "https://syosetu.com/",
