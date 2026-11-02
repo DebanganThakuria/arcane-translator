@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -286,7 +287,7 @@ func restoreParagraphOrder(content *html.Node) error {
 		case strategy == "split":
 			paragraphs = restoreSplitOrder(paragraphs, mode)
 		case mode == 1 || mode == 2:
-			reverseNodes(paragraphs)
+			slices.Reverse(paragraphs)
 		}
 		for _, p := range paragraphs {
 			p.Parent.RemoveChild(p)
@@ -322,7 +323,7 @@ func restoreParagraphOrder(content *html.Node) error {
 func restoreSplitOrder(items []*html.Node, mode int) []*html.Node {
 	grouped := append([]*html.Node(nil), items...)
 	if mode == 1 || mode == 2 {
-		reverseNodes(grouped)
+		slices.Reverse(grouped)
 	}
 
 	evenFirst := mode == 1 || mode == 3
@@ -345,63 +346,4 @@ func restoreSplitOrder(items []*html.Node, mode int) []*html.Node {
 		}
 	}
 	return restored
-}
-
-func collectParagraphs(node *html.Node, paragraphs *[]*html.Node) {
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		if child.Type == html.ElementNode && child.Data == "p" {
-			*paragraphs = append(*paragraphs, child)
-			continue
-		}
-		collectParagraphs(child, paragraphs)
-	}
-}
-
-func findHTMLNode(node *html.Node, match func(*html.Node) bool) *html.Node {
-	if match(node) {
-		return node
-	}
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		if found := findHTMLNode(child, match); found != nil {
-			return found
-		}
-	}
-	return nil
-}
-
-func hasHTMLAttr(node *html.Node, key string) bool {
-	if node.Type != html.ElementNode {
-		return false
-	}
-	for _, a := range node.Attr {
-		if a.Key == key {
-			return true
-		}
-	}
-	return false
-}
-
-func htmlAttr(node *html.Node, key string) string {
-	for _, a := range node.Attr {
-		if a.Key == key {
-			return a.Val
-		}
-	}
-	return ""
-}
-
-func setHTMLAttr(node *html.Node, key, value string) {
-	for i := range node.Attr {
-		if node.Attr[i].Key == key {
-			node.Attr[i].Val = value
-			return
-		}
-	}
-	node.Attr = append(node.Attr, html.Attribute{Key: key, Val: value})
-}
-
-func reverseNodes(nodes []*html.Node) {
-	for i, j := 0, len(nodes)-1; i < j; i, j = i+1, j-1 {
-		nodes[i], nodes[j] = nodes[j], nodes[i]
-	}
 }
