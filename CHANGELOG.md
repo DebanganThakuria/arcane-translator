@@ -32,6 +32,12 @@ Notable changes to Arcane Translator. Format follows
 - The `gemini` and `openai` providers. Use `litellm` for models outside AWS
   Bedrock.
 
+### Fixed
+
+- novel543 chapters that the site splits across pages (8096_1.html,
+  8096_1_2.html) are fetched in full and translated as one chapter, titled
+  without the "(1/2)" marker. Each part used to be stored as its own chapter.
+
 ## [1.1.0] - 2026-10-16
 
 ### Added

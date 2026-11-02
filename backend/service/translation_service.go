@@ -63,6 +63,44 @@ func pageHTML(source, pageURL string, pasted *string) (string, error) {
 	return webscraper.GetScraperService().ScrapeWebPage(pageURL)
 }
 
+// maxChapterPages bounds how many pages one chapter may span, so a pager that
+// loops back on itself cannot fetch forever.
+const maxChapterPages = 10
+
+// wholeChapter fetches the remaining pages of a chapter whose source splits it
+// across pages. It returns the page to translate, and the chapter's last page
+// and its URL, which carry the link to the next chapter. For every other
+// source it returns the first page unchanged.
+func wholeChapter(source, chapterURL, firstPage string) (page, lastPage, lastURL string, err error) {
+	multi, ok := sources.GetSource(source).(sources.MultiPageChapter)
+	if !ok {
+		return firstPage, firstPage, chapterURL, nil
+	}
+
+	pages := []string{firstPage}
+	lastURL = chapterURL
+	next := multi.NextChapterPage(firstPage, chapterURL)
+	for next != "" {
+		if len(pages) == maxChapterPages {
+			return "", "", "", fmt.Errorf("%s: chapter %s spans more than %d pages", source, chapterURL, maxChapterPages)
+		}
+
+		part, err := webscraper.GetScraperService().ScrapeWebPage(next)
+		if err != nil {
+			return "", "", "", fmt.Errorf("%s: page %d of chapter %s: %w", source, len(pages)+1, chapterURL, err)
+		}
+		pages = append(pages, part)
+		lastURL = next
+		next = multi.NextChapterPage(part, next)
+	}
+
+	page, err = multi.JoinChapterPages(pages)
+	if err != nil {
+		return "", "", "", err
+	}
+	return page, pages[len(pages)-1], lastURL, nil
+}
+
 func (s *translationService) ExtractNovelDetails(ctx context.Context, request *models.NovelExtractionRequest) (*models.Novel, error) {
 	if request == nil {
 		return nil, errors.New("request cannot be nil")
@@ -165,8 +203,13 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 	}
 	request.HTMLContent = &chapterContent
 
+	fullChapter, lastPage, lastURL, err := wholeChapter(novel.Source, request.ChapterURL, chapterContent)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get the next chapter URL
-	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(*request.HTMLContent, request.ChapterURL)
+	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(lastPage, lastURL)
 	if err != nil {
 		log.Printf("Failed to get next chapter url: %v", err)
 		return nil, err
@@ -178,7 +221,7 @@ func (s *translationService) TranslateFirstChapter(ctx context.Context, request 
 		return nil, err
 	}
 
-	chapterPage, err := sources.PrepareChapter(novel.Source, *request.HTMLContent, request.ChapterURL)
+	chapterPage, err := sources.PrepareChapter(novel.Source, fullChapter, request.ChapterURL)
 	if err != nil {
 		return nil, err
 	}
@@ -251,8 +294,13 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 	}
 	request.HTMLContent = &chapterContent
 
+	fullChapter, lastPage, lastURL, err := wholeChapter(novel.Source, request.ChapterURL, chapterContent)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get the next chapter URL
-	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(*request.HTMLContent, request.ChapterURL)
+	nextChapterUrl, err := sources.GetSource(novel.Source).GetNextChapterUrl(lastPage, lastURL)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +311,7 @@ func (s *translationService) TranslateChapter(ctx context.Context, request *mode
 		return nil, err
 	}
 
-	chapterPage, err := sources.PrepareChapter(novel.Source, *request.HTMLContent, request.ChapterURL)
+	chapterPage, err := sources.PrepareChapter(novel.Source, fullChapter, request.ChapterURL)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +427,12 @@ func (s *translationService) addNextChapterUrlToLastChapter(novelId, source stri
 		return err
 	}
 
-	nextChapterUrl, err := sources.GetSource(source).GetNextChapterUrl(webpageContent, lastChapter.URL)
+	_, lastPage, lastURL, err := wholeChapter(source, lastChapter.URL, webpageContent)
+	if err != nil {
+		return err
+	}
+
+	nextChapterUrl, err := sources.GetSource(source).GetNextChapterUrl(lastPage, lastURL)
 	if err != nil {
 		return err
 	}

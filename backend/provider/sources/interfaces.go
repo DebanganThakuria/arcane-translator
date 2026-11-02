@@ -22,6 +22,17 @@ func PrepareChapter(sourceType, chapterContent, chapterURL string) (string, erro
 	return chapterContent, nil
 }
 
+// MultiPageChapter is implemented by a source that splits each chapter across
+// several pages. The app fetches every page, translates them as one chapter,
+// and follows the last page's link to the next chapter.
+type MultiPageChapter interface {
+	// NextChapterPage returns the URL of the next page of the same chapter, or
+	// "" when page is the chapter's last.
+	NextChapterPage(page, pageURL string) string
+	// JoinChapterPages joins one chapter's pages, in order, into one page.
+	JoinChapterPages(pages []string) (string, error)
+}
+
 // manualHTMLSources are sources the server must never scrape. Their pages come
 // back with a normal 200 but carry the wrong details, so the scrape "succeeds"
 // and nothing downstream notices. The reader supplies the HTML from their own
