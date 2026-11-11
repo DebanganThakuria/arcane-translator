@@ -85,6 +85,8 @@ func GetSource(sourceType string) Source {
 		return NewNovel85()
 	case "xsw":
 		return NewXsw()
+	case "canghaishuge":
+		return NewCanghaishuge()
 	default:
 		return nil
 	}

@@ -550,6 +550,12 @@ var allSources = []*models.SourceSite{
 		Language: "chinese",
 	},
 	{
+		ID:       "canghaishuge",
+		Name:     "canghaishuge",
+		URL:      "https://www.canghaishuge.com",
+		Language: "chinese",
+	},
+	{
 		ID:       "syosetu",
 		Name:     "syosetu",
 		URL:      "https://syosetu.com/",

@@ -15,6 +15,7 @@ Notable changes to Arcane Translator. Format follows
   the app restores the order and asks the site for the title and next link,
   as the page itself does.
 - xsw (m.xsw.tw, 台灣小說網) as a Chinese source.
+- canghaishuge (www.canghaishuge.com, 沧海书阁) as a Chinese source.
 
 ### Changed
 
