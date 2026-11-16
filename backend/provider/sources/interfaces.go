@@ -87,6 +87,8 @@ func GetSource(sourceType string) Source {
 		return NewXsw()
 	case "canghaishuge":
 		return NewCanghaishuge()
+	case "69shubatw":
+		return NewShubaTW()
 	default:
 		return nil
 	}

@@ -16,6 +16,8 @@ Notable changes to Arcane Translator. Format follows
   as the page itself does.
 - xsw (m.xsw.tw, 台灣小說網) as a Chinese source.
 - canghaishuge (www.canghaishuge.com, 沧海书阁) as a Chinese source.
+- 69shuba.tw (69書吧) as a Chinese source, separate from 69shuba.com: it lays
+  out books and chapters differently and is not behind Cloudflare.
 
 ### Changed
 
