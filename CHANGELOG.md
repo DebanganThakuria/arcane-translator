@@ -45,6 +45,11 @@ Notable changes to Arcane Translator. Format follows
   saves the link, asking for the page source if the site blocks the server.
   The check used to fail silently on such sites, and it also refetched the
   last chapter on every refresh, even when its link was already known.
+- twkan and 69shuba no longer record their "no more chapters" placeholder
+  (twkan's end.html, 69shuba's book page) as the latest chapter's next link.
+  "Translate next" used to open that placeholder, and "Check for updates" took
+  it for a real link and never looked again; a stored placeholder is now
+  checked again, and cleared if no new chapter is out yet.
 
 ## [1.1.0] - 2026-10-16
 

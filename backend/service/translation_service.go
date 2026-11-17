@@ -410,8 +410,10 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 // translated one, by reading the next link off the last chapter's page again.
 // It returns the last chapter, whose NextChapterURL is set if one came out.
 //
-// Only a last chapter without a next link is checked: one that has a link
-// already is returned as is, so the source site is not fetched for nothing.
+// A last chapter that already links to a chapter is returned as is, so the
+// source site is not fetched for nothing. A link the source does not take for
+// a chapter, such as twkan's end.html placeholder recorded before the source
+// knew better, counts as none.
 func (s *translationService) RefreshNextChapterURL(request *models.NextChapterRefreshRequest) (*models.Chapter, error) {
 	if request == nil || request.NovelID == "" {
 		return nil, errors.New("novel ID cannot be empty")
@@ -432,7 +434,8 @@ func (s *translationService) RefreshNextChapterURL(request *models.NextChapterRe
 	if err != nil {
 		return nil, fmt.Errorf("last chapter of novel %s: %w", novel.ID, err)
 	}
-	if lastChapter.NextChapterURL != "" {
+	source := sources.GetSource(novel.Source)
+	if lastChapter.NextChapterURL != "" && source.GetChapterId(lastChapter.NextChapterURL) != "" {
 		return lastChapter, nil
 	}
 
@@ -446,17 +449,16 @@ func (s *translationService) RefreshNextChapterURL(request *models.NextChapterRe
 		return nil, err
 	}
 
-	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(lastPage, lastURL)
+	nextChapterURL, err := source.GetNextChapterUrl(lastPage, lastURL)
 	if err != nil {
 		return nil, err
 	}
-	if nextChapterURL == "" {
-		return lastChapter, nil
-	}
-
-	lastChapter.NextChapterURL = nextChapterURL
-	if err = s.repo.UpdateChapter(lastChapter); err != nil {
-		return nil, err
+	// Also clears a placeholder link when no new chapter is out yet.
+	if nextChapterURL != lastChapter.NextChapterURL {
+		lastChapter.NextChapterURL = nextChapterURL
+		if err = s.repo.UpdateChapter(lastChapter); err != nil {
+			return nil, err
+		}
 	}
 	return lastChapter, nil
 }

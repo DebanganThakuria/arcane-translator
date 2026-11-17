@@ -73,15 +73,17 @@
 
 	/**
 	 * Once every chapter out so far is translated, the last one has no next
-	 * link. Looks again in case a new chapter came out since, and resolves to
-	 * whether one did. A chapter that already links onward needs no fetch.
+	 * link, or only a placeholder some sites put on their latest chapter. Looks
+	 * again in case a new chapter came out since, and resolves to whether one
+	 * did. Only the server can tell a placeholder from a real link, and it
+	 * fetches nothing for a chapter that already links onward.
 	 */
 	async function checkForNewChapter(): Promise<boolean> {
 		if (lastChapter === null) return false;
 		const last = await getChapterByNumber(novelId, lastChapter);
-		if (last.next_chapter_url || !last.url) return false;
+		if (!last.url) return false;
 		const updated = await refreshNextChapter(novelId, last.url);
-		return Boolean(updated.next_chapter_url);
+		return Boolean(updated.next_chapter_url) && updated.next_chapter_url !== last.next_chapter_url;
 	}
 
 	async function refresh() {

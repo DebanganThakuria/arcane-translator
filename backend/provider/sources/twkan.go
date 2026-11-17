@@ -35,6 +35,9 @@ func (s *twkan) GetNovelId(url string) string {
 func (s *twkan) GetChapterId(chapterUrl string) string {
 	// Example URL: https://www.69shuba.com/txt/36573/40179619
 	// We need to extract the last part of the URL
+	if !isTxtChapterURL(chapterUrl) {
+		return ""
+	}
 
 	parts := strings.Split(chapterUrl, "/")
 	if len(parts) < 6 {
@@ -46,19 +49,9 @@ func (s *twkan) GetChapterId(chapterUrl string) string {
 	return lastPart + "_" + secondLastPart
 }
 
-// GetNextChapterUrl constructs the chapter URL based on the previous chapter URL
+// GetNextChapterUrl returns the page's 下一章 link, or "" on the latest chapter.
 func (s *twkan) GetNextChapterUrl(chapterContent, currentChapterUrl string) (string, error) {
-	doc, err := html.Parse(strings.NewReader(chapterContent))
-	if err != nil {
-		return "", err
-	}
-
-	nextChapterURL, found := findNextChapterLink(doc)
-	if found {
-		return nextChapterURL, nil
-	}
-
-	return "", fmt.Errorf("next chapter link not found")
+	return txtNextChapterURL(chapterContent, currentChapterUrl)
 }
 
 func (s *twkan) GetNovelCoverImageUrl(pageContent string) (string, error) {
