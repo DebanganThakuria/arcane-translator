@@ -39,6 +39,8 @@ type MultiPageChapter interface {
 // browser instead.
 var manualHTMLSources = map[string]bool{
 	"ixdzs": true,
+	// Chapter pages answer the server with a captcha form instead.
+	"mingshutang": true,
 }
 
 // RequiresManualHTML reports whether pages from sourceType must be pasted in by
@@ -89,6 +91,8 @@ func GetSource(sourceType string) Source {
 		return NewCanghaishuge()
 	case "69shubatw":
 		return NewShubaTW()
+	case "mingshutang":
+		return NewMingshutang()
 	default:
 		return nil
 	}
