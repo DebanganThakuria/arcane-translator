@@ -100,3 +100,22 @@ func refreshNovel(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, response, http.StatusOK)
 }
+
+// refreshNextChapter handles the POST request to look for a chapter released
+// after the novel's last translated one. It responds with the last chapter.
+func refreshNextChapter(w http.ResponseWriter, r *http.Request) {
+	var request models.NextChapterRefreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	chapter, err := service.GetTranslationService().RefreshNextChapterURL(&request)
+	if err != nil {
+		log.Printf("Failed to refresh the next chapter link: %v", err)
+		http.Error(w, "Failed to check for a new chapter: "+err.Error(), translationStatus(err))
+		return
+	}
+
+	writeJSON(w, chapter, http.StatusOK)
+}

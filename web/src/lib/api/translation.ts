@@ -67,3 +67,14 @@ export function refreshNovel(novelId: string, novelUrl: string): Promise<Novel> 
 		post<Novel>('/novels/refresh', { novel_id: novelId, html_content })
 	);
 }
+
+/**
+ * Reads the last translated chapter's page again for a link to a newer
+ * chapter, and resolves to that chapter with `next_chapter_url` set if one
+ * came out.
+ */
+export function refreshNextChapter(novelId: string, lastChapterUrl: string): Promise<Chapter> {
+	return withManualFallback(lastChapterUrl, (html_content) =>
+		post<Chapter>('/novels/refresh/next_chapter', { novel_id: novelId, html_content })
+	);
+}

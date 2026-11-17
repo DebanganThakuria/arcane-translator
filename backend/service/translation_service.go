@@ -22,6 +22,7 @@ type TranslationService interface {
 	TranslateChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
 	TranslateFirstChapter(ctx context.Context, request *models.ChapterTranslationRequest) (*models.Chapter, error)
 	RefreshNovel(ctx context.Context, request *models.NovelRefreshRequest) (*models.Novel, error)
+	RefreshNextChapterURL(request *models.NextChapterRefreshRequest) (*models.Chapter, error)
 }
 
 type translationService struct {
@@ -387,11 +388,6 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 		return nil, err
 	}
 
-	// Add the next chapter URL to the last chapter if there are new chapters
-	if err = s.addNextChapterUrlToLastChapter(novel.ID, novel.Source); err != nil {
-		log.Printf("Failed to add next chapter URL to last chapter: %v\n", err)
-	}
-
 	// Update the novel details in the database
 	novel.Title = novelDetails.NovelTitleTranslated
 	novel.OriginalTitle = novelDetails.NovelTitleOriginal
@@ -410,33 +406,57 @@ func (s *translationService) RefreshNovel(ctx context.Context, request *models.N
 	return s.repo.GetNovelByID(request.NovelID)
 }
 
-func (s *translationService) addNextChapterUrlToLastChapter(novelId, source string) error {
-	// The server cannot read these pages, so the next URL recorded when the
-	// last chapter was translated from pasted HTML stands.
-	if sources.RequiresManualHTML(source) {
-		return nil
+// RefreshNextChapterURL looks for a chapter released after the novel's last
+// translated one, by reading the next link off the last chapter's page again.
+// It returns the last chapter, whose NextChapterURL is set if one came out.
+//
+// Only a last chapter without a next link is checked: one that has a link
+// already is returned as is, so the source site is not fetched for nothing.
+func (s *translationService) RefreshNextChapterURL(request *models.NextChapterRefreshRequest) (*models.Chapter, error) {
+	if request == nil || request.NovelID == "" {
+		return nil, errors.New("novel ID cannot be empty")
 	}
 
-	lastChapter, err := s.repo.GetLastChapter(novelId)
+	// Shares the refresh lock: a second click must not fetch the page twice.
+	if !utils.Mutex.TryLock("refreshNovel"+request.NovelID, 5*time.Millisecond) {
+		return nil, errors.New("another request is in progress")
+	}
+	defer utils.Mutex.Unlock("refreshNovel" + request.NovelID)
+
+	novel, err := s.repo.GetNovelByID(request.NovelID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	webpageContent, err := webscraper.GetScraperService().ScrapeWebPage(lastChapter.URL)
+	lastChapter, err := s.repo.GetLastChapter(novel.ID)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("last chapter of novel %s: %w", novel.ID, err)
+	}
+	if lastChapter.NextChapterURL != "" {
+		return lastChapter, nil
 	}
 
-	_, lastPage, lastURL, err := wholeChapter(source, lastChapter.URL, webpageContent)
+	page, err := pageHTML(novel.Source, lastChapter.URL, request.HTMLContent)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	nextChapterUrl, err := sources.GetSource(source).GetNextChapterUrl(lastPage, lastURL)
+	_, lastPage, lastURL, err := wholeChapter(novel.Source, lastChapter.URL, page)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	lastChapter.NextChapterURL = nextChapterUrl
-	return s.repo.UpdateChapter(lastChapter)
+	nextChapterURL, err := sources.GetSource(novel.Source).GetNextChapterUrl(lastPage, lastURL)
+	if err != nil {
+		return nil, err
+	}
+	if nextChapterURL == "" {
+		return lastChapter, nil
+	}
+
+	lastChapter.NextChapterURL = nextChapterURL
+	if err = s.repo.UpdateChapter(lastChapter); err != nil {
+		return nil, err
+	}
+	return lastChapter, nil
 }

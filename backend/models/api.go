@@ -74,6 +74,14 @@ type NovelRefreshRequest struct {
 	HTMLContent *string `json:"html_content"`
 }
 
+// NextChapterRefreshRequest asks whether a chapter has come out after the
+// novel's last translated one. HTMLContent is the last chapter's page, pasted
+// in when the server cannot fetch it.
+type NextChapterRefreshRequest struct {
+	NovelID     string  `json:"novel_id"`
+	HTMLContent *string `json:"html_content"`
+}
+
 // NovelRefreshResponse represents the response when refreshing a novel
 type NovelRefreshResponse struct {
 	Success          bool   `json:"success"`

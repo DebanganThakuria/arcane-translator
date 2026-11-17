@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { getChapterPage, getNovel, deleteNovel } from '$api/novels';
-	import { refreshNovel } from '$api/translation';
+	import { getChapterByNumber, getChapterPage, getNovel, deleteNovel } from '$api/novels';
+	import { refreshNextChapter, refreshNovel } from '$api/translation';
 	import Cover from '$components/Cover.svelte';
 	import ChapterList from '$components/ChapterList.svelte';
 	import ConfirmDialog from '$components/ConfirmDialog.svelte';
@@ -71,13 +71,34 @@
 
 	const started = $derived(Boolean(saved?.lastChapter || novel?.last_read_timestamp));
 
+	/**
+	 * Once every chapter out so far is translated, the last one has no next
+	 * link. Looks again in case a new chapter came out since, and resolves to
+	 * whether one did. A chapter that already links onward needs no fetch.
+	 */
+	async function checkForNewChapter(): Promise<boolean> {
+		if (lastChapter === null) return false;
+		const last = await getChapterByNumber(novelId, lastChapter);
+		if (last.next_chapter_url || !last.url) return false;
+		const updated = await refreshNextChapter(novelId, last.url);
+		return Boolean(updated.next_chapter_url);
+	}
+
 	async function refresh() {
 		if (!novel) return;
 		refreshing = true;
 		try {
 			await refreshNovel(novel.id, novel.url);
+			// The details are saved by now, so a failed check is reported on
+			// its own rather than as a failed refresh.
+			const newChapter = await checkForNewChapter().catch((cause) => {
+				if (!(cause instanceof ManualExtractCancelled)) {
+					toast.fromError('Could not check for a new chapter', cause);
+				}
+				return false;
+			});
 			await load();
-			toast.success('Novel refreshed');
+			toast.success('Novel refreshed', newChapter ? 'A new chapter is out.' : undefined);
 		} catch (cause) {
 			if (!(cause instanceof ManualExtractCancelled)) {
 				toast.fromError('Refresh failed', cause);

@@ -40,6 +40,11 @@ Notable changes to Arcane Translator. Format follows
 - novel543 chapters that the site splits across pages (8096_1.html,
   8096_1_2.html) are fetched in full and translated as one chapter, titled
   without the "(1/2)" marker. Each part used to be stored as its own chapter.
+- "Check for updates" finds a chapter released after the last translated one.
+  When the last chapter has no next link, the app reads its page again and
+  saves the link, asking for the page source if the site blocks the server.
+  The check used to fail silently on such sites, and it also refetched the
+  last chapter on every refresh, even when its link was already known.
 
 ## [1.1.0] - 2026-10-16
 
